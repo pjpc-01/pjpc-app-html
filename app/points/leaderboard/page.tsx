@@ -85,7 +85,7 @@ export default function LeaderboardPage() {
   return (
     <PageLayout
       title={t("积分排行榜")}
-      description={`共 ${filtered.length} 名学生有积分`}
+      description={`${t("共")} ${filtered.length} ${t("名学生有积分")}`}
       backUrl="/points"
       userRole="admin"
       background="from-yellow-50 to-amber-50"

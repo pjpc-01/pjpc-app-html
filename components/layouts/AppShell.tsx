@@ -799,7 +799,7 @@ export default function AppShell({
                 }`}
               >
                 <item.icon className="w-4 h-4 flex-shrink-0" />
-                <span className="flex-1 text-left truncate">{NAV_LABEL_MAP[item.label] ? t(NAV_LABEL_MAP[item.label]) : item.label}</span>
+                <span className="flex-1 text-left truncate">{t(NAV_LABEL_MAP[item.label] || item.label)}</span>
                 <ChevronDown
                   className={`w-3.5 h-3.5 transition-transform duration-200 flex-shrink-0 ${
                     expanded ? "rotate-180" : ""
@@ -823,7 +823,7 @@ export default function AppShell({
             }`}
           >
             <item.icon className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">{NAV_LABEL_MAP[item.label] ? t(NAV_LABEL_MAP[item.label]) : item.label}</span>
+            <span className="truncate">{t(NAV_LABEL_MAP[item.label] || item.label)}</span>
             {active && (
               <span className="ml-auto w-1.5 h-1.5 rounded-full bg-gray-500"></span>
             )}

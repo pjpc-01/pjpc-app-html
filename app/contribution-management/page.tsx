@@ -79,7 +79,7 @@ export default function ContributionManagementPage() {
         fetch(`/api/contribution/item-requests?status=pending`),
       ])
       const [da, db, dc, dd, de, df, dg] = await Promise.all([a.json(), b.json(), c.json(), d.json(), e.json(), f.json(), g.json()])
-      if (!a.ok || !b.ok || !c.ok) throw new Error("读取失败")
+      if (!a.ok || !b.ok || !c.ok) throw new Error(t("读取失败"))
       setItems(da.items || [])
       setRewards(db.items || [])
       setPending(dc.items || [])
