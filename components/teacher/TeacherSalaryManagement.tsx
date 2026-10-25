@@ -137,6 +137,8 @@ export default function TeacherSalaryManagement() {
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [salaryStructures, setSalaryStructures] = useState<TeacherSalaryStructure[]>([])
   const [salaryRecords, setSalaryRecords] = useState<TeacherSalaryRecord[]>([])
+  // 顶部卡片用「筛选条件下全部记录」的合计；salaryRecords 只是当前这一页（20 条），不能拿来算总
+  const [recordSummary, setRecordSummary] = useState<{ count: number; gross: number; net: number; average: number } | null>(null)
   const [recordPage, setRecordPage] = useState(1)
   const [recordTotalPages, setRecordTotalPages] = useState(1)
   const [recordTotal, setRecordTotal] = useState(0)
@@ -436,6 +438,7 @@ export default function TeacherSalaryManagement() {
         setRecordPage(page)
         setRecordTotalPages(result.totalPages || 1)
         setRecordTotal(result.total || 0)
+        setRecordSummary(result.summary || null)
       }
     } catch (error) {
       console.error('获取薪资记录失败:', error)
@@ -1067,6 +1070,15 @@ export default function TeacherSalaryManagement() {
 
   // 统计数据
   const stats = useMemo(() => {
+    // 有后端汇总就用汇总（全量），否则退回当前页（只在接口旧版时的兜底）
+    if (recordSummary) {
+      return {
+        totalGrossSalary: recordSummary.gross,
+        totalNetSalary: recordSummary.net,
+        averageSalary: recordSummary.average,
+        recordCount: recordSummary.count,
+      }
+    }
     const totalGrossSalary = salaryRecords.reduce((sum, record) => sum + record.gross_salary, 0)
     const totalNetSalary = salaryRecords.reduce((sum, record) => sum + record.net_salary, 0)
     const totalDeductions = totalGrossSalary - totalNetSalary
@@ -1079,7 +1091,7 @@ export default function TeacherSalaryManagement() {
       averageSalary,
       recordCount: salaryRecords.length
     }
-  }, [salaryRecords])
+  }, [salaryRecords, recordSummary])
 
   if (loading) {
     return (

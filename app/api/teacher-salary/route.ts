@@ -158,12 +158,27 @@ export async function GET(request: NextRequest) {
         }
       }))
 
+      // 顶部卡片要的是「筛选条件下全部记录的合计」，不是当前这一页（20 条）的合计
+      let summary = null
+      try {
+        const allRows = await pb.collection('teacher_salary_records').getFullList({ filter, fields: 'gross_salary,net_salary' })
+        const gross = allRows.reduce((a: number, r: any) => a + Number(r.gross_salary || 0), 0)
+        const net = allRows.reduce((a: number, r: any) => a + Number(r.net_salary || 0), 0)
+        summary = {
+          count: allRows.length,
+          gross: Math.round(gross * 100) / 100,
+          net: Math.round(net * 100) / 100,
+          average: allRows.length ? Math.round((net / allRows.length) * 100) / 100 : 0,
+        }
+      } catch { /* 汇总失败不影响列表 */ }
+
       return NextResponse.json({
         success: true,
         data: recordsData,
         total: records.totalItems,
         page,
-        totalPages: records.totalPages
+        totalPages: records.totalPages,
+        summary
       })
     }
   } catch (error) {

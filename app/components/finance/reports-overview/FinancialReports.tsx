@@ -13,6 +13,7 @@ import { useFinancialStats } from "@/hooks/useFinancialStats"
 import { useInvoices } from "@/hooks/useInvoices"
 import { usePayments } from "@/hooks/usePayments"
 import { useExpenses } from "@/hooks/useExpenses"
+import { useExpenseCategories } from "@/hooks/useExpenseCategories"
 import { useCenterScope } from "@/hooks/useCenterScope"
 import { inCenterScope, centerOfInvoice, centerOfInvoiceId, centerOfExpense, UNASSIGNED_CENTER } from "@/lib/center-scope"
 import { exportPnLPDF } from "@/lib/pdf-export"
@@ -37,6 +38,8 @@ const fmtMoney = (n: number) => (Number(n) || 0).toLocaleString('en-MY', { minim
 
 export default function FinancialReports() {
   const { t } = useLanguage()
+  // 类别名称以 PB 的 expense_categories 为准（key→name）；静态表只做兜底
+  const expCats = useExpenseCategories()
   // 分行筛选：全部 / 各分行 / 未分配（归属规则见 lib/center-scope.ts）
   const [centerFilter, setCenterFilter] = useState("all")
   const { stats: financialStats, loading: financialLoading } = useFinancialStats(centerFilter)
@@ -181,8 +184,8 @@ export default function FinancialReports() {
     safeExpenses
       .filter(e => String(e.date || e.created || "").slice(0, 7) === selectedMonth)
       .forEach(e => {
-        const cat = CATEGORY_LABELS[e.category] || e.category || "其他"
-        cats[cat] = (cats[cat] || 0) + (Number(e.amount) || 0)
+        const catName = expCats.labelOf(e.category) || CATEGORY_LABELS[e.category] || e.category || "其他"
+        cats[catName] = (cats[catName] || 0) + (Number(e.amount) || 0)
       })
     // 薪资是最大成本项，单列出来；取所选月份的薪资成本
     const salaryTotal = cur.salary || 0
