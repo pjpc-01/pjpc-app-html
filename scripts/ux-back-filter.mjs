@@ -18,8 +18,10 @@ const PAGES = [
   ['每日日志', '/daily-logs'],
 ];
 
-const uid = (await (await fetch(`${PROXY}/collections/users/records?perPage=1&filter=email%3D%22admin%40pjpc.com%22`)).json()).items[0].id;
-const imp = await (await fetch(`${PROXY}/collections/users/impersonate/${uid}`, { method: 'POST' })).json();
+// 代理加了守门后不能匿名查 users/impersonate → 与 ux-audit 一致，直连 PB 取身份
+const { adminAuth } = await import('./probes/_auth.mjs');
+const imp = await adminAuth();
+if (!imp.token) { console.error('代登录失败'); process.exit(1); }
 const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'zh-CN' });
 await ctx.addInitScript(({ t, m }) => {

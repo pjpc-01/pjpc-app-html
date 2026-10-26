@@ -182,6 +182,36 @@
     ③ 2 门课程标题尾随空格 → 已 trim（`'Form 2 BC '`→`Form 2 BC`、`'STANDARD 3 BC '`→`STANDARD 3 BC`）
 - ✅ 已解决：凭证编号体系、资产负债表简版、26 张发票补账期、票号重复已重编 + 唯一索引
 
+### 🆕 2026-10-26 每周体检新发现（待处理）
+
+**只读全站体检（dev-check + 45 页真浏览器 + Back/筛选 + 智能会计师 + 死代码 + 用法扫描）**
+
+- 🔴 **两个体检脚本从 2026-10-21 起静默失效（已修，但历史数字要重算）**
+  - `scripts/account-audit.mjs`：代理加守门后匿名读一律 401，脚本没检查 `ok`，直接把 401 当「0 条」→ 本次首跑输出「发票 0 / 收款 0 / 学生 0 / 老师 0」，还把这份全 0 报告写成 `reports/account-audit-2026-10-26.md` 和 `-latest.md`，并拿它跟 10-19 快照对比得出「未收 1029 → 0」「开票 117454 → 0」的假结论。
+  - `scripts/ux-back-filter.mjs`：同样匿名查 `users` / `impersonate` → `items[0]` 为 undefined 直接崩，退出码 1。
+  - 已做：两者都改成跟 `ux-audit.mjs` 一样走 `scripts/probes/_auth.mjs`（PB 超管直连、只读）取登录态/数据；删掉今日假快照后重跑正常。仍散在 `scripts/probes/` 的多个一次性探针（`mobile-probe.mjs` 等）还在用匿名代理写法，下次用到前要先改，否则同样静默失败。
+
+- 🟡 **学生建档缺校验：2 名在读学生学号都是 `00`、`centerId` 空**
+  - `Rizwan Ahmad`（215mur5g710bu9m）、`Wong Zi Hong`（mztnm8i8qfuwc3o），都是 PU1 / active，`student_id="00"` 撞号，`centerId` 空。
+  - 影响：按中心分组的报表与贡献排行榜漏人；按学号对账对不上。
+  - 建议：新增/导入学生时 `student_id` 必填且查重（空则自动生成），`centerId` 由 `center` 代码强制映射（不用手填）。
+
+- 🟡 **死组件：3 个整文件零引用 + 12 个 `ui/` 原件零引用**
+  - `app/components/student/StudentManagement.tsx`（页面实际用 `management/student-management-page.tsx`）、`app/components/systems/auth/login-form.tsx`（登录页实际用 `secure-login-form.tsx`）、`app/components/admin/ApprovalStats.tsx`
+  - `components/ui/`：accordion / aspect-ratio / chart / command / context-menu / hover-card / navigation-menu / radio-group / resizable / scroll-area / toaster / toggle-group（shadcn 原件，从未被 import）
+  - 建议：前 3 个直接删；`ui/` 那批可一起删（要用再装回来）。
+
+- 🟡 **`/api/my/summary` 全站零调用** —— 被 `/api/student/home` 取代后没删，84 个 route 里唯一零引用 → 建议删。
+
+- 🟡 **`audit_logs` 每笔操作写两遍**：代理记名（`proxy:post:invoices` + `user_name`）+ `pb_hooks` 无名（`create:invoices` / `update:invoices`），同一 record_id 两条。近 30 天 16,775 条里 13,823 条是无名副本 → 审计页按事件计数会翻倍、按人筛会漏一半。
+  - 好消息：上周「谁改的等于没有」已解决，2,952 条带 `user_name`（发票/学生费用/报表设置等都记名）。
+  - 建议：钩子层不再写重复记录（或写入前先查同一 record+action 是否已有代理记录）。
+
+- 🟡 **`daily_logs` 0 条**：`/daily-logs` 页面 + `/api/daily-logs` 增删改都在，集合一条数据都没有（`schedule_logs` 有数据）→ 确认是「没人用」还是「保存没落库」。
+
+- ℹ️ **本周全绿**：45 页 0 控制台错 / 0 失败请求 / 0 stuckLoading / 0 横向溢出；Back 去向 0 问题、跳页与弹窗后筛选 0 被清空；3001+8090 正常、近 3 分钟无错误日志。
+- ℹ️ **账务（修复后首份可信数，与上轮口径可比）**：未收 1,029 → **75,164**，开票 117,454 → **191,960**；增加全部来自 10-25 月批开票 131 张 RM87,956（9-24 也是同样节奏 145 张），属正常月周期。上轮未动项**均无变化**：支出凭证缺 11 笔、10 月薪资未生成、银行流水 0 条、资产负债表简版。
+
 ### 🆕 2026-10-19 每周体检新发现（待处理）
 
 **只读全站体检（dev-check + 41 页真浏览器 + Back/筛选 + 智能会计师 + 死代码 + 用法扫描）**
