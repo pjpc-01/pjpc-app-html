@@ -750,11 +750,25 @@ export default function SettingsPage() {
                         {auditLogs.map((log: any, i: number) => (
                           <tr key={i} className="border-b hover:bg-gray-50">
                             <td className="py-2 px-3 text-gray-600">{new Date(log.created).toLocaleString("zh-CN")}</td>
-                            <td className="py-2 px-3">{log.user || log.userId || "-"}</td>
+                            <td className="py-2 px-3">
+                              {log.actor_type === 'system' || !String(log.user || '').trim()
+                                ? <Badge variant="secondary" className="text-xs font-normal text-gray-500">{t("系统自动")}</Badge>
+                                : <span className="text-gray-800">{log.user}</span>}
+                            </td>
                             <td className="py-2 px-3">
                               <Badge variant="outline" className="text-xs">{log.action || log.type || "-"}</Badge>
                             </td>
-                            <td className="py-2 px-3 text-gray-600">{log.detail || log.description || "-"}</td>
+                            <td className="py-2 px-3 text-gray-600">
+                              <span className="font-mono text-xs">{log.detail || "-"}</span>
+                              {Array.isArray(log.changes) && log.changes.length > 0 && (
+                                <span className="ml-2 inline-flex flex-wrap gap-1 align-middle">
+                                  {log.changes.slice(0, 4).map((f: string) => (
+                                    <Badge key={f} variant="outline" className="text-[10px] font-normal">{f}</Badge>
+                                  ))}
+                                  {log.changes.length > 4 && <span className="text-[10px] text-gray-400">+{log.changes.length - 4}</span>}
+                                </span>
+                              )}
+                            </td>
                             <td className="py-2 px-3 text-gray-400 text-xs">{log.ip || "-"}</td>
                           </tr>
                         ))}

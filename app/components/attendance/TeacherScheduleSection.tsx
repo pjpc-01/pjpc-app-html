@@ -295,7 +295,7 @@ export default function TeacherScheduleSection() {
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-500 shrink-0">{changeTime(rec)}</span>
                     <span className="font-medium truncate">
-                      {(rec.user_name || "").trim() || <span className="text-red-600">{t("未知操作人")}</span>}
+                      {(rec.user_name || "").trim() || <span className="text-gray-400">{t("系统自动")}</span>}
                     </span>
                     <Badge variant="outline" className="shrink-0 text-[10px]">
                       {String(rec.action || "").split(":")[0]}
