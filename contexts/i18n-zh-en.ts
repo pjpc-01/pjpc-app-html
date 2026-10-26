@@ -3575,4 +3575,7 @@ export const ZH_TO_EN: Record<string, string> = {
   "行为表现、特别事项": "Behaviour / notes",
   "例如：今天主动帮同学、写字有进步": "e.g. helped a classmate today, handwriting improved",
   "保存日志": "Save log",
+
+  // ── 审计展示（2026-10-26）──
+  "系统自动": "Automated (system)",
 }

@@ -27,16 +27,28 @@ export async function GET(request: NextRequest) {
 
     const data = await res.json()
     // PB 字段名 → 前端渲染用的字段名（user_name/user_id/ip_address/description）
-    const logs = (data.items || []).map((r: any) => ({
-      id: r.id,
-      created: r.created,
-      user: r.user_name || r.user_id || "-",
-      action: r.action || "-",
-      detail: r.description || "",
-      description: r.description || "",
-      collection: r.collectionName || "",
-      ip: r.ip_address || "-",
-    }))
+    // actor_type: 服务端接口/PB 自己算出来的写入（成绩导入、自动出勤、NFC、月批发票）拿不到操作人，
+    // 这些不是「不知道谁改的」，而是「系统自动」—— 显式区分，别和管理员操作混在一起。
+    const logs = (data.items || []).map((r: any) => {
+      let meta: any = {}
+      try { meta = JSON.parse(r.metadata || '{}') } catch { meta = {} }
+      const who = String(r.user_name || '').trim()
+      const changes = meta && meta.changes ? Object.keys(meta.changes) : []
+      return {
+        id: r.id,
+        created: r.created,
+        user: who || '',
+        actor_type: who ? 'human' : 'system',
+        action: r.action || "-",
+        // 详情只留「集合 #记录」，改动字段单独给（原来把整段 JSON 塞进描述，表格被撑爆）
+        detail: (meta.collection ? `${meta.collection} #${meta.record_id || '-'}` : (r.description || "").split(' | ')[0]) || "-",
+        description: r.description || "",
+        collection: meta.collection || "",
+        record_id: meta.record_id || "",
+        changes,
+        ip: r.ip_address || "-",
+      }
+    })
     return NextResponse.json({
       success: true,
       logs,
