@@ -218,7 +218,8 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
           centers: `${proxy}/centers/records?perPage=20&sort=code`,
           // ⚠️ 只有 payments / invoices 有 deleted 字段；students / teachers / expenses 没有，
           //    对它们用 deleted!=true 会被 PB 判为非法字段直接 400（整包数据取不回来）。
-          students: `${proxy}/students/records?perPage=500&sort=-created&expand=centerId`,
+          // students 集合没有 created/updated 字段，sort=-created 会 400 → 按名字排
+          students: `${proxy}/students/records?perPage=500&sort=name&expand=centerId`,
           teachers: `${proxy}/teachers/records?perPage=500&sort=-created&expand=centerId`,
           payments: `${proxy}/payments/records?perPage=500&sort=-created&filter=${encodeURIComponent('deleted!=true')}`,
           expenses: `${proxy}/expenses/records?perPage=500&sort=-date`,

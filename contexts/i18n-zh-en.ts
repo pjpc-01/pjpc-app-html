@@ -3557,4 +3557,22 @@ export const ZH_TO_EN: Record<string, string> = {
 
   // ── 年级与榜单标签（2026-10-25）──
   "名学生有积分": "students with points",
+
+  // ── 每日日志手写表单（2026-10-26）──
+  "已更新这一天的日志": "Updated that day's log",
+  "日志已保存": "Log saved",
+  "写日志": "Write log",
+  "写一篇日志": "Write a log entry",
+  "同一学生同一天已有日志会直接更新；照片之后加": "An existing log for the same student and day will be updated; photos come later",
+  "用餐": "Meal",
+  "未记餐": "No meal recorded",
+  "吃一半": "Ate half",
+  "不吃": "Refused",
+  "情绪": "Mood",
+  "未记心情": "No mood recorded",
+  "一般": "Neutral",
+  "不开心": "Upset",
+  "行为表现、特别事项": "Behaviour / notes",
+  "例如：今天主动帮同学、写字有进步": "e.g. helped a classmate today, handwriting improved",
+  "保存日志": "Save log",
 }

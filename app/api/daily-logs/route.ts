@@ -53,8 +53,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { studentId, teacherId, date, homework_done, nap, meal, mood, behavior_note, centerId } = body
 
-    if (!studentId || !teacherId || !date) {
-      return NextResponse.json({ error: '缺少必需字段: studentId, teacherId, date' }, { status: 400 })
+    if (!studentId || !date) {
+      return NextResponse.json({ error: '缺少必需字段: studentId, date' }, { status: 400 })
     }
 
     await authenticateAdmin()
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     const log = await pb.collection('daily_logs').create({
       studentId,
-      teacherId,
+      teacherId: teacherId || '',
       date,
       homework_done: homework_done ?? false,
       nap: nap ?? false,
