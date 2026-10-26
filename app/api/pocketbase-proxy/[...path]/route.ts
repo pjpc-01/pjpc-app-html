@@ -90,11 +90,14 @@ async function writeProxyAudit(opts: {
   recordId: string
   actor: { id: string; name: string; role: string }
   request: NextRequest
+  changes?: Record<string, { from: any; to: any }>
+  before?: any
 }) {
   try {
     const tok = await getAdminToken()
     if (!tok) return
-    const { method, collection, recordId, actor, request } = opts
+    const { method, collection, recordId, actor, request, changes, before } = opts
+    const verb = method === 'POST' ? 'create' : method === 'PATCH' ? 'update' : 'delete'
     const ip = String(request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '')
       .split(',')[0].trim().slice(0, 60)
     const who = actor.name || actor.id || '未知'
@@ -102,16 +105,87 @@ async function writeProxyAudit(opts: {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tok}` },
       body: JSON.stringify({
-        action: `proxy:${method.toLowerCase()}:${collection}`,
-        description: `${collection} #${recordId || '-'} | ${method} | ${who}`,
+        action: `${verb}:${collection}`,
+        description: changes
+          ? `${collection} #${recordId || '-'} | ${method} | ${who} | ${JSON.stringify(changes).slice(0, 800)}`
+          : `${collection} #${recordId || '-'} | ${method} | ${who}`,
         user_id: actor.id || '',
         user_name: actor.name || '',
         ip_address: ip,
         user_agent: String(request.headers.get('user-agent') || '').slice(0, 300),
-        metadata: JSON.stringify({ collection, record_id: recordId, method, role: actor.role, via: 'proxy' }),
+        metadata: JSON.stringify({
+          collection, record_id: recordId, action: verb, method, role: actor.role, via: 'proxy',
+          ...(changes ? { changes } : {}),
+          ...(before ? { snapshot: before } : {}),
+        }),
       }),
     })
   } catch { /* 记日志失败不影响业务 */ }
+}
+
+/**
+ * 钩子（pb_hooks/main.pb.js）是审计的**唯一写入者** —— 它覆盖所有写操作，
+ * 包括服务端 API 直接写 PB 的那些（那些根本不经过代理）。但它拿不到请求头，
+ * 记不到「谁」。所以代理在写成功后，把刚才钩子写的那条补上操作人/IP/UA，
+ * 而不是再插一条新的 —— 否则同一笔改动两条记录，审计页翻倍、按人筛漏一半。
+ *
+ * 找不到（还没写完 / 钩子跳过该集合，如 schedules）就自己写一条兜底。
+ */
+/** 已经补过操作人的审计行 id，防止同一行被补第二次 */
+const PATCHED_AUDIT = new Set<string>()
+
+async function attachActorToAudit(opts: {
+  method: string
+  collection: string
+  recordId: string
+  actor: { id: string; name: string; role: string }
+  request: NextRequest
+  changes?: Record<string, { from: any; to: any }>
+  before?: any
+}) {
+  const verb = opts.method === 'POST' ? 'create' : opts.method === 'PATCH' ? 'update' : 'delete'
+  try {
+    const tok = await getAdminToken()
+    if (!tok) return
+    const ip = String(opts.request.headers.get('x-forwarded-for') || opts.request.headers.get('x-real-ip') || '')
+      .split(',')[0].trim().slice(0, 60)
+    const ua = String(opts.request.headers.get('user-agent') || '').slice(0, 300)
+
+    // 钩子是 PB 保存成功后写的，实测 0.2–1.5 秒才落库（PB 0.39.6 JSVM 慢），
+    // 所以最多等约 3 秒；超时才兜底自己写一条，避免同一笔改动两条记录
+    for (let attempt = 0; attempt < 20; attempt++) {
+      try {
+        const filter = `action = "${verb}:${opts.collection}" && user_name = ""` +
+          (opts.recordId ? ` && description ~ "${opts.recordId}"` : '')
+        const url = `${POCKETBASE_URL}/api/collections/audit_logs/records?perPage=10&sort=-created&filter=${encodeURIComponent(filter)}`
+        const r = await fetch(url, { headers: { Authorization: `Bearer ${tok}` } })
+        if (r.ok) {
+          const d = await r.json()
+          // 同一条审计只补一次（连续两次改同一条记录时别都补到同一行）
+          const row = (d.items || []).find((x: any) => !PATCHED_AUDIT.has(x.id))
+          if (row) {
+            PATCHED_AUDIT.add(row.id)
+            if (PATCHED_AUDIT.size > 500) PATCHED_AUDIT.clear()
+            await fetch(`${POCKETBASE_URL}/api/collections/audit_logs/records/${row.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tok}` },
+              body: JSON.stringify({
+                user_id: opts.actor.id || '',
+                user_name: opts.actor.name || opts.actor.id || '未知',
+                ip_address: ip,
+                user_agent: ua,
+              }),
+            })
+            return
+          }
+        }
+      } catch { /* 单次失败继续重试 */ }
+      await new Promise(res => setTimeout(res, 150))
+    }
+
+    // 兜底：钩子没写（例如 schedules 被钩子排除）→ 自己写一条
+    await writeProxyAudit({ ...opts })
+  } catch { /* 审计失败绝不影响业务 */ }
 }
 
 /** 从 /api/collections/<name>/... 取出集合名 */
@@ -301,6 +375,35 @@ async function proxyRequest(method: string, request: NextRequest) {
     }
   }
 
+  // ★ 单点审计（2026-10-26 用户要求）：pb_hooks 不再写审计，全部在代理这层记「谁 + 改了什么」，
+  //   否则同一笔改动会落两条（代理一条有操作人、钩子一条没操作人），审计页事件翻倍、按人筛漏一半。
+  let auditBefore: any = null
+  let auditChanges: Record<string, { from: any; to: any }> | undefined
+  const auditCol = collectionOf(pbPath)
+  const auditIdMatch = pbPath.match(/\/records\/([^/?#]+)/)
+  if ((method === 'PATCH' || method === 'DELETE') && auditCol && auditIdMatch) {
+    try {
+      const tokForBefore = await getAdminToken()
+      if (tokForBefore) {
+        const rBefore = await fetch(`${POCKETBASE_URL}/api/collections/${auditCol}/records/${auditIdMatch[1]}`, {
+          headers: { Authorization: `Bearer ${tokForBefore}` },
+        })
+        if (rBefore.ok) auditBefore = await rBefore.json()
+      }
+    } catch { /* 取旧值失败就不记 changes，不影响业务 */ }
+  }
+  if (method === 'PATCH' && auditBefore && typeof body === 'string' && body) {
+    try {
+      const sent = JSON.parse(body)
+      const ch: Record<string, { from: any; to: any }> = {}
+      for (const k of Object.keys(sent)) {
+        if (k === 'updated' || k === 'created' || k === 'id') continue
+        if (JSON.stringify(auditBefore[k]) !== JSON.stringify(sent[k])) ch[k] = { from: auditBefore[k], to: sent[k] }
+      }
+      if (Object.keys(ch).length) auditChanges = ch
+    } catch { /* multipart 或非 JSON 就跳过 */ }
+  }
+
   const targetUrl = `${POCKETBASE_URL}${targetPath}${targetSearch}`
   const response = await fetch(targetUrl, { method, headers, body })
 
@@ -317,10 +420,12 @@ async function proxyRequest(method: string, request: NextRequest) {
           const d = await cloned.json().catch(() => null)
           rid = d?.id || ''
         }
-        await writeProxyAudit({
+        await attachActorToAudit({
           method, collection: col, recordId: rid,
           actor: auditActor || { id: '', name: '', role: 'anonymous' },
           request,
+          changes: auditChanges,
+          before: method === 'DELETE' ? auditBefore : undefined,
         })
       }
     } catch { /* 审计失败绝不影响业务 */ }
@@ -346,38 +451,6 @@ async function proxyRequest(method: string, request: NextRequest) {
   }
 
   const data = await response.text()
-
-  // ★ 排班改动日志：PB 钩子拿不到请求头（0.39.6 里 e.httpContext / e.requestInfo 全是 undefined），
-  //   所以「谁改的」在代理这一层补记 —— 这里既有 x-actor（前端统一带的操作人），也有刚写入的记录。
-  if (response.ok && pbPath.includes('/collections/schedules/records') && (method === 'POST' || method === 'PATCH' || method === 'DELETE')) {
-    try {
-      let rec: any = null
-      try { rec = JSON.parse(data) } catch { /* DELETE 无 body */ }
-      const adminTok = await getAdminToken()
-      if (adminTok) {
-        const verb = method === 'POST' ? 'create' : method === 'PATCH' ? 'update' : 'delete'
-        await fetch(`${POCKETBASE_URL}/api/collections/audit_logs/records`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminTok}` },
-          body: JSON.stringify({
-            action: `${verb}:schedules`,
-            description: `schedules #${rec?.id || ''} | ${method} via proxy`,
-            user_name: headers['x-actor'] || '',
-            metadata: JSON.stringify({
-              collection: 'schedules',
-              record_id: rec?.id || '',
-              action: verb,
-              via: 'proxy',
-              snapshot: rec ? {
-                date: rec.date, start_time: rec.start_time, end_time: rec.end_time,
-                teacher_id: rec.teacher_id, teacher_name: rec.teacher_name, course_id: rec.course_id,
-              } : null,
-            }),
-          }),
-        })
-      }
-    } catch { /* 记日志失败不影响业务本身 */ }
-  }
 
   return new NextResponse(data, {
     status: response.status,
