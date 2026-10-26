@@ -131,6 +131,9 @@ async function writeProxyAudit(opts: {
  *
  * 找不到（还没写完 / 钩子跳过该集合，如 schedules）就自己写一条兜底。
  */
+/** pb_hooks/main.pb.js 里排除、不写审计的集合（排班改动由代理这条兜底记录提供） */
+const HOOK_SKIPPED = new Set(['schedules', 'audit_logs'])
+
 /** 已经补过操作人的审计行 id，防止同一行被补第二次 */
 const PATCHED_AUDIT = new Set<string>()
 
@@ -150,6 +153,12 @@ async function attachActorToAudit(opts: {
     const ip = String(opts.request.headers.get('x-forwarded-for') || opts.request.headers.get('x-real-ip') || '')
       .split(',')[0].trim().slice(0, 60)
     const ua = String(opts.request.headers.get('user-agent') || '').slice(0, 300)
+
+    // 钩子根本不审计这些集合（pb_hooks 里排除了），等也没用 → 直接自己写，别拖慢接口
+    if (HOOK_SKIPPED.has(opts.collection)) {
+      await writeProxyAudit({ ...opts })
+      return
+    }
 
     // 钩子是 PB 保存成功后写的，实测 0.2–1.5 秒才落库（PB 0.39.6 JSVM 慢），
     // 所以最多等约 3 秒；超时才兜底自己写一条，避免同一笔改动两条记录
