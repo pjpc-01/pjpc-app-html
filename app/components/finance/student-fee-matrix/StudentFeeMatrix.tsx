@@ -183,8 +183,21 @@ export const StudentFeeMatrix = () => {
       setIsSaving(true)
       try {
         const result = await exitEditMode()
-        if (result?.failures?.length === 0) setEditMode(false)
-        else alert(`保存失败：${result?.failures?.length || 0} 条未保存`)
+        if (result?.failures?.length === 0) {
+          setEditMode(false)
+          // 折扣改完顺手同步到还没缴清的发票 —— 以前只写 student_fees，
+          // 发票还是原价，用户以为折扣没算（2026-10-26 反馈）
+          try {
+            const sync = await fetch('/api/billing/reapply-discounts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ dryRun: false }),
+            }).then(r => r.json())
+            if (sync?.success && sync.updated > 0) {
+              alert(`${t("已保存，并同步更新")} ${sync.updated} ${t("张未缴清发票的折扣")}`)
+            }
+          } catch { /* 同步失败不影响保存本身，去发票管理按「重算折扣」还能补 */ }
+        } else alert(`${t("保存失败：")}${result?.failures?.length || 0} ${t("条未保存")}`)
       } catch { alert(t("保存失败")) }
       finally { setIsSaving(false) }
     }

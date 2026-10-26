@@ -19,7 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useLanguage } from "@/contexts/language-context"
-import { FileText, Plus, Download, Printer, Send, CheckCircle, AlertCircle, Eye, Edit, Settings, Loader2, Zap, BarChart3, Calendar } from "lucide-react"
+import { FileText, Plus, Download, Printer, Send, CheckCircle, AlertCircle, Eye, Edit, Settings, Loader2, Zap, BarChart3, Calendar, Percent } from "lucide-react"
 import { useInvoices } from "@/hooks/useInvoices"
 import { downloadInvoicePDF, printInvoicePDF, generateInvoiceHTML, generateInvoicePDF } from "@/lib/pdf-generator"
 import { useStudents } from "@/hooks/useStudents"
@@ -93,6 +93,7 @@ export default function InvoiceManagement() {
   const [messageContent, setMessageContent] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [isAutoGenerating, setIsAutoGenerating] = useState(false)
+  const [isReapplying, setIsReapplying] = useState(false)
   // 视图：列表 / 按学生（已开具·已发送 看板）
   const [invoiceView, setInvoiceView] = useState<'list' | 'student'>('list')
 
@@ -540,9 +541,45 @@ Prospek Cemerlang`,
       await fetchInvoices()
     } catch (error) {
       console.error('Auto-generate failed:', error)
-      alert('自动生成发票失败: ' + (error as Error).message)
-    } finally {
+      alert('自动生成发票失败: ' + (error as Error).message)    } finally {
       setIsAutoGenerating(false)
+    }
+  }
+
+  // 把「学生费用」里的月折扣重算进已开的未缴清发票
+  // （学生费用改折扣只写 student_fees，发票不会自己变 → 用户 2026-10-26 又踩到）
+  const handleReapplyDiscounts = async () => {
+    setIsReapplying(true)
+    try {
+      const dry = await fetch('/api/billing/reapply-discounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dryRun: true }),
+      }).then(r => r.json())
+      if (!dry.success) { alert(t("重算折扣失败：") + (dry.error || '')); return }
+      if (!dry.count) { alert(t("所有未缴清发票的折扣都已经是对的")); return }
+      const lines = (dry.plan || []).slice(0, 10)
+        .map((p: any) => `${p.invoiceNumber} ${p.studentName || ''}  RM${p.oldTotal} → RM${p.newTotal}`)
+        .join('\n')
+      const ok = confirm(
+        `${dry.count} ${t("张未缴清发票的折扣需要更新，总额变化 RM")}${dry.delta}\n\n${lines}` +
+        (dry.count > 10 ? '\n…' : '') + `\n\n${t("要现在更新吗？")}`
+      )
+      if (!ok) return
+      const res = await fetch('/api/billing/reapply-discounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dryRun: false }),
+      }).then(r => r.json())
+      if (!res.success) { alert(t("重算折扣失败：") + (res.error || '')); return }
+      alert(`${t("已更新")} ${res.updated} ${t("张发票")}` +
+        (res.failed?.length ? `，${t("失败")} ${res.failed.length}` : '') +
+        `\n${t("总额变化 RM")}${res.delta}`)
+      await fetchInvoices()
+    } catch (e: any) {
+      alert(t("重算折扣失败：") + (e?.message || ''))
+    } finally {
+      setIsReapplying(false)
     }
   }
 
@@ -674,6 +711,16 @@ Prospek Cemerlang`,
             {t("自动生成")}
           </Button>
           
+          <Button
+            variant="outline"
+            onClick={handleReapplyDiscounts}
+            disabled={isReapplying}
+            title={t("把学生费用里的月折扣重算进未缴清的发票")}
+          >
+            {isReapplying ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Percent className="h-4 w-4 mr-2" />}
+            {t("重算折扣")}
+          </Button>
+
           <Button onClick={() => setIsCreateInvoiceDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             {t("创建发票")}

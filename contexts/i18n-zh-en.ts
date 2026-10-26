@@ -3578,4 +3578,20 @@ export const ZH_TO_EN: Record<string, string> = {
 
   // ── 审计展示（2026-10-26）──
   "系统自动": "Automated (system)",
+
+  // ── 发票重算折扣（2026-10-26）──
+  "重算折扣失败：": "Failed to reapply discounts: ",
+  "所有未缴清发票的折扣都已经是对的": "All unpaid invoices already have the correct discount",
+  "张未缴清发票的折扣需要更新，总额变化 RM": "unpaid invoices need a discount update, total change RM",
+  "要现在更新吗？": "Update now?",
+  "总额变化 RM": "Total change RM ",
+  "把学生费用里的月折扣重算进未缴清的发票": "Recalculate discounts from student fees into unpaid invoices",
+  "重算折扣": "Reapply discounts",
+  "重算折扣失败": "Failed to reapply discounts",
+
+  // ── 学生费用保存提示（2026-10-26）──
+  "已保存，并同步更新": "Saved and synced ",
+  "张未缴清发票的折扣": "unpaid invoice discount(s)",
+  "保存失败：": "Save failed: ",
+  "条未保存": "row(s) not saved",
 }
