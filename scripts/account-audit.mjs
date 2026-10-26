@@ -3,7 +3,9 @@
 import fs from 'fs';
 
 const B = 'http://127.0.0.1:3001/api/pocketbase-proxy/api';
-const g = async (p) => (await fetch(`${B}${p}`)).json();
+// 代理加了守门后匿名读一律 401（静默变 0 条）→ 与 ux-audit 一致，直连 PB 超管只读
+const { pbGet } = await import('./probes/_auth.mjs');
+const g = async (p) => pbGet(p.replace(/^\/collections/, '/api/collections'));
 
 const cols = ['invoices', 'payments', 'refunds', 'receipts', 'expenses', 'teacher_salary_records', 'students', 'teachers', 'centers', 'fee_items', 'salary_structures'];
 const D = {};
