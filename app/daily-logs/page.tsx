@@ -31,6 +31,8 @@ import {
   Plus,
   Edit,
   Eye,
+  Save,
+  PenLine,
 } from 'lucide-react'
 import { useLanguage } from "@/contexts/language-context"
 
@@ -61,6 +63,13 @@ export default function DailyLogsPage() {
   const [studentsLoading, setStudentsLoading] = useState(false)
   const [newLogMode, setNewLogMode] = useState(false)
   const [editingLog, setEditingLog] = useState<string | null>(null)
+  // 手写表单（也方便以后 AI 调同一个接口填）
+  const [formOpen, setFormOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState<DailyLogFormData>({
+    studentId: '', teacherId: '', date: today(),
+    homework_done: false, nap: false, meal: '', mood: '', behavior_note: '',
+  })
 
   // 加载学生列表
   const loadStudents = useCallback(async () => {
@@ -87,7 +96,8 @@ export default function DailyLogsPage() {
 
   // 快速创建日志
   const handleQuickCreate = async (studentId: string) => {
-    const teacherId = userProfile?.id || ''
+    // teacherId 是 teachers 表的关系字段：只能用绑定的 teacher_id，用 users.id 会被 PB 拒绝
+    const teacherId = (userProfile as any)?.teacher_id || ''
     if (!teacherId) { toast.error(t("请先登录")); return }
     try {
       await createLog({
@@ -116,6 +126,34 @@ export default function DailyLogsPage() {
       await updateLog(logId, { [field]: value } as any)
     } catch (err: any) {
       toast.error(err.message || '更新失败')
+    }
+  }
+
+  // 手写表单保存：同一学生同一天已有日志就更新，没有才新建
+  const handleSaveForm = async () => {
+    if (!form.studentId) { toast.error(t("先选学生")); return }
+    const teacherId = form.teacherId || (userProfile as any)?.teacher_id || ''
+    setSaving(true)
+    try {
+      const sameDay = logs.find(l => l.studentId === form.studentId && String(l.date || '').slice(0, 10) === form.date)
+      if (sameDay) {
+        await updateLog(sameDay.id, {
+          homework_done: form.homework_done, nap: form.nap, meal: form.meal,
+          mood: form.mood, behavior_note: form.behavior_note,
+        } as any)
+        toast.success(t("已更新这一天的日志"))
+      } else {
+        await createLog({ ...form, teacherId })
+        toast.success(t("日志已保存"))
+      }
+      setFormOpen(false)
+      setForm({ studentId: '', teacherId: '', date: selectedDate, homework_done: false, nap: false, meal: '', mood: '', behavior_note: '' })
+      refetch()
+    } catch (err: any) {
+      if (err.message === 'EXISTING_LOG') toast(t("该学生已有今日日志"))
+      else toast.error(err.message || t("保存失败"))
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -152,6 +190,13 @@ export default function DailyLogsPage() {
           <Button variant="ghost" size="sm" onClick={refetch}>
             <RefreshCw className="h-4 w-4" />
           </Button>
+          <Button size="sm" variant={formOpen ? "secondary" : "default"}
+            onClick={() => {
+              setForm(f => ({ ...f, teacherId: (userProfile as any)?.teacher_id || '', date: selectedDate }))
+              setFormOpen(o => !o)
+            }}>
+            <PenLine className="h-4 w-4 mr-1" />{t("写日志")}
+          </Button>
         </div>
       }
     >
@@ -183,6 +228,104 @@ export default function DailyLogsPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* 手写表单 */}
+        {formOpen && (
+          <Card className="border-indigo-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">{t("写一篇日志")}</CardTitle>
+              <CardDescription>{t("同一学生同一天已有日志会直接更新；照片之后加")}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">{t("学生")}</Label>
+                  <select
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                    value={form.studentId}
+                    onChange={e => setForm(f => ({ ...f, studentId: e.target.value }))}
+                  >
+                    <option value="">{t("— 请选择 —")}</option>
+                    {students.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}{s.grade ? ` · ${gradeLabel(s.grade)}` : ''}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{t("日期")}</Label>
+                  <input
+                    type="date"
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                    value={form.date}
+                    max={today()}
+                    onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4">
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" className="h-4 w-4" checked={form.homework_done}
+                    onChange={e => setForm(f => ({ ...f, homework_done: e.target.checked }))} />
+                  {t("功课完成")}
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" className="h-4 w-4" checked={form.nap}
+                    onChange={e => setForm(f => ({ ...f, nap: e.target.checked }))} />
+                  {t("午睡了")}
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">{t("用餐")}</Label>
+                  <select
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                    value={form.meal}
+                    onChange={e => setForm(f => ({ ...f, meal: e.target.value }))}
+                  >
+                    <option value="">{t("未记餐")}</option>
+                    <option value="ate_all">{t("吃完")}</option>
+                    <option value="ate_some">{t("吃一半")}</option>
+                    <option value="refused">{t("不吃")}</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{t("情绪")}</Label>
+                  <select
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                    value={form.mood}
+                    onChange={e => setForm(f => ({ ...f, mood: e.target.value }))}
+                  >
+                    <option value="">{t("未记心情")}</option>
+                    <option value="happy">{t("开心")}</option>
+                    <option value="neutral">{t("一般")}</option>
+                    <option value="upset">{t("不开心")}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs">{t("行为表现、特别事项")}</Label>
+                <Textarea
+                  rows={3}
+                  className="text-sm"
+                  placeholder={t("例如：今天主动帮同学、写字有进步")}
+                  value={form.behavior_note}
+                  onChange={e => setForm(f => ({ ...f, behavior_note: e.target.value }))}
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={handleSaveForm} disabled={saving}>
+                  {saving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
+                  {t("保存日志")}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setFormOpen(false)}>{t("取消")}</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* 加载状态 */}
         {(loading || studentsLoading) && (
@@ -231,6 +374,13 @@ export default function DailyLogsPage() {
                           {log.mood ? `${MOOD_EMOJI[log.mood]} ${MOOD_LABELS[log.mood].split(' ')[1]}` : "未记心情"}
                         </Badge>
                       </div>
+
+                      {/* 备注预览：AI 或老师写的内容不用点编辑也看得到 */}
+                      {log.behavior_note && !isEditing && (
+                        <p className="text-xs text-gray-600 bg-gray-50 rounded px-2 py-1.5 line-clamp-3 whitespace-pre-wrap">
+                          {log.behavior_note}
+                        </p>
+                      )}
 
                       {/* 行内操作：功课为最常用主操作，其余进「⋯」 */}
                       <RowActions
