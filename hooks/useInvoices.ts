@@ -1,4 +1,5 @@
 import { isInvoiceOverdue } from '@/lib/invoice-status'
+import { round2, sumLines } from '@/lib/finance-calc'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchSecureData, createRecord, updateRecord, deleteRecord } from '@/lib/secure-api-client'
 import { toLocalMonthKey, defaultInvoiceDates } from "@/lib/utils"
@@ -207,7 +208,8 @@ export const useInvoices = () => {
   ) => {
     const { issueDate, dueDate } = defaultInvoiceDates()
     
-    const totalAmount = items.reduce((sum, item) => sum + item.amount, 0)
+    // 金额单源：lib/finance-calc
+    const totalAmount = sumLines(items)
     
     return createInvoice({
       studentId,
@@ -248,10 +250,10 @@ export const useInvoices = () => {
     const paid = invoices.filter(inv => inv.status === 'paid').length
     const issued = invoices.filter(inv => inv.status === 'issued').length
     const overdue = invoices.filter(inv => isInvoiceOverdue(inv)).length
-    const totalAmount = invoices.reduce((sum, inv) => sum + inv.totalAmount, 0)
-    const paidAmount = invoices
+    const totalAmount = round2(invoices.reduce((sum, inv) => sum + (Number(inv.totalAmount) || 0), 0))
+    const paidAmount = round2(invoices
       .filter(inv => inv.status === 'paid')
-      .reduce((sum, inv) => sum + inv.totalAmount, 0)
+      .reduce((sum, inv) => sum + (Number(inv.totalAmount) || 0), 0))
     
     return {
       total,
@@ -260,7 +262,7 @@ export const useInvoices = () => {
       overdue,
       totalAmount,
       paidAmount,
-      collectionRate: total > 0 ? (paidAmount / totalAmount) * 100 : 0
+      collectionRate: totalAmount > 0 ? round2((paidAmount / totalAmount) * 100) : 0
     }
   }, [invoices])
 

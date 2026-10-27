@@ -8,6 +8,7 @@ import { type PayslipSettingsPreset } from '@/app/components/report/PayslipSetti
 import { StudentReport, ReportSubject } from '@/hooks/useStudentReports'
 import { getSocsoEmployer, getEisContribution } from '@/lib/perkeso-rates'
 import { scoreToGrade } from '@/lib/utils'
+import { round2, sumLines } from '@/lib/finance-calc'
 
 // ── Enrichment Class 名单：学生(中文名) → 参加的课程名（2026-10-16 依最新分班表更新，57 人） ──
 export const ENRICHMENT_MAP: Record<string, string> = {
@@ -100,8 +101,9 @@ export const generateInvoiceHTML = (invoice: Invoice, settings: InvoiceSettingsP
     ? invoice.items
     : [{ name: '学生费用', amount: invoice.totalAmount || 0 }])
 
-  const subtotal = items.reduce((sum, it) => sum + (it.amount || 0), 0)
-  const total = invoice.totalAmount || subtotal
+  // 金额单源：lib/finance-calc（以前各处自己 reduce，改一处别处不动）
+  const subtotal = sumLines(items as any)
+  const total = round2(invoice.totalAmount || subtotal)
   const statusText = getStatusText(invoice.status)
   const primaryColor = settings.primaryColor || '#1e40af'
   const secondaryColor = settings.secondaryColor || '#3b82f6'
