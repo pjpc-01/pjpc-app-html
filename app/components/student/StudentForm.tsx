@@ -16,6 +16,64 @@ import { Student } from '@/hooks/useStudents'
 import { validateEmail, validatePhone, validateStudentId, sanitizeText } from '@/lib/validation'
 import { useLanguage } from "@/contexts/language-context"
 
+// 学校名称标准清单（下拉选项）
+export const SCHOOL_CANONICAL = [
+  'SJKC Han Ming',
+  'SJKC Sin Ming',
+  'SMK PU1',
+  'SMK Batu 14',
+  'SMK Puchong Permai',
+  'SJKC Yak Chee',
+  'Bright Robin',
+] as const
+
+// 手动输入时常见的错拼/前缀词 — 比对校名前先剔除
+const SCHOOL_PREFIX_WORDS = new Set([
+  'sjk', 'sjkc', 'sjkt', 'sjkr', 'srj', 'srjkc', 'smk', 'sma', 'smjk', 'sri',
+  'sekolah', 'rendah', 'menengah', 'jenis', 'kebangsaan', 'cina', 'chinese',
+  'national', 'type', 's', 'c',
+])
+
+// 去掉连写形式的前缀（"smkpu1"、"sjkchanming"）— 长的先匹配
+const SCHOOL_PREFIX_RE =
+  /^(sjkc|sjkt|sjkr|srjkc|smjk|sjk|srj|sri|smk|sma|sekolah|rendah|menengah|jenis|kebangsaan|cina|chinese|national)+/
+
+// 校名核心词 → 标准名称
+const SCHOOL_CORE_MAP: Record<string, string> = {
+  hanming: 'SJKC Han Ming',
+  sinming: 'SJKC Sin Ming',
+  pu1: 'SMK PU1',
+  pu: 'SMK PU1',
+  batu14: 'SMK Batu 14',
+  batu: 'SMK Batu 14',
+  puchongpermai: 'SMK Puchong Permai',
+  yakchee: 'SJKC Yak Chee',
+  brightrobin: 'Bright Robin',
+}
+
+/**
+ * 学校名称自动纠错：
+ * "SRJ Han Ming" / "SJKC HAN MING" / "SJK (C) Han Ming" / "Han Ming" → "SJKC Han Ming"
+ * 认不出的写法原样保留，不擅自改动用户输入的新学校。
+ */
+export function normalizeSchoolName(raw: string): string {
+  const value = (raw || '').trim()
+  if (!value) return value
+  if ((SCHOOL_CANONICAL as readonly string[]).includes(value)) return value
+
+  const words = value.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
+  if (words.length === 0) return value
+
+  const collapsed = words.join('')
+  const core = words.filter(w => !SCHOOL_PREFIX_WORDS.has(w)).join('')
+  const candidates = [core, collapsed, core.replace(SCHOOL_PREFIX_RE, ''), collapsed.replace(SCHOOL_PREFIX_RE, '')]
+
+  for (const key of candidates) {
+    if (key && SCHOOL_CORE_MAP[key]) return SCHOOL_CORE_MAP[key]
+  }
+  return value
+}
+
 interface StudentFormProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -79,10 +137,8 @@ export default function StudentForm({
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [isOtherSchool, setIsOtherSchool] = useState(false)
-  const SCHOOL_OPTIONS = [
-    'SJKC Han Ming', 'SJKC Sin Ming', 'SMK PU1', 'SMK Batu 14',
-    'SMK Puchong Permai', 'SJKC Yak Chee', 'Bright Robin',
-  ]
+  const [schoolFixNote, setSchoolFixNote] = useState('')
+  const SCHOOL_OPTIONS: string[] = [...SCHOOL_CANONICAL]
 
   const isEditing = !!student
 
@@ -160,6 +216,7 @@ export default function StudentForm({
       })
     }
     setErrors({})
+    setSchoolFixNote('')
     setSubmitError('')
     setBirthCertificateFile(null)
     
@@ -244,7 +301,7 @@ export default function StudentForm({
         email: formData.email || '',
         status: formData.status || 'active',
         nric: formData.nric || '',
-        school: formData.school || '',
+        school: normalizeSchoolName(formData.school || ''),
         emergencyContact: formData.emergencyContact || '',
         emergencyPhone: formData.emergencyPhone || '',
         emergency_contacts: formData.emergency_contacts || [],
@@ -735,10 +792,27 @@ export default function StudentForm({
                   <Input
                     id="school"
                     value={formData.school || ''}
-                    onChange={(e) => handleInputChange('school', e.target.value)}
+                    onChange={(e) => {
+                      setSchoolFixNote('')
+                      handleInputChange('school', e.target.value)
+                    }}
+                    onBlur={(e) => {
+                      const raw = e.target.value
+                      const fixed = normalizeSchoolName(raw)
+                      if (fixed && fixed !== raw) {
+                        handleInputChange('school', fixed)
+                        if (SCHOOL_OPTIONS.includes(fixed)) {
+                          setSchoolFixNote(fixed)
+                          setIsOtherSchool(false)
+                        }
+                      }
+                    }}
                     placeholder={t("请输入学校名称")}
                     className={`mt-2 ${errors.school ? 'border-red-500' : ''}`}
                   />
+                )}
+                {schoolFixNote && (
+                  <p className="text-emerald-600 text-sm mt-1">✓ {t("已自动纠正为")} {schoolFixNote}</p>
                 )}
                 {errors.school && <p className="text-red-500 text-sm mt-1">{errors.school}</p>}
               </div>

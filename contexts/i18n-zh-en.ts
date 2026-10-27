@@ -2725,6 +2725,7 @@ export const ZH_TO_EN: Record<string, string> = {
   "剩余": "Remaining",
   "记录还款": "Record Repayment",
   "请输入学校名称": "Please enter the school name",
+  "已自动纠正为": "Auto-corrected to",
   "学生自助刷卡": "Student Self Check-in",
   "请选择孩子": "Please select a child",
   "请选择请假类型": "Please select a leave type",

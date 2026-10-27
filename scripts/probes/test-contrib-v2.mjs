@@ -5,6 +5,14 @@ const H = { 'Content-Type': 'application/json', Authorization: su }
 const out = []
 const ok = (n, pass, extra='') => { out.push(pass); console.log(`${pass?'PASS':'FAIL'}  ${n}${extra?'  →  '+extra:''}`) }
 
+// 先清掉上次跑挂掉留下的测试流水 —— 否则会污染真实流水（2026-10-27 清出 20 条 ZZ 测试流水）
+for (const col of ['contribution_point_logs']) {
+  const q = encodeURIComponent('student_name~"ZZ" || note~"ZZ"')
+  const d = await (await fetch(`${PB}/api/collections/${col}/records?perPage=200&filter=${q}`, { headers: H })).json()
+  for (const r of d.items || []) await fetch(`${PB}/api/collections/${col}/records/${r.id}`, { method: 'DELETE', headers: H })
+  if ((d.items || []).length) console.log(`清掉上次残留的测试流水 ${d.items.length} 条`)
+}
+
 // 临时学生
 const s = await (await fetch(PB+'/api/collections/students/records',{method:'POST',headers:H,body:JSON.stringify({name:'ZZ 贡献v2',student_id:'ZZ V2',grade:'Form 1',center:'PU1',status:'active',points:500,points_enabled:true})})).json()
 const u = await (await fetch(PB+'/api/collections/users/records',{method:'POST',headers:H,body:JSON.stringify({username:'zzv2',email:'zzv2@student.pjpc.local',password:'pjpcZZV2',passwordConfirm:'pjpcZZV2',name:'ZZ 贡献v2',role:'student',student_id:s.id,center:'PU1'})})).json()
