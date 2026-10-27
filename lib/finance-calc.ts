@@ -93,3 +93,43 @@ export function withDiscountLine(
   const label = String(type) === 'percent' ? `学生折扣 (${Number(value)}%)` : '学生折扣'
   return [...kept, { name: label, amount: round2(-amount) }]
 }
+
+// ── 归月（口径的第二半：这张票算哪个月的钱） ──
+
+/**
+ * 任意日期值 → 'YYYY-MM'，按**本地时区**取月。
+ * 不要用 toISOString().slice(0,7)：那是 UTC，马来西亚早上 8 点前会掉到上个月。
+ */
+export function monthKeyOf(v: any): string {
+  if (!v) return ''
+  if (v instanceof Date) {
+    if (isNaN(v.getTime())) return ''
+    return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}`
+  }
+  const s = String(v).trim()
+  // '2026-09-14...' / '2026-09' / '2026/09/14'
+  const m = s.match(/^(\d{4})[-/](\d{2})/)
+  if (m) return `${m[1]}-${m[2]}`
+  const d = new Date(s)
+  return isNaN(d.getTime()) ? '' : monthKeyOf(d)
+}
+
+/**
+ * 发票算哪个月：账期(period) 优先，它代表「这票是哪个月的学费」；
+ * 没填账期才退回开具日，最后退回创建日。
+ */
+export function invoiceMonthKey(inv: any): string {
+  const period = String(inv?.period || '').trim()
+  if (/^\d{4}-\d{2}/.test(period)) return period.slice(0, 7)
+  return monthKeyOf(inv?.issueDate) || monthKeyOf(inv?.created)
+}
+
+/** 这一行是不是「上期欠款 / 迟付罚金 / 余额转入」——属于旧账，不是本月新学费 */
+export function isCarryOverLine(line: MoneyLine | null | undefined): boolean {
+  return /上期|欠款|迟付罚金|Balance Deposit|结余/i.test(String(line?.name || ''))
+}
+
+/** 发票里结转性质的钱（旧账转入），正数 */
+export function carryOverOf(lines: MoneyLine[] | null | undefined): number {
+  return round2((lines || []).filter(isCarryOverLine).reduce((s, l) => s + (Number(l?.amount) || 0), 0))
+}

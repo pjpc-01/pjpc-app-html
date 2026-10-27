@@ -1,3 +1,4 @@
+import { monthKeyOf, invoiceMonthKey } from '@/lib/finance-calc'
 import { isInvoiceOverdue } from '@/lib/invoice-status'
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/pocketbase-auth-context'
@@ -70,12 +71,8 @@ export interface CashFlowRecord {
   balance: number
 }
 
-const monthOf = (v: any): string => {
-  if (!v) return ''
-  const s = String(v)
-  // 本地化：'2026-09-14 14:43:34.934Z' / '2026-09-14' 都取前 7 位
-  return s.slice(0, 7)
-}
+// 归月单源在 lib/finance-calc（monthKeyOf 按本地时区，不会像 toISOString 那样掉月份）
+const monthOf = (v: any): string => monthKeyOf(v)
 
 export const useFinancialStats = (centerCode?: string) => {
   const { user, userProfile } = useAuth()
@@ -143,10 +140,8 @@ export const useFinancialStats = (centerCode?: string) => {
       const invMonth = new Map<string, string>()
       for (const i of fInvoices) {
         if (i?.deleted) continue
-        // 账期(period)优先 —— 它代表"这票是哪个月的学费"；没填才退回开票日
-        const m = (i.period && /^\d{4}-\d{2}/.test(String(i.period)))
-          ? String(i.period).slice(0, 7)
-          : monthOf(i.issueDate || i.created)
+        // 归月单源：账期(period)优先，没填才退回开票日（lib/finance-calc.invoiceMonthKey）
+        const m = invoiceMonthKey(i)
         if (i?.id && m) invMonth.set(i.id, m)
       }
 
@@ -218,9 +213,7 @@ export const useFinancialStats = (centerCode?: string) => {
         if (i?.deleted) continue
         const amt = Number(i.totalAmount ?? i.total_amount) || 0
         // 开票也按账期归月（与收款归月口径一致）
-        const m = (i.period && /^\d{4}-\d{2}/.test(String(i.period)))
-          ? String(i.period).slice(0, 7)
-          : monthOf(i.issueDate || i.created)
+        const m = invoiceMonthKey(i)
         receivable += amt
         if (m) {
           invByMonth[m] = (invByMonth[m] || 0) + amt
