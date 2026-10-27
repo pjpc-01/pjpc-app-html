@@ -36,6 +36,9 @@ export default function ContributionManagementPage() {
   const [error, setError] = useState("")
   const [msg, setMsg] = useState("")
   const [busy, setBusy] = useState(false)
+  // 单个物品的贡献排行（弹窗）
+  const [itemRank, setItemRank] = useState<any>(null)
+  const [rankLoading, setRankLoading] = useState(false)
 
   // 新增表单
   const [iName, setIName] = useState("")
@@ -144,6 +147,38 @@ export default function ContributionManagementPage() {
       body: JSON.stringify(body),
     })
     if (!r.ok) throw new Error(`更新失败（${r.status}）`)
+  }
+
+  // 单个物品的贡献排行
+  const openItemRank = async (it: any) => {
+    setRankLoading(true); setMsg("")
+    setItemRank({ item: it, rows: [], loading: true })
+    try {
+      const r = await fetch(`/api/contribution/item-ranking?itemId=${encodeURIComponent(it.id)}`)
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d?.success) throw new Error(d?.error || `加载失败（${r.status}）`)
+      setItemRank(d)
+    } catch (e: any) {
+      setMsg(String(e?.message || e)); setItemRank(null)
+    } finally { setRankLoading(false) }
+  }
+
+  // 删除物品（中心物品 / 私人物品共用）
+  const deleteItem = async (type: "upgrade" | "reward", x: any) => {
+    if (!window.confirm(`${t("确定删除")}「${x.name}」？${t("删除后不能恢复")}`)) return
+    setBusy(true); setMsg("")
+    try {
+      let r = await fetch(`/api/contribution/item?type=${type}&id=${encodeURIComponent(x.id)}`, { method: "DELETE" })
+      let d = await r.json().catch(() => ({}))
+      if (r.status === 409 && d?.need_confirm) {
+        if (!window.confirm(String(d.error || ""))) return
+        r = await fetch(`/api/contribution/item?type=${type}&id=${encodeURIComponent(x.id)}&force=1`, { method: "DELETE" })
+        d = await r.json().catch(() => ({}))
+      }
+      if (!r.ok || !d?.success) throw new Error(d?.error || `删除失败（${r.status}）`)
+      setMsg(`${t("已删除")}「${x.name}」`)
+      await load()
+    } catch (e: any) { setMsg(String(e?.message || e)) } finally { setBusy(false) }
   }
 
   const addItem = async () => {
@@ -557,6 +592,10 @@ export default function ContributionManagementPage() {
                               <button className="flex-1 rounded border px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50" disabled={busy} onClick={() => setStatus(x, "closed")}>{t("关闭")}</button>
                             )}
                           </div>
+                          <div className="flex items-center gap-2">
+                            <button className="flex-1 rounded border px-2 py-1.5 text-xs text-gray-700 hover:bg-gray-50" onClick={() => openItemRank(x)}>{t("贡献排行")}</button>
+                            <button className="rounded border border-red-200 px-2 py-1.5 text-xs text-red-600 hover:bg-red-50" disabled={busy} onClick={() => deleteItem("upgrade", x)}>{t("删除")}</button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -627,6 +666,7 @@ export default function ContributionManagementPage() {
                               onClick={async () => { await patch("reward_items", x.id, { status: x.status === "active" ? "closed" : "active" }); load() }}>
                               {x.status === "active" ? t("下架") : t("上架")}
                             </button>
+                            <button className="rounded border border-red-200 px-2 py-1.5 text-xs text-red-600 hover:bg-red-50" disabled={busy} onClick={() => deleteItem("reward", x)}>{t("删除")}</button>
                           </div>
                         </div>
                       </div>
@@ -686,6 +726,57 @@ export default function ContributionManagementPage() {
           </>
         )}
       </div>
+      {/* 单个物品的贡献排行 */}
+      {itemRank && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setItemRank(null)}>
+          <div className="max-h-[80vh] w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3 border-b p-4">
+              <div>
+                <p className="text-sm font-semibold">{t("贡献排行")} · {itemRank.item?.name || ""}</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  {Number(itemRank.item?.current_points || 0)} / {Number(itemRank.item?.target_points || 0)} {t("分")}
+                  {itemRank.donors ? ` · ${itemRank.donors} ${t("人")}` : ""}
+                </p>
+              </div>
+              <button className="rounded border px-2 py-1 text-xs text-gray-600 hover:bg-gray-50" onClick={() => setItemRank(null)}>{t("关闭")}</button>
+            </div>
+            <div className="max-h-[60vh] overflow-y-auto p-4">
+              {itemRank.loading ? (
+                <p className="py-6 text-center text-sm text-gray-500">{t("加载中...")}</p>
+              ) : (itemRank.rows || []).length === 0 ? (
+                <p className="py-6 text-center text-sm text-gray-500">{t("还没有人投入")}</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-xs text-gray-500">
+                      <th className="py-2 pr-2">#</th>
+                      <th className="py-2 pr-2">{t("学生")}</th>
+                      <th className="py-2 pr-2 text-right">{t("投入")}</th>
+                      <th className="py-2 pr-2 text-right">{t("次数")}</th>
+                      <th className="py-2 text-right">{t("占比")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(itemRank.rows || []).map((r: any) => (
+                      <tr key={r.studentId} className="border-b last:border-0">
+                        <td className="py-2 pr-2 text-xs text-gray-400">{r.rank}</td>
+                        <td className="py-2 pr-2">
+                          <div className="font-medium">{r.studentName || "-"}</div>
+                          <div className="text-[11px] text-gray-400">{r.center || ""}</div>
+                        </td>
+                        <td className="py-2 pr-2 text-right font-semibold text-orange-600">{r.points}</td>
+                        <td className="py-2 pr-2 text-right text-xs text-gray-500">{r.times}</td>
+                        <td className="py-2 text-right text-xs text-gray-600">{r.share}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </PageLayout>
   )
 }

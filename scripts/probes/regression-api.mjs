@@ -193,6 +193,10 @@ try {
   await cleanup('monthly_test_scores', `studentId="${t1.s.id}"`)
   await cleanup('suggestions', `user="${t1.u.id}"`)
   await cleanup('contribution_logs', `student="${t1.s.id}"`)
+  // 之前漏了这个集合，测试跑的投入/兑换会留在真实贡献积分流水里（2026-10-28 清出 20 条）
+  await cleanup('contribution_point_logs', `student="${t1.s.id}"`)
+  await cleanup('contribution_point_logs', `student_name~"ZZ"`)
+  await cleanup('contribution_logs', `student_name~"ZZ"`)
   await cleanup('reward_redemptions', `student="${t1.s.id}"`)
   await cleanup('point_logs', `student="${t1.s.id}"`)
   await cleanup('contribution_items', 'name="ZZ 回归测试物品"')
