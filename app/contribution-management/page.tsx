@@ -385,54 +385,6 @@ export default function ContributionManagementPage() {
               </CardContent>
             </Card>
 
-            {/* 贡献积分流水 */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base"><History className="h-4 w-4" />{t("贡献积分流水")}</CardTitle>
-                <CardDescription>{t("最近")} {logs.length} {t("笔（投入按比率入账、兑换扣减、退回、手动调整）")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {logs.length === 0 ? (
-                  <p className="text-sm text-gray-500 py-2">{t("还没有记录")}</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[700px] text-sm">
-                      <thead>
-                        <tr className="border-b text-left text-xs text-gray-500">
-                          <th className="py-2 pr-2">{t("时间")}</th>
-                          <th className="py-2 pr-2">{t("学生")}</th>
-                          <th className="py-2 pr-2">{t("类型")}</th>
-                          <th className="py-2 pr-2 text-right">{t("变动")}</th>
-                          <th className="py-2 pr-2 text-right">{t("余额")}</th>
-                          <th className="py-2 pr-2">{t("说明")}</th>
-                          <th className="py-2">{t("操作人")}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {logs.map((x: any) => (
-                          <tr key={x.id} className="border-b last:border-0">
-                            <td className="py-2 pr-2 text-xs text-gray-500">{(x.created || "").slice(0, 16).replace("T", " ")}</td>
-                            <td className="py-2 pr-2">
-                              <div className="font-medium">{x.student_name || "-"}</div>
-                              <div className="text-[11px] text-gray-400">{x.center || ""}</div>
-                            </td>
-                            <td className="py-2 pr-2 text-xs">{t(KIND_LABEL[x.kind] || x.kind)}</td>
-                            <td className={`py-2 pr-2 text-right font-semibold ${Number(x.amount) > 0 ? "text-green-600" : "text-red-600"}`}>
-                              {Number(x.amount) > 0 ? "+" : ""}{x.amount}
-                              {x.donate_points ? <span className="ml-1 text-[11px] font-normal text-gray-400">{t("（投")} {x.donate_points}×{x.rate}{t("）")}</span> : null}
-                            </td>
-                            <td className="py-2 pr-2 text-right text-gray-600">{x.balance_after}</td>
-                            <td className="py-2 pr-2 text-xs text-gray-600 max-w-[220px] truncate">{x.note || "-"}</td>
-                            <td className="py-2 text-xs text-gray-500">{x.operator || "-"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
             {/* 待审批 */}
             <Card>
               <CardHeader className="pb-2">
@@ -683,6 +635,54 @@ export default function ContributionManagementPage() {
                 )}
               </CardContent>
             </Card>
+            {/* 贡献积分流水 */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base"><History className="h-4 w-4" />{t("贡献积分流水")}</CardTitle>
+                <CardDescription>{t("最近")} {logs.length} {t("笔（投入按比率入账、兑换扣减、退回、手动调整）")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {logs.length === 0 ? (
+                  <p className="text-sm text-gray-500 py-2">{t("还没有记录")}</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[700px] text-sm">
+                      <thead>
+                        <tr className="border-b text-left text-xs text-gray-500">
+                          <th className="py-2 pr-2">{t("时间")}</th>
+                          <th className="py-2 pr-2">{t("学生")}</th>
+                          <th className="py-2 pr-2">{t("类型")}</th>
+                          <th className="py-2 pr-2 text-right">{t("变动")}</th>
+                          <th className="py-2 pr-2 text-right">{t("余额")}</th>
+                          <th className="py-2 pr-2">{t("说明")}</th>
+                          <th className="py-2">{t("操作人")}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {logs.map((x: any) => (
+                          <tr key={x.id} className="border-b last:border-0">
+                            <td className="py-2 pr-2 text-xs text-gray-500">{(x.created || "").slice(0, 16).replace("T", " ")}</td>
+                            <td className="py-2 pr-2">
+                              <div className="font-medium">{x.student_name || "-"}</div>
+                              <div className="text-[11px] text-gray-400">{x.center || ""}</div>
+                            </td>
+                            <td className="py-2 pr-2 text-xs">{t(KIND_LABEL[x.kind] || x.kind)}</td>
+                            <td className={`py-2 pr-2 text-right font-semibold ${Number(x.amount) > 0 ? "text-green-600" : "text-red-600"}`}>
+                              {Number(x.amount) > 0 ? "+" : ""}{x.amount}
+                              {x.donate_points ? <span className="ml-1 text-[11px] font-normal text-gray-400">{t("（投")} {x.donate_points}×{x.rate}{t("）")}</span> : null}
+                            </td>
+                            <td className="py-2 pr-2 text-right text-gray-600">{x.balance_after}</td>
+                            <td className="py-2 pr-2 text-xs text-gray-600 max-w-[220px] truncate">{x.note || "-"}</td>
+                            <td className="py-2 text-xs text-gray-500">{x.operator || "-"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
           </>
         )}
       </div>
