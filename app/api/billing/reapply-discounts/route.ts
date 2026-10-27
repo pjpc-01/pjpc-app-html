@@ -1,3 +1,4 @@
+import { round2, sumLines, subtotalOf, discountValueOf, isDiscountLine as _isDiscountLine } from '@/lib/finance-calc'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
       if (!prev || (Number(a.discount || 0) > 0 && Number(prev.discount || 0) === 0)) byStudent.set(a.students, a)
     }
 
-    const isDiscountLine = (it: any) => /折扣/.test(String(it?.name || ''))
+    const isDiscountLine = (it: any) => _isDiscountLine(it)
     const isPaid = (i: any) => String(i.status || '') === 'paid'
 
     const plan: any[] = []
@@ -64,15 +65,13 @@ export async function POST(request: NextRequest) {
 
       const items: any[] = Array.isArray(inv.items) ? inv.items : []
       const keptItems = items.filter(it => !isDiscountLine(it))
-      const base = keptItems.reduce((s, it) => s + (Number(it.amount) || 0), 0)
+      const base = subtotalOf(keptItems)
       const hadDiscountLine = items.some(isDiscountLine)
       const oldDiscount = hadDiscountLine
         ? Math.abs(items.filter(isDiscountLine).reduce((s, it) => s + (Number(it.amount) || 0), 0))
         : 0
 
-      const newDiscount = discount > 0
-        ? (discountType === 'percent' ? Math.round(base * (discount / 100) * 100) / 100 : discount)
-        : 0
+      const newDiscount = discountValueOf(base, discount, discountType)
 
       // 一致就不用动
       if (Math.abs(newDiscount - oldDiscount) < 0.01) continue
@@ -84,7 +83,7 @@ export async function POST(request: NextRequest) {
           amount: -newDiscount,
         })
       }
-      const newTotal = Math.max(0, Math.round(newItems.reduce((s, it) => s + (Number(it.amount) || 0), 0) * 100) / 100)
+      const newTotal = Math.max(0, sumLines(newItems))
 
       plan.push({
         invoiceId: inv.id,

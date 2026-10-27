@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireRoles } from '@/lib/api-auth'
+import { round2, discountValueOf } from '@/lib/finance-calc'
 
 // 定期账单自动生成 API
 // 为所有有活跃学生费用的学生生成当月账单
@@ -244,9 +245,8 @@ export async function POST(request: NextRequest) {
       const discountType = assignment.discount_type || 'amount'
       let discountValue = 0
       if (studentDiscount > 0) {
-        discountValue = discountType === 'percent'
-          ? Math.round(totalBeforeDiscount * (studentDiscount / 100) * 100) / 100
-          : studentDiscount
+        // 金额单源：lib/finance-calc（percent 取整规则跟以前一致）
+        discountValue = discountValueOf(totalBeforeDiscount, studentDiscount, discountType)
         const discountLabel = discountType === 'percent'
           ? `学生折扣 (${studentDiscount}%)`
           : '学生折扣'
@@ -327,7 +327,7 @@ export async function POST(request: NextRequest) {
         totalAmount -= carryForward
       }
 
-      totalAmount = Math.max(0, Math.round(totalAmount * 100) / 100)
+      totalAmount = Math.max(0, round2(totalAmount))
 
       const invoiceData = {
         studentId: sid,

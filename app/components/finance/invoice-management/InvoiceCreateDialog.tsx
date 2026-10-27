@@ -1,5 +1,6 @@
 "use client"
 
+import { sumLines } from '@/lib/finance-calc'
 import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -71,7 +72,7 @@ export function InvoiceCreateDialog({
     const items = activeFees
       .filter(fee => isFeeAssigned(studentId, fee.id))
       .map(fee => ({ name: fee.name, amount: fee.amount }))
-    const total = items.reduce((sum, it) => sum + it.amount, 0)
+    const total = sumLines(items)  // 金额单源
     return { items, total, studentName: firstStudent.name || firstStudent.student_name }
   }, [selectedStudents, activeFees, isFeeAssigned, selectedStudentObjects])
 
