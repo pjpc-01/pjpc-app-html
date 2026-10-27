@@ -1,5 +1,6 @@
 "use client"
 
+import { invoiceMonthKey } from '@/lib/finance-calc'
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -69,12 +70,8 @@ export default function FinancialReports() {
   const safeExpenses = (Array.isArray(expenses) ? expenses : [])
     .filter((e: any) => inCenterScope(centerOfExpense(e, centerScope), centerFilter))
 
-  // 发票归属月：账期(period)优先，没填才用开票日 —— 与财务报表口径一致
-  const invMonthOf = (i: any): string => {
-    const pp = String(i?.period || "")
-    if (/^\d{4}-\d{2}/.test(pp)) return pp.slice(0, 7)
-    return String(i?.issueDate || i?.created || "").slice(0, 7)
-  }
+  // 发票归属月：走单源 lib/finance-calc.invoiceMonthKey（账期优先，没填退回开票日）
+  const invMonthOf = (i: any): string => invoiceMonthKey(i)
 
   // Revenue data from real stats
   const revenueByMonth = financialStats.revenueByMonth || {}
@@ -327,7 +324,7 @@ export default function FinancialReports() {
             {t("收支概览")}
           </CardTitle>
           <CardDescription>
-            {financialLoading ? "加载中..." : `以下是 ${monthLabel} 的经营数据（收入按账期归月，成本含教师薪资）`}
+            {financialLoading ? "加载中..." : `以下是 ${monthLabel} 的经营数据（收入＝已收款，按发票账期归月；应收/未收在财务总览另计；成本含教师薪资）`}
           </CardDescription>
         </CardHeader>
         <CardContent>
