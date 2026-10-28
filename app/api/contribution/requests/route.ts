@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
+import { requirePermission } from '@/lib/role-perms'
 import { getAdminToken } from '@/lib/pb-admin-token'
 import { addContributionPoints } from '@/lib/contribution'
 import { notify } from '@/lib/notify'
@@ -14,7 +15,7 @@ const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
  * 已领（delivered）之后不能再改。
  */
 export async function PATCH(request: NextRequest) {
-  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  const gate = await requirePermission(request, 'education.contribution')
   if ('error' in gate) return gate.error
 
   let body: any = {}

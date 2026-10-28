@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
+import { requirePermission } from '@/lib/role-perms'
 import { getAdminToken } from '@/lib/pb-admin-token'
 import { notify } from '@/lib/notify'
 import { getAchievementDefs, pbGet } from '@/lib/achievements'
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  const gate = await requirePermission(request, 'system.achievements')
   if ('error' in gate) return gate.error
 
   let body: any = {}
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  const gate = await requirePermission(request, 'system.achievements')
   if ('error' in gate) return gate.error
 
   const { searchParams } = new URL(request.url)

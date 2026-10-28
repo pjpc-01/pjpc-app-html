@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
+import { requirePermission } from '@/lib/role-perms'
 import { getAdminToken } from '@/lib/pb-admin-token'
 import { addContributionPoints, getContributionRate, pbGet } from '@/lib/contribution'
 import { notify } from '@/lib/notify'
@@ -74,7 +75,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const gate = await requireRoles(request, ['admin'])
+  const gate = await requirePermission(request, 'education.contribution', ['admin'])
   if ('error' in gate) return gate.error
 
   let body: any = {}
@@ -105,7 +106,7 @@ export async function PATCH(request: NextRequest) {
 
 /** 手动加减贡献积分（管理员/老师/行政） */
 export async function POST(request: NextRequest) {
-  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  const gate = await requirePermission(request, 'education.contribution')
   if ('error' in gate) return gate.error
 
   let body: any = {}

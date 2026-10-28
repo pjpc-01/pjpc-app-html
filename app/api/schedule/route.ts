@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
+import { requirePermission } from '@/lib/role-perms'
 import { getPocketBase } from '@/lib/pocketbase'
 import { authenticateAdmin } from '@/lib/auth-utils'
 import { logScheduleAction, logScheduleError } from '@/lib/schedule-logger'
@@ -87,7 +88,7 @@ export async function GET(request: NextRequest) {
 
 // 创建排班
 export async function POST(request: NextRequest) {
-  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  const gate = await requirePermission(request, 'education.courses')
   if ('error' in gate) return gate.error
   try {
     const data = await request.json()
@@ -181,7 +182,7 @@ export async function POST(request: NextRequest) {
 
 // 更新排班
 export async function PUT(request: NextRequest) {
-  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  const gate = await requirePermission(request, 'education.courses')
   if ('error' in gate) return gate.error
   try {
     const data = await request.json()
@@ -213,7 +214,7 @@ export async function PUT(request: NextRequest) {
 
 // 删除排班
 export async function DELETE(request: NextRequest) {
-  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  const gate = await requirePermission(request, 'education.courses')
   if ('error' in gate) return gate.error
   try {
     const { searchParams } = new URL(request.url)
