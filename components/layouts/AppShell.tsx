@@ -14,7 +14,6 @@ import {
   Award,
   Settings,
   GraduationCap,
-  Bell,
   LogOut,
   Menu,
   X,
@@ -52,6 +51,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import GlobalSearch from "@/components/ui/global-search"
+import NotificationBell from "@/components/notifications/NotificationBell"
 
 type NavItem = {
   label: string
@@ -1049,9 +1049,7 @@ export default function AppShell({
                   </div>
                 </div>
                 <div className="flex items-center gap-0.5">
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-gray-500/50 hover:text-gray-800 hover:bg-gray-100/30">
-                    <Bell className="h-3.5 w-3.5" />
-                  </Button>
+                  <NotificationBell />
                   <Button
                     variant="ghost"
                     size="sm"

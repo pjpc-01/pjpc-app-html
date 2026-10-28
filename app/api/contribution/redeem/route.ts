@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
+import { notifyRoles } from '@/lib/notify'
 import { pendingRedeemCost } from '@/lib/contribution'
 
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
@@ -83,6 +84,16 @@ export async function POST(request: NextRequest) {
       redemption: rec,
       balance: { balance: balanceNow, held: held + cost, available: available - cost, contributed: donated, spent },
     })
+
+    // 通知老师和行政：有新的兑换申请要批
+    await notifyRoles(token, ['admin', 'teacher', 'office_admin'], {
+      title: `新的兑换申请：${student.name || ''}`,
+      body: `${item.name || ''} · ${cost} 贡献积分`,
+      kind: 'redemption',
+      link: '/contribution-management',
+      actor: student.name || '',
+      center: student.center || '',
+    }).catch(() => {})
   } catch (e) {
     return NextResponse.json({ success: false, error: e instanceof Error ? e.message : '操作失败' }, { status: 500 })
   }

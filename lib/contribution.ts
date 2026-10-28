@@ -1,3 +1,5 @@
+import { notify } from '@/lib/notify'
+
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
 
 /**
@@ -122,6 +124,15 @@ export async function releaseItemContributions(
         })
         granted += earned
         students++
+        await notify(token, {
+          studentId: sid,
+          title: '物品完成，贡献积分已入账',
+          body: `「${r.item_name || '-'}」+${earned} 贡献积分`,
+          kind: 'contribution',
+          link: '/my/contribution',
+          actor: operator,
+          center: r.center || '',
+        })
       }
       await fetch(`${PB_URL}/api/collections/contribution_logs/records/${r.id}`, {
         method: 'PATCH', headers: H,
@@ -167,6 +178,15 @@ export async function refundItemContributions(
           }).catch(() => {})
           refunded += pts
           students++
+          await notify(token, {
+            studentId: sid,
+            title: '物品未完成，投入的积分已退回',
+            body: `「${r.item_name || '-'}」退回 ${pts} 分${reason ? '（' + reason + '）' : ''}`,
+            kind: 'contribution',
+            link: '/my/contribution',
+            actor: operator,
+            center: r.center || '',
+          })
         }
       }
       await fetch(`${PB_URL}/api/collections/contribution_logs/records/${r.id}`, {
