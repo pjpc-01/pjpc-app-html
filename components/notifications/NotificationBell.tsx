@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import { Bell } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
@@ -17,7 +18,9 @@ export default function NotificationBell() {
   const [unread, setUnread] = useState(0)
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [pos, setPos] = useState<{ left: number; bottom: number }>({ left: 0, bottom: 0 })
   const boxRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
 
   const load = useCallback(async () => {
     try {
@@ -41,7 +44,9 @@ export default function NotificationBell() {
   useEffect(() => {
     if (!open) return
     const onClick = (e: MouseEvent) => {
-      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false)
+      const el = e.target as Node
+      if (boxRef.current?.contains(el) || panelRef.current?.contains(el)) return
+      setOpen(false)
     }
     document.addEventListener("mousedown", onClick)
     return () => document.removeEventListener("mousedown", onClick)
@@ -79,20 +84,34 @@ export default function NotificationBell() {
   return (
     <div className="relative" ref={boxRef}>
       <button
-        className="relative h-7 w-7 rounded-md flex items-center justify-center text-gray-500/60 hover:text-gray-800 hover:bg-gray-100/40 transition-colors"
-        onClick={() => setOpen(o => !o)}
+        className={`relative h-9 w-9 rounded-lg flex items-center justify-center transition-colors ${
+          unread > 0
+            ? "text-amber-600 bg-amber-50 hover:bg-amber-100"
+            : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+        }`}
+        onClick={() => {
+          // 侧边栏是 overflow-hidden，弹窗必须用 fixed 定位才不会被裁掉
+          const r = boxRef.current?.getBoundingClientRect()
+          if (r) setPos({ left: Math.min(r.left, Math.max(8, window.innerWidth - 328)), bottom: window.innerHeight - r.top + 8 })
+          setOpen(o => !o)
+        }}
         aria-label={t("通知")}
+        title={unread > 0 ? `${unread} ${t("条未读通知")}` : t("通知")}
       >
-        <Bell className="h-3.5 w-3.5" />
+        <Bell className="h-5 w-5" strokeWidth={2.2} />
         {unread > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] px-1 rounded-full bg-red-500 text-[9px] leading-[14px] text-white text-center font-semibold">
+          <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-[10px] leading-4 text-white text-center font-semibold shadow">
             {unread > 99 ? "99+" : unread}
           </span>
         )}
       </button>
 
-      {open && (
-        <div className="absolute bottom-full left-0 mb-2 w-80 max-h-[70vh] overflow-hidden rounded-xl border bg-white shadow-xl z-50">
+      {open && typeof document !== "undefined" && createPortal(
+        <div
+          ref={panelRef}
+          className="fixed max-h-[70vh] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl z-[60]"
+          style={{ width: 320, left: pos.left, bottom: pos.bottom }}
+        >
           <div className="flex items-center justify-between border-b px-3 py-2">
             <span className="text-sm font-semibold text-gray-800">{t("通知")}</span>
             {unread > 0 && (
@@ -126,7 +145,8 @@ export default function NotificationBell() {
               ))
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

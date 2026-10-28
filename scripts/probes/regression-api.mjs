@@ -9,6 +9,7 @@ import { suToken, SITE } from './_auth.mjs'
 const PB = 'http://127.0.0.1:8090'
 const su = await suToken()
 const H = { 'Content-Type': 'application/json', Authorization: su }
+const startedAt = new Date().toISOString().replace('T', ' ')
 const out = []
 const ok = (name, pass, extra = '') => {
   out.push({ name, pass })
@@ -199,6 +200,9 @@ try {
   // 之前漏了这个集合，测试跑的投入/兑换会留在真实贡献积分流水里（2026-10-28 清出 20 条）
   await cleanup('contribution_point_logs', `student="${t1.s.id}"`)
   await cleanup('contribution_point_logs', `student_name~"ZZ"`)
+  // 通知也要清（2026-10-28 加的站内通知，测试会往老师/管理员铃铛里塞消息）
+  // 通知：这段时间内产生的一律删（测试会往老师/管理员铃铛塞消息）
+  await cleanup('notifications', `created >= "${startedAt}"`)
   await cleanup('contribution_logs', `student_name~"ZZ"`)
   await cleanup('reward_redemptions', `student="${t1.s.id}"`)
   await cleanup('point_logs', `student="${t1.s.id}"`)
