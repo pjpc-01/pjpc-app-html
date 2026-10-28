@@ -92,7 +92,11 @@ export default function NotificationBell() {
         onClick={() => {
           // 侧边栏是 overflow-hidden，弹窗必须用 fixed 定位才不会被裁掉
           const r = boxRef.current?.getBoundingClientRect()
-          if (r) setPos({ left: Math.min(r.left, Math.max(8, window.innerWidth - 328)), bottom: window.innerHeight - r.top + 8 })
+          if (r) {
+            // 放在铃铛右边，别压住侧边栏；右边超出视口就往左挪
+            const left = Math.min(r.right + 8, Math.max(8, window.innerWidth - 336))
+            setPos({ left, bottom: Math.max(8, window.innerHeight - r.bottom) })
+          }
           setOpen(o => !o)
         }}
         aria-label={t("通知")}
@@ -109,8 +113,8 @@ export default function NotificationBell() {
       {open && typeof document !== "undefined" && createPortal(
         <div
           ref={panelRef}
-          className="fixed max-h-[70vh] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl z-[60]"
-          style={{ width: 320, left: pos.left, bottom: pos.bottom }}
+          className="fixed max-h-[70vh] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl"
+          style={{ width: 320, left: pos.left, bottom: pos.bottom, zIndex: 3000 }}
         >
           <div className="flex items-center justify-between border-b px-3 py-2">
             <span className="text-sm font-semibold text-gray-800">{t("通知")}</span>

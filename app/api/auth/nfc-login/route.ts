@@ -70,12 +70,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '未绑定账户，请在用户管理中绑定档案' })
     }
 
-    // 3. Card verified, user found — use admin token directly (no password needed)
+    // 3. 卡验过了、人也找到了 —— 换成**这个账号自己的** token
+    //
+    // 为什么不能用管理员 token：管理员(superuser)的 token 在 /api/collections/users/auth-refresh
+    // 上会被 PB 拒绝(403 "requires auth record from _superusers collection")，于是前端之后每个
+    // /api/* 都是 401，页面就一直「加载中 / 未绑定档案」。而且把 superuser token 交给浏览器，
+    // 等于刷卡就能动整库。
+    // 正确做法：用 PB 的 impersonate 接口按账号签发真 token（不需要密码）。
+    const impRes = await fetch(PB_URL + '/api/collections/users/impersonate/' + user.id, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token },
+    })
+    if (!impRes.ok) {
+      return NextResponse.json({ success: false, error: `签发登录票据失败（${impRes.status}）` })
+    }
+    const imp = await impRes.json()
+
     return NextResponse.json({
       success: true,
-      pb_token: token,
-      pb_record: user,
-      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      pb_token: imp.token,
+      pb_record: imp.record || user,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        teacher_id: user.teacher_id || '',
+        student_id: user.student_id || '',
+        center: user.center || '',
+      },
     })
   } catch (error: any) {
     console.error('NFC login failed:', error)
