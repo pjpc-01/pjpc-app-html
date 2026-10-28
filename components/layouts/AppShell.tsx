@@ -611,7 +611,7 @@ export default function AppShell({
     "/homework": "education.homework", "/grades": "education.grades",
     "/monthly-tests": "education.monthly_tests",
     "/pickup": "education.pickup", "/daily-logs": "education.logs",
-    "/student-leave": "education.students",
+    "/student-leave": "education.student_leave",   // 请假审批独立开关（原来跟学生管理共用，导致有学生列表就能批请假）
     "/teacher-management": "education.teachers", "/teacher-attendance-reports": "education.teacher_attendance",
     "/activities": "education.activities",
     "/teacher-performance": "education.performance",
@@ -645,22 +645,25 @@ export default function AppShell({
     if (userRole === 'admin') return items
     // Not loaded yet: show nothing to avoid flash
     if (Object.keys(rolePerms).length === 0) return []
-    
-    return items.filter(item => {
+
+    // 注意：这里不能用 items.filter() —— filter 只看返回值真假，返回的
+    // {...item, children: 过滤后的孩子} 会被丢掉，父节点的子项就等于没过滤
+    // （这就是「权限开关明明关了，菜单里还在」的原因，2026-10-29 修）
+    const out: NavItem[] = []
+    for (const item of items) {
       if (item.children) {
-        // Parent: check parent key
         const parentKey = PARENT_PERM[item.label]
-        if (parentKey && rolePerms[parentKey] !== true) return false
-        // Filter children
-        const filteredChildren = filterByPerms(item.children)
-        if (filteredChildren.length === 0) return false
-        return { ...item, children: filteredChildren }
+        if (parentKey && rolePerms[parentKey] !== true) continue
+        const kids = filterByPerms(item.children)
+        if (kids.length === 0) continue
+        out.push({ ...item, children: kids })
+      } else {
+        // Leaf: MUST have mapping AND be true（没映射 = 隐藏）
+        const childKey = item.href ? CHILD_PERM[item.href] : undefined
+        if (childKey && rolePerms[childKey] === true) out.push(item)
       }
-      // Leaf: MUST have mapping AND be true
-      const childKey = item.href ? CHILD_PERM[item.href] : undefined
-      if (!childKey) return false  // no mapping = hidden
-      return rolePerms[childKey] === true
-    })
+    }
+    return out
   }
 
   const filteredNavItems = applyNavOrder(filterByPerms(config?.navItems || []))

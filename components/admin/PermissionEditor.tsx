@@ -14,9 +14,9 @@ import { useLanguage } from "@/contexts/language-context"
 
 const NAV_TREE: Record<string, { label: string; icon?: string; children?: string[] }> = {
   overview: { label: "概览", children: ["overview.dashboard", "overview.slideshow"] },
-  education: { label: "教务", children: ["education.overview", "education.students", "education.reports", "education.parents", "education.homework", "education.grades", "education.pickup", "education.logs", "education.teachers", "education.teacher_attendance", "education.courses", "education.workspace", "education.teaching_report", "education.resources"] },
+  education: { label: "教务", children: ["education.overview", "education.students", "education.reports", "education.parents", "education.homework", "education.grades", "education.pickup", "education.logs", "education.teachers", "education.teacher_attendance", "education.courses", "education.workspace", "education.teaching_report", "education.resources", "education.student_leave", "education.contribution", "education.monthly_tests", "education.performance", "education.activities"] },
   finance: { label: "财务", children: ["finance.overview", "finance.fees", "finance.student_fees", "finance.invoices", "finance.payments", "finance.receipts", "finance.payroll", "finance.expenses", "finance.bank", "finance.budget", "finance.debts", "finance.reports", "finance.inventory"] },
-  system: { label: "系统", children: ["system.attendance", "system.cards", "system.points", "system.points_rules", "system.points_leaderboard", "system.users", "system.centers", "system.settings", "system.tv_board"] },
+  system: { label: "系统", children: ["system.attendance", "system.cards", "system.points", "system.points_rules", "system.points_leaderboard", "system.users", "system.centers", "system.settings", "system.tv_board", "system.suggestions", "system.achievements"] },
 }
 
 const CHILD_LABELS: Record<string, string> = {
@@ -28,6 +28,8 @@ const CHILD_LABELS: Record<string, string> = {
   "education.pickup": "接送管理", "education.logs": "每日日志", "education.teachers": "教师管理",
   "education.teacher_attendance": "教师考勤", "education.courses": "课程管理",
   "education.workspace": "教师工作台", "education.teaching_report": "教学评估", "education.resources": "资源库",
+  "education.student_leave": "学生请假（审批）", "education.contribution": "贡献兑换",
+  "education.monthly_tests": "安亲班月测", "education.performance": "教师绩效", "education.activities": "活动",
   // Finance
   "finance.overview": "财务概览", "finance.fees": "收费管理", "finance.student_fees": "学生费用",
   "finance.invoices": "发票管理", "finance.payments": "付款和收据", "finance.receipts": "收据管理",
@@ -37,7 +39,7 @@ const CHILD_LABELS: Record<string, string> = {
   "system.attendance": "考勤中心", "system.cards": "卡片管理", "system.points": "积分操作",
   "system.points_rules": "积分规则", "system.points_leaderboard": "积分排行",
   "system.users": "用户管理", "system.centers": "分行管理", "system.settings": "系统设置",
-  "system.tv_board": "TV看板",
+  "system.tv_board": "TV看板", "system.suggestions": "建议箱", "system.achievements": "成就管理",
 }
 
 // Default permission templates for new roles
