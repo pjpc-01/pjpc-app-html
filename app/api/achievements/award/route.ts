@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
+import { notify } from '@/lib/notify'
 import { getAchievementDefs, pbGet } from '@/lib/achievements'
 
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
@@ -81,6 +82,16 @@ export async function POST(request: NextRequest) {
       }),
     })
     if (!r.ok) throw new Error('授予失败')
+    // 通知学生：拿到新成就
+    await notify(token, {
+      studentId: sid,
+      title: `获得新成就：${def.icon || '🏅'} ${def.name || code}`,
+      body: String(body.note || '').slice(0, 200),
+      kind: 'achievement',
+      link: '/my/achievements',
+      actor: gate.session.name || gate.session.role || '',
+    })
+
     return NextResponse.json({ success: true, achievement: { code, name: def.name, icon: def.icon || '' } })
   } catch (e) {
     return NextResponse.json({ success: false, error: e instanceof Error ? e.message : '授予失败' }, { status: 500 })

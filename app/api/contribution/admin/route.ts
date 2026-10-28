@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
 import { addContributionPoints, getContributionRate, pbGet } from '@/lib/contribution'
+import { notify } from '@/lib/notify'
 
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
 
@@ -131,6 +132,17 @@ export async function POST(request: NextRequest) {
       operator: gate.session.name || gate.session.role,
       center: stu.center || '',
       baseBalance: Number(stu.contribution_points || 0),
+    })
+
+    // 通知学生：贡献积分被手动加减
+    await notify(token, {
+      studentId: sid,
+      title: amount > 0 ? `老师奖励了 ${amount} 贡献积分` : `贡献积分被扣 ${Math.abs(amount)}`,
+      body: note,
+      kind: 'contribution',
+      link: '/my/contribution',
+      actor: gate.session.name || gate.session.role || '',
+      center: stu.center || '',
     })
 
     return NextResponse.json({ success: true, balance: r.balance, student: { id: sid, name: stu.name } })

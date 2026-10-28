@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
 import { addContributionPoints } from '@/lib/contribution'
+import { notify } from '@/lib/notify'
 
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
 
@@ -81,6 +82,16 @@ export async function PATCH(request: NextRequest) {
         }
       }
     }
+
+    // 结果通知学生（站内铃铛）
+    await notify(token, {
+      studentId: String(rec.student || ''),
+      title: status === 'approved' ? '兑换申请已批准' : status === 'rejected' ? '兑换申请被拒绝' : '兑换已领取',
+      body: `${rec.item_name || '物品'}${status === 'rejected' ? '：贡献积分已退回' : status === 'approved' ? '：可以来领取了' : '：已记录领取'}`,
+      kind: 'redemption',
+      link: '/my/contribution',
+      actor: gate.session.name || gate.session.role || '',
+    })
 
     return NextResponse.json({ success: true, id, status })
   } catch (e) {

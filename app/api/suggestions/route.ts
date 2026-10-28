@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
+import { notify } from '@/lib/notify'
 
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
 
@@ -147,6 +148,25 @@ export async function PATCH(request: NextRequest) {
       body: JSON.stringify(payload),
     })
     if (!r.ok) throw new Error('更新失败')
+
+    // 回复了 → 通知提问的同学（站内铃铛）
+    if (payload.reply) {
+      const cur = await fetch(`${PB_URL}/api/collections/suggestions/records/${id}`, { headers: { Authorization: token } })
+      if (cur.ok) {
+        const row = await cur.json()
+        if (row.user) {
+          await notify(token, {
+            userId: row.user,
+            title: '你的建议有回复了',
+            body: String(payload.reply).slice(0, 200),
+            kind: 'suggestion',
+            link: '/my/suggestions',
+            actor: gate.session.name || gate.session.role || '',
+          })
+        }
+      }
+    }
+
     return NextResponse.json({ success: true })
   } catch (e) {
     return NextResponse.json({ success: false, error: e instanceof Error ? e.message : '更新失败' }, { status: 500 })

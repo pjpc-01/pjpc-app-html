@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
+import { notify, notifyRoles } from '@/lib/notify'
 import { pbGet } from '@/lib/contribution'
 
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
@@ -115,6 +116,16 @@ export async function POST(request: NextRequest) {
       method: 'POST', headers: { Authorization: token }, body: fd,
     })
     if (!r.ok) throw new Error('提交失败')
+    // 通知老师和行政：有新的物品提议
+    await notifyRoles(token, ['admin', 'teacher', 'office_admin'], {
+      title: `新的物品提议：${name}`,
+      body: String(description || '').slice(0, 160),
+      kind: 'suggestion',
+      link: '/contribution-management',
+      actor: gate.session.name || '',
+      center: center || '',
+    }).catch(() => {})
+
     return NextResponse.json({ success: true })
   } catch (e) {
     return NextResponse.json({ success: false, error: e instanceof Error ? e.message : '提交失败' }, { status: 500 })
@@ -177,6 +188,19 @@ export async function PATCH(request: NextRequest) {
         })
         if (r.ok) created = await r.json()
       }
+    }
+
+    // 提议结果通知学生（收件人取提议这条记录里的学生）
+    const reqStudent = String(rec.student || '')
+    if (reqStudent) {
+      await notify(token, {
+        studentId: reqStudent,
+        title: status === 'approved' ? '你的物品提议已通过' : '你的物品提议被拒绝',
+        body: `${rec.name || ''}${String(payload.review_note || '') ? '：' + String(payload.review_note).slice(0, 120) : ''}`,
+        kind: 'suggestion',
+        link: '/my/contribution',
+        actor: gate.session.name || gate.session.role || '',
+      })
     }
 
     return NextResponse.json({ success: true, status, created_id: created?.id || null })
