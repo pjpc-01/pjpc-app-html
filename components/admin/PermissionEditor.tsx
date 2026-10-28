@@ -17,6 +17,8 @@ const NAV_TREE: Record<string, { label: string; icon?: string; children?: string
   education: { label: "教务", children: ["education.overview", "education.students", "education.reports", "education.parents", "education.homework", "education.grades", "education.pickup", "education.logs", "education.teachers", "education.teacher_attendance", "education.courses", "education.workspace", "education.teaching_report", "education.resources", "education.student_leave", "education.contribution", "education.monthly_tests", "education.performance", "education.activities"] },
   finance: { label: "财务", children: ["finance.overview", "finance.fees", "finance.student_fees", "finance.invoices", "finance.payments", "finance.receipts", "finance.payroll", "finance.expenses", "finance.bank", "finance.budget", "finance.debts", "finance.reports", "finance.inventory"] },
   system: { label: "系统", children: ["system.attendance", "system.cards", "system.points", "system.points_rules", "system.points_leaderboard", "system.users", "system.centers", "system.settings", "system.tv_board", "system.suggestions", "system.achievements"] },
+  // 学生端（学生账号登入后能看的页面）
+  student_portal: { label: "学生端", children: ["my.home", "my.timetable", "my.homework", "my.points", "my.achievements", "my.contribution", "my.notices", "my.leave", "my.reports", "my.suggestions"] },
 }
 
 const CHILD_LABELS: Record<string, string> = {
@@ -40,6 +42,10 @@ const CHILD_LABELS: Record<string, string> = {
   "system.points_rules": "积分规则", "system.points_leaderboard": "积分排行",
   "system.users": "用户管理", "system.centers": "分行管理", "system.settings": "系统设置",
   "system.tv_board": "TV看板", "system.suggestions": "建议箱", "system.achievements": "成就管理",
+  // 学生端
+  "my.home": "我的首页", "my.timetable": "我的课表", "my.homework": "我的作业", "my.points": "我的积分",
+  "my.achievements": "我的成就", "my.contribution": "我的贡献", "my.notices": "公告",
+  "my.leave": "请假", "my.reports": "我的报告", "my.suggestions": "我的建议",
 }
 
 // Default permission templates for new roles

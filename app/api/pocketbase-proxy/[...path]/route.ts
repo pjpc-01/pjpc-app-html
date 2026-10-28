@@ -1,3 +1,4 @@
+import { roleHas } from '@/lib/role-perms'
 import { NextRequest, NextResponse } from 'next/server'
 
 const POCKETBASE_URL = 'http://127.0.0.1:8090'
@@ -214,6 +215,29 @@ const ADMIN_ONLY = new Set([
 const STAFF_ROLES = new Set(['admin', 'teacher', 'office_admin'])
 
 /**
+ * 写操作守门：集合 → 权限 key（跟侧边栏开关同一张 role_permissions 表）。
+ * 开关关掉的页面，对应集合也不能直接通过代理写（否则界面挡住、接口还能改）。
+ */
+const COLLECTION_PERM: Record<string, string> = {
+  grades: 'education.grades',
+  monthly_test_scores: 'education.monthly_tests',
+  courses: 'education.courses',
+  schedules: 'education.courses',
+  schedule_logs: 'education.courses',
+  course_time_slots: 'education.courses',
+  student_leave_record: 'education.student_leave',
+  contribution_items: 'education.contribution',
+  contribution_logs: 'education.contribution',
+  contribution_point_logs: 'education.contribution',
+  contribution_settings: 'education.contribution',
+  reward_items: 'education.contribution',
+  reward_redemptions: 'education.contribution',
+  item_requests: 'education.contribution',
+  student_achievements: 'system.achievements',
+  suggestions: 'system.suggestions',
+}
+
+/**
  * 学生账号：只读，且【只能看自己】。
  * 集合 → 用来判定「是不是他本人」的字段。
  * 请求里原本的 filter 会被 AND 上这个条件，学生改不掉（服务端拼的）。
@@ -321,6 +345,12 @@ async function proxyRequest(method: string, request: NextRequest) {
       } else if (!STAFF_ROLES.has(session.role)) {
         // 未知/未开放角色
         return NextResponse.json({ error: '没有权限' }, { status: 403 })
+      } else if (session.role !== 'admin' && method !== 'GET' && col && COLLECTION_PERM[col] && !(await roleHas(session.role, COLLECTION_PERM[col]))) {
+        // ★ 写操作按权限表拦（开关关了就不能改数据，不只是看不见菜单）
+        return NextResponse.json(
+          { error: `没有权限修改这个数据：${COLLECTION_PERM[col]}（请管理员到「用户管理 → 角色权限」开启）` },
+          { status: 403 }
+        )
       } else if (session.role !== 'admin' && col && ADMIN_ONLY.has(col)) {
         // ★ 例外：任何人都能读「自己」的 users 记录（前端要拿姓名/角色/绑定信息）
         const selfId = (pbPath.match(/\/records\/([^/?#]+)/) || [])[1]

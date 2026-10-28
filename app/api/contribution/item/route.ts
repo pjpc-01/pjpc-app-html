@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
+import { requirePermission } from '@/lib/role-perms'
 import { getAdminToken } from '@/lib/pb-admin-token'
 import { pbGet, refundItemContributions, releaseItemContributions } from '@/lib/contribution'
 
@@ -20,7 +21,7 @@ const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
  *  - 投入记录（contribution_logs）不删，历史留着；物品没了那些记录仍能查到名字。
  */
 export async function DELETE(request: NextRequest) {
-  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  const gate = await requirePermission(request, 'education.contribution')
   if ('error' in gate) return gate.error
 
   const { searchParams } = new URL(request.url)
@@ -107,7 +108,7 @@ export async function DELETE(request: NextRequest) {
  * complete  = 手动标记完成：把锁定的贡献积分发给投入的学生
  */
 export async function PATCH(request: NextRequest) {
-  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  const gate = await requirePermission(request, 'education.contribution')
   if ('error' in gate) return gate.error
 
   const { searchParams } = new URL(request.url)

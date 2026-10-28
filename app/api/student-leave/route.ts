@@ -1,6 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPocketBase } from '@/lib/pocketbase'
 import { authenticateAdmin } from '@/lib/auth-utils'
+import { requireRoles } from '@/lib/api-auth'
+import { roleHas } from '@/lib/role-perms'
+
+const ALL_ROLES = ['admin', 'teacher', 'office_admin', 'student', 'parent']
+
+/**
+ * 这个文件原来完全没有登录校验（谁都能写请假记录 = 谁都能把学生标成请假不计缺勤）。
+ * 现在：① 必须登录；② 学生只能看/提自己的；③ 老师/行政要「学生请假（审批）」这个开关。
+ */
+/** 刷卡机（/student-kiosk）是免登录设备：没有 Authorization 头就当刷卡机处理，行为跟改之前一致 */
+function isKiosk(request: NextRequest) {
+  return !request.headers.get('authorization')
+}
+
+async function guardStaff(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate
+  if (gate.session.internal) return gate
+  if (!(await roleHas(gate.session.role, 'education.student_leave'))) {
+    return { error: NextResponse.json({ success: false, error: '没有权限：学生请假（审批）' }, { status: 403 }) }
+  }
+  return gate
+}
 
 // 学生请假记录 —— 结构对齐教师请假（teacher_leave_record / /api/teacher-leave）
 // 差别：① 无审批流，录入即生效（status 默认 approved，仍可改）
@@ -8,11 +31,30 @@ import { authenticateAdmin } from '@/lib/auth-utils'
 
 export async function GET(request: NextRequest) {
   try {
+    const kiosk = isKiosk(request)
+    let role = 'kiosk'
+    let selfStudentId = ''
+    if (!kiosk) {
+      const gate = await requireRoles(request, ALL_ROLES)
+      if ('error' in gate) return gate.error
+      role = gate.session.role
+      selfStudentId = String(gate.session.studentId || '')
+      // 有账号的老师/行政：要「学生请假（审批）」这个开关
+      if (['teacher', 'office_admin'].includes(role) && !(await roleHas(role, 'education.student_leave'))) {
+        return NextResponse.json({ success: false, error: '没有权限：学生请假（审批）' }, { status: 403 })
+      }
+    }
+
     const pb = await getPocketBase()
     await authenticateAdmin(pb)
 
     const { searchParams } = new URL(request.url)
-    const studentId = searchParams.get('student_id')
+    // 学生账号只能看自己的，不能靠改参数看别人
+    let studentId = searchParams.get('student_id')
+    if (role === 'student') studentId = selfStudentId
+    if (role === 'student' && !studentId) {
+      return NextResponse.json({ success: true, data: [], total: 0, page: 1, totalPages: 0 })
+    }
     const status = searchParams.get('status')
     const year = searchParams.get('year')
     const month = searchParams.get('month')
@@ -51,11 +93,30 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const kiosk = isKiosk(request)
+    let role = 'kiosk'
+    let selfStudentId = ''
+    if (!kiosk) {
+      const gate = await requireRoles(request, ALL_ROLES)
+      if ('error' in gate) return gate.error
+      role = gate.session.role
+      selfStudentId = String(gate.session.studentId || '')
+      if (role !== 'student') {
+        const staff = await guardStaff(request)
+        if ('error' in staff) return staff.error
+      }
+    }
+
     const pb = await getPocketBase()
     await authenticateAdmin(pb)
 
     const body = await request.json()
     const { student_id, leave_type, start_date, end_date, reason, status, notes } = body
+
+    // 学生只能提交自己的请假，状态固定 pending 之外也要跟自己的 id 一致
+    if (role === 'student' && String(student_id || '') !== selfStudentId) {
+      return NextResponse.json({ success: false, error: '只能提交自己的请假' }, { status: 403 })
+    }
     if (!student_id || !start_date || !end_date) {
       return NextResponse.json({ success: false, error: '缺少必需字段: student_id / start_date / end_date' }, { status: 400 })
     }
@@ -86,6 +147,9 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const gate = await guardStaff(request)
+    if ('error' in gate) return gate.error
+
     const pb = await getPocketBase()
     await authenticateAdmin(pb)
 
@@ -121,6 +185,9 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const gate = await guardStaff(request)
+    if ('error' in gate) return gate.error
+
     const pb = await getPocketBase()
     await authenticateAdmin(pb)
 

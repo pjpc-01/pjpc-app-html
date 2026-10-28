@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
+import { requirePermission } from '@/lib/role-perms'
 import { getAdminToken } from '@/lib/pb-admin-token'
 import { notify, notifyRoles } from '@/lib/notify'
 import { pbGet } from '@/lib/contribution'
@@ -133,7 +134,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  const gate = await requirePermission(request, 'education.contribution')
   if ('error' in gate) return gate.error
 
   let body: any = {}
