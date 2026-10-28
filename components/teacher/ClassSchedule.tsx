@@ -278,7 +278,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
               <BookOpen className="h-5 w-5" />
               {t("今日课程 (")}{filteredSchedule.length})
             </CardTitle>
-            <Button className="flex items-center gap-2" onClick={() => router.push('/schedule-management')}>
+            <Button className="flex items-center gap-2" onClick={() => router.push('/teacher-workspace/courses')}>
               <Plus className="h-4 w-4" />
               {t("添加课程")}
             </Button>

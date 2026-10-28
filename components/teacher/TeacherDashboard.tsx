@@ -384,7 +384,7 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
                 <span className="text-sm">{t("统一考勤")}</span>
               </Button>
             </Link>
-            <Link href="/schedule-management">
+            <Link href="/teacher-workspace/courses">
               <Button variant="outline" className="w-full h-20 flex flex-col items-center gap-2">
                 <BarChart3 className="h-6 w-6" />
                 <span className="text-sm">{t("AI考勤系统")}</span>

@@ -159,7 +159,7 @@ export default function TodayPanel({ teacherId }: { teacherId?: string }) {
               <span className="text-sm font-medium flex items-center gap-2">
                 <Users className="h-4 w-4 text-gray-500" />{t("今天没来")} · {(data?.absent_today || []).length} {t("人")}
               </span>
-              <Link href="/student-attendance" className="text-sm text-blue-600 hover:underline">{t("看考勤")}</Link>
+              <Link href="/teacher-workspace/attendance" className="text-sm text-blue-600 hover:underline">{t("看考勤")}</Link>
             </div>
             {(data?.absent_today || []).length > 0 && (
               <p className="text-xs text-gray-600 mt-2">
