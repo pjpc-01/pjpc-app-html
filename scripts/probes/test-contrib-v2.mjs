@@ -2,12 +2,13 @@ import { suToken, SITE } from './_auth.mjs'
 const PB = 'http://127.0.0.1:8090'
 const su = await suToken()
 const H = { 'Content-Type': 'application/json', Authorization: su }
+const startedAt = new Date().toISOString().replace('T', ' ')
 const out = []
 const ok = (n, pass, extra='') => { out.push(pass); console.log(`${pass?'PASS':'FAIL'}  ${n}${extra?'  →  '+extra:''}`) }
 
 // 先清掉上次跑挂掉留下的测试流水 —— 否则会污染真实流水（2026-10-27 清出 20 条 ZZ 测试流水）
-for (const col of ['contribution_point_logs']) {
-  const q = encodeURIComponent('student_name~"ZZ" || note~"ZZ"')
+for (const col of ['contribution_point_logs', 'notifications']) {
+  const q = encodeURIComponent(col === 'notifications' ? 'title~"ZZ" || actor~"ZZ" || body~"ZZ"' : 'student_name~"ZZ" || note~"ZZ"')
   const d = await (await fetch(`${PB}/api/collections/${col}/records?perPage=200&filter=${q}`, { headers: H })).json()
   for (const r of d.items || []) await fetch(`${PB}/api/collections/${col}/records/${r.id}`, { method: 'DELETE', headers: H })
   if ((d.items || []).length) console.log(`清掉上次残留的测试流水 ${d.items.length} 条`)
@@ -126,6 +127,7 @@ try {
     for (const x of d.items||[]) await fetch(PB+`/api/collections/${col}/records/`+x.id,{method:'DELETE',headers:{Authorization:su}})
   }
   await cleanup('contribution_point_logs', `student="${s.id}"`)
+  await cleanup('notifications', `created >= "${startedAt}"`)
   await cleanup('contribution_logs', `student="${s.id}"`)
   await cleanup('reward_redemptions', `student="${s.id}"`)
   await cleanup('point_logs', `student="${s.id}"`)

@@ -2557,6 +2557,7 @@ export const ZH_TO_EN: Record<string, string> = {
   "导出 PDF 失败": "Failed to export PDF.",
   "已删除": "Deleted.",
   "通知": "Notifications",
+  "条未读通知": "unread",
   "全部已读": "Mark all read",
   "还没有通知": "No notifications yet.",
   "没有数据可以导出": "Nothing to export.",
