@@ -3624,4 +3624,9 @@ export const ZH_TO_EN: Record<string, string> = {
   "张未缴清发票的折扣": "unpaid invoice discount(s)",
   "保存失败：": "Save failed: ",
   "条未保存": "row(s) not saved",
+  " 份文档，点「删除」可移除": " document(s) — click Delete to remove",
+  " 张照片，点「删除」可移除": " photo(s) — click Delete to remove",
+  "确定删除这个附件？": "Delete this attachment?",
+  "上传后立刻生效（不用点保存）；点附件下面的「删除」就能删掉": "Uploads apply immediately (no need to save); use the Delete button under each attachment",
+  "照片 / 附件": "Photos / Attachments",
 }

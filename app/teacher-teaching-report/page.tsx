@@ -721,6 +721,38 @@ export default function TeacherTeachingReportPage() {
   }
 
   // ── Render: View/Edit/New Form ──
+  // 删除单个已上传的附件（照片 / 文档）：把剩下的文件名 PATCH 回去
+  const removeExistingAttachment = async (field: "photos" | "documents", idx: number) => {
+    const rec: any = report
+    if (!rec?.id) return
+    // 现有文件名要从 _photos/_documents（URL）里取，state 里没有 raw 的 photos 字段
+    const urls: string[] = ((rec[field === "photos" ? "_photos" : "_documents"] || []) as string[])
+    const names = urls.map(u => decodeURIComponent(String(u).split("/").pop() || "")).filter(Boolean)
+    if (!window.confirm(t("确定删除这个附件？"))) return
+    const remaining = names.filter((_, i) => i !== idx)
+    try {
+      setSaving(true)
+      // 必须用 JSON 传「要保留的文件名数组」：multipart 里塞字符串 PB 会当成新文件、把旧的连保留的一起清掉（实测会全删）
+      const res = await fetch(`${API_BASE}/records/${rec.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: remaining }),
+      })
+      if (!res.ok) throw new Error(await res.text())
+      const urls = remaining.map(f => `/api/pocketbase-proxy/api/files/teacher_teaching_reports/${rec.id}/${f}`)
+      setReport(prev => ({
+        ...(prev as any),
+        [field]: remaining,
+        [field === "photos" ? "_photos" : "_documents"]: urls,
+      }))
+      toast.success(t("已删除"))
+    } catch (e: any) {
+      toast.error(t("删除失败") + ": " + (e?.message || ""))
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const isView = viewMode === "view"
 
   // Rating badge variant
@@ -1295,12 +1327,22 @@ export default function TeacherTeachingReportPage() {
               <div>
                 <Label className="font-semibold mb-2 block">{t("照片（课堂活动、学生作业等）")}</Label>
                 {isView ? (
-                  <div className="flex gap-2 flex-wrap">
-                    {(report as any)._photos?.map((url: string, i: number) => (
-                      <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                        <img src={url} alt={`photo-${i}`} className="h-20 w-20 object-cover rounded border" />
-                      </a>
-                    )) || <span className="text-sm text-gray-400">{t("无照片")}</span>}
+                  <div className="flex gap-3 flex-wrap">
+                    {((report as any)._photos || []).length ? (report as any)._photos.map((url: string, i: number) => (
+                      <div key={i} className="flex flex-col items-center gap-1">
+                        <a href={url} target="_blank" rel="noopener noreferrer">
+                          <img src={url} alt={`photo-${i}`} className="h-20 w-20 object-cover rounded border" />
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => removeExistingAttachment("photos", i)}
+                          disabled={saving}
+                          className="inline-flex items-center gap-1 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[11px] text-red-600 hover:bg-red-100 disabled:opacity-50"
+                        >
+                          <Trash2 className="h-3 w-3" />{t("删除")}
+                        </button>
+                      </div>
+                    )) : <span className="text-sm text-gray-400">{t("无照片")}</span>}
                   </div>
                 ) : (
                   <>
@@ -1334,8 +1376,25 @@ export default function TeacherTeachingReportPage() {
                         ))}
                       </div>
                     )}
-                    {(report as any)._photos?.length > 0 && (
-                      <p className="text-xs text-gray-400 mt-1">{t("已有 ")} {(report as any)._photos.length} {t(" 张照片（新上传会追加）")}</p>
+                    {((report as any)._photos || []).length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-xs text-gray-400 mb-1">{t("已有 ")} {(report as any)._photos.length} {t(" 张照片，点「删除」可移除")}</p>
+                        <div className="flex gap-3 flex-wrap">
+                          {(report as any)._photos.map((url: string, i: number) => (
+                            <div key={i} className="flex flex-col items-center gap-1">
+                              <img src={url} alt={`saved-photo-${i}`} className="h-16 w-16 object-cover rounded border" />
+                              <button
+                                type="button"
+                                onClick={() => removeExistingAttachment("photos", i)}
+                                disabled={saving}
+                                className="inline-flex items-center gap-1 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[11px] text-red-600 hover:bg-red-100 disabled:opacity-50"
+                              >
+                                <Trash2 className="h-3 w-3" />{t("删除")}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </>
                 )}
@@ -1348,14 +1407,24 @@ export default function TeacherTeachingReportPage() {
                 <Label className="font-semibold mb-2 block">{t("文档（教案、习题等）")}</Label>
                 {isView ? (
                   <div className="flex gap-2 flex-wrap">
-                    {(report as any)._documents?.map((url: string, i: number) => (
-                      <a key={i} href={url} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded text-sm hover:bg-blue-100"
-                      >
-                        <FileText className="h-4 w-4" />
-                        {decodeURIComponent(url.split('/').pop()?.split('_').slice(1).join('_') || `${t("文档")}${i+1}`)}
-                      </a>
-                    )) || <span className="text-sm text-gray-400">{t("无文档")}</span>}
+                    {((report as any)._documents || []).length ? (report as any)._documents.map((url: string, i: number) => (
+                      <div key={i} className="flex items-center gap-1 px-2 py-1 bg-blue-50 rounded">
+                        <a href={url} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-blue-700 text-sm hover:underline"
+                        >
+                          <FileText className="h-4 w-4" />
+                          {decodeURIComponent(url.split('/').pop()?.split('_').slice(1).join('_') || `${t("文档")}${i+1}`)}
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => removeExistingAttachment("documents", i)}
+                          disabled={saving}
+                          className="ml-1 inline-flex items-center gap-0.5 rounded border border-red-200 bg-white px-1.5 py-0.5 text-[11px] text-red-600 hover:bg-red-50 disabled:opacity-50"
+                        >
+                          <Trash2 className="h-3 w-3" />{t("删除")}
+                        </button>
+                      </div>
+                    )) : <span className="text-sm text-gray-400">{t("无文档")}</span>}
                   </div>
                 ) : (
                   <>
@@ -1380,6 +1449,27 @@ export default function TeacherTeachingReportPage() {
                               className="text-red-500 text-xs hover:underline"
                             >
                               {t("移除")}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {((report as any)._documents || []).length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs text-gray-400">{t("已有 ")} {(report as any)._documents.length} {t(" 份文档，点「删除」可移除")}</p>
+                        {(report as any)._documents.map((url: string, i: number) => (
+                          <div key={i} className="flex items-center gap-2 text-sm">
+                            <FileText className="h-4 w-4 text-blue-500" />
+                            <span className="truncate max-w-[280px]">
+                              {decodeURIComponent(url.split('/').pop()?.split('_').slice(1).join('_') || `${t("文档")}${i+1}`)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => removeExistingAttachment("documents", i)}
+                              disabled={saving}
+                              className="text-red-500 text-xs hover:underline disabled:opacity-50"
+                            >
+                              {t("删除")}
                             </button>
                           </div>
                         ))}

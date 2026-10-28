@@ -18,7 +18,7 @@ import { useCurrentTeacher } from "@/hooks/useCurrentTeacher"
 import { scoreToGrade, gradeColorClass, formatGrade } from "@/lib/utils"
 import {
   ArrowLeft, Printer, Download, Save, Edit3, FileText,
-  Loader2, Settings, X, PlusCircle
+  Loader2, Settings, X, PlusCircle, Trash2,
 } from "lucide-react"
 import ReportSettingsManager, { type ReportSettingsPreset } from "@/app/components/report/ReportSettingsManager"
 import { downloadReportPDF, generateReportHTML, resolveEnrichment } from "@/lib/pdf-generator"
@@ -437,6 +437,8 @@ export default function StudentReportContent() {
   // 删除指定照片：把剩下的文件名 PATCH 回去
   const removePhoto = async (idx: number) => {
     if (!report) return
+    const target = normalizePhotos(report.report_photos)[idx]
+    if (!window.confirm(`${t("确定删除这个附件？")}\n${target || ''}`)) return
     try {
       setSaving(true)
       const remaining = normalizePhotos(report.report_photos).filter((_, i) => i !== idx)
@@ -536,6 +538,100 @@ export default function StudentReportContent() {
         </div>
       }
     >
+      {/* ─── 附件（照片 / PDF）：不用点「编辑」也能上传和删除 ─── */}
+      {report && (
+        <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-gray-800">
+                {t("照片 / 附件")}（{normalizePhotos(report.report_photos).length}）
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {t("上传后立刻生效（不用点保存）；点附件下面的「删除」就能删掉")}
+              </p>
+            </div>
+            <input
+              type="file"
+              accept="image/*,application/pdf"
+              multiple
+              onChange={handlePhotoUpload}
+              disabled={saving}
+              className="text-sm"
+            />
+          </div>
+
+          {normalizePhotos(report.report_photos).length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-3">
+              {normalizePhotos(report.report_photos).map((fname, i) => {
+                const isPdf = /\.pdf$/i.test(fname)
+                return (
+                  <div key={`${fname}-${i}`} className="flex flex-col items-center gap-1">
+                    {isPdf ? (
+                      <a
+                        href={photoUrl(fname, report)}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={fname}
+                        className="w-24 h-24 rounded-lg border border-gray-200 bg-red-50 flex flex-col items-center justify-center gap-1 hover:border-red-400 overflow-hidden"
+                      >
+                        {pdfPageImages[fname]?.[0] ? (
+                          <>
+                            <img src={pdfPageImages[fname][0]} alt={fname} className="w-full h-[80px] object-cover object-top" />
+                            <span className="text-[9px] text-red-600 font-semibold leading-none pb-0.5">
+                              PDF · {pdfPageImages[fname].length}{t("页")}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="h-6 w-6 text-red-500" />
+                            <span className="text-[10px] text-red-600 font-medium">PDF</span>
+                          </>
+                        )}
+                      </a>
+                    ) : (
+                      <img
+                        src={photoUrl(fname, report)}
+                        alt={`upload-${i}`}
+                        className="w-24 h-24 object-cover rounded-lg border border-gray-200"
+                      />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(i)}
+                      disabled={saving}
+                      className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-600 hover:bg-red-100 disabled:opacity-50"
+                      aria-label="删除"
+                    >
+                      <Trash2 className="h-3 w-3" />{t("删除")}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {Object.keys(pdfPageImages).length > 0 && (
+            <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-2.5">
+              <p className="text-[11px] font-semibold text-gray-600 mb-2">
+                {t("PDF 内容预览")}（{t("每页渲染成图，报告和导出的 PDF 都会显示")}）
+              </p>
+              {Object.entries(pdfPageImages).map(([fn, pages]) => (
+                <div key={fn} className="mb-2 last:mb-0">
+                  <p className="text-[10px] text-gray-500 mb-1 truncate" title={fn}>{fn}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {pages.length ? pages.map((src, k) => (
+                      <img key={k} src={src} alt={`${fn}-p${k + 1}`} title={`${t("第")} ${k + 1} ${t("页")}`} className="w-16 h-20 object-contain bg-white border border-gray-200 rounded" />
+                    )) : (
+                      <span className="text-[10px] text-gray-400">{t("渲染中…")}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ─── Report Preview (iframe from generateReportHTML) ─── */}
       <div className="report-container" id="student-report-print">
         <iframe
@@ -711,94 +807,6 @@ export default function StudentReportContent() {
                   className="text-sm mt-1" rows={3}
                   placeholder={t("填写功课班评语...")}
                 />
-              </div>
-
-              {/* 上传文档/照片 */}
-              <div>
-                <Label className="text-xs font-semibold">{t("上传文档/照片")}</Label>
-                <p className="text-xs text-gray-400 mt-0.5">{t("每份报告都可上传照片（jpg/png/webp/gif）或 PDF 文件，最多 10 个、每个 50MB；照片会显示在报告和PDF里，PDF 列成附件")}</p>
-                <div className="mt-1 flex items-center gap-2">
-                  <input
-                    type="file"
-                    accept="image/*,application/pdf"
-                    multiple
-                    onChange={handlePhotoUpload}
-                    className="text-sm"
-                  />
-                </div>
-                {(report.report_photos && normalizePhotos(report.report_photos).length > 0) ? (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {normalizePhotos(report.report_photos).map((p, i) => {
-                      const isPdf = /\.pdf$/i.test(p)
-                      return (
-                      <div key={i} className="relative group">
-                        {isPdf ? (
-                          <a
-                            href={photoUrl(p, report)}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="w-20 h-20 rounded-lg border border-gray-200 bg-red-50 flex flex-col items-center justify-center gap-1 hover:border-red-400 overflow-hidden"
-                            title={p}
-                          >
-                            {pdfPageImages[p]?.[0] ? (
-                              <>
-                                <img src={pdfPageImages[p][0]} alt={p} className="w-full h-[68px] object-cover object-top" />
-                                <span className="text-[8px] text-red-600 font-semibold leading-none pb-0.5">
-                                  PDF · {pdfPageImages[p].length}{t("页")}
-                                </span>
-                              </>
-                            ) : (
-                              <>
-                                <FileText className="h-6 w-6 text-red-500" />
-                                <span className="text-[9px] text-red-600 font-medium">PDF</span>
-                              </>
-                            )}
-                          </a>
-                        ) : (
-                          <img
-                            src={photoUrl(p, report)}
-                            alt={`upload-${i}`}
-                            className="w-20 h-20 object-cover rounded-lg border border-gray-200"
-                          />
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => removePhoto(i)}
-                          className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500 text-white text-xs leading-none flex items-center justify-center shadow hover:bg-red-600"
-                          aria-label="删除"
-                        >×</button>
-                      </div>
-                      )
-                    })}
-                  </div>
-                ) : null}
-
-                {/* PDF 内容预览：把 PDF 每页渲染成图，内容看得见 */}
-                {Object.keys(pdfPageImages).length > 0 && (
-                  <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-2.5">
-                    <p className="text-[11px] font-semibold text-gray-600 mb-2">
-                      {t("PDF 内容预览")}（{t("每页渲染成图，报告和导出的 PDF 都会显示")}）
-                    </p>
-                    {Object.entries(pdfPageImages).map(([fn, pages]) => (
-                      <div key={fn} className="mb-2 last:mb-0">
-                        <p className="text-[10px] text-gray-500 mb-1 truncate" title={fn}>{fn}</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {pages.length ? pages.map((src, i) => (
-                            <img
-                              key={i}
-                              src={src}
-                              alt={`${fn}-p${i + 1}`}
-                              title={`${t("第")} ${i + 1} ${t("页")}`}
-                              className="w-16 h-20 object-contain bg-white border border-gray-200 rounded"
-                            />
-                          )) : (
-                            <span className="text-[10px] text-gray-400">{t("渲染中…")}</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {/* Enrichment Class（只对名单上的学生显示，逐科写评价） */}
