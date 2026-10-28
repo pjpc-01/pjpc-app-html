@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
-import { getContributionRate, pendingRedeemCost } from '@/lib/contribution'
+import { getContributionRate, pendingRedeemCost, lockedPointsOf } from '@/lib/contribution'
 
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
 
@@ -88,6 +88,8 @@ export async function GET(request: NextRequest) {
         held,
         available: balanceNow - held,
         points_now: Number(student?.points || 0),
+        // 还在锁定中的投入（物品完成才发放贡献积分，下架会全数退回）
+        locked: student ? await lockedPointsOf(token, student.id) : { points: 0, willEarn: 0 },
       },
       my_point_logs: pointLogs.map((x: any) => ({
         id: x.id, amount: Number(x.amount || 0), kind: x.kind || '',
@@ -117,6 +119,36 @@ export async function GET(request: NextRequest) {
         stock: x.stock === undefined || x.stock === null ? null : Number(x.stock), status: x.status || 'active',
       })),
       my_logs: myLogs.items || [],
+      // 我给哪个物品投了多少（按物品汇总，带锁定/已发放/已退回状态）
+      my_donations: await (async () => {
+        if (!student?.id) return []
+        const myDonationLogs = await get(
+          `contribution_logs/records?perPage=200&sort=-created&filter=${encodeURIComponent(`student="${student.id}" && kind="donate"`)}`
+        )
+        const map = new Map<string, any>()
+        for (const x of myDonationLogs.items || []) {
+          const key = String(x.item || x.item_name || '')
+          const cur = map.get(key) || {
+            itemId: x.item || '', itemName: x.item_name || '-',
+            points: 0, earned: 0, times: 0,
+            pending: 0, released: 0, refunded: 0,
+            status: 'pending', last: x.created || '',
+          }
+          cur.points += Number(x.points || 0)
+          cur.earned += Number(x.earned || 0)
+          cur.times += 1
+          cur[String(x.status || 'pending')] += 1
+          if (String(x.created || '') > String(cur.last || '')) cur.last = x.created
+          map.set(key, cur)
+        }
+        return [...map.values()]
+          .map(x => ({
+            ...x,
+            // 整件物品的状态：全退回 = refunded，全发放 = released，否则 pending（部分锁定）
+            status: x.pending > 0 ? 'pending' : (x.refunded === x.times ? 'refunded' : 'released'),
+          }))
+          .sort((a, b) => String(b.last).localeCompare(String(a.last)))
+      })(),
       my_redemptions: myRedemptions.items || [],
       pending_redemptions: allPending.items || [],
     })

@@ -128,13 +128,16 @@ try {
   // ── 6) 贡献 / 兑换 / 按中心排行 ───────────────
   const item = await (await fetch(PB + '/api/collections/contribution_items/records', {
     method: 'POST', headers: H,
-    body: JSON.stringify({ name: 'ZZ 回归测试物品', target_points: 9999, current_points: 0, center: 'PU1', status: 'active' }),
+    body: JSON.stringify({ name: 'ZZ 回归测试物品', target_points: 100, current_points: 0, center: 'PU1', status: 'active' }),
   })).json()
   const donate = await send('/api/contribution/donate', 'POST', { itemId: item.id, points: 100 }, SH)
   const stuAfter = await (await fetch(PB + '/api/collections/students/records/' + t1.s.id, { headers: { Authorization: su } })).json()
   const itemAfter = await (await fetch(PB + '/api/collections/contribution_items/records/' + item.id, { headers: { Authorization: su } })).json()
   ok('投 100 分 → 学生扣分、物品加分', donate.status === 200 && Number(stuAfter.points) === 700 && Number(itemAfter.current_points) === 100,
     `学生 ${stuAfter.points} / 物品 ${itemAfter.current_points}`)
+  // 新规则（2026-10-28）：物品筹够那一刻才发贡献积分，这里目标=100 所以当场发放
+  ok('物品筹够 → 贡献积分当场发放', itemAfter.status === 'achieved' && Number(stuAfter.contribution_points || 0) === 100,
+    `状态 ${itemAfter.status} / 贡献积分 ${stuAfter.contribution_points}`)
   const over = await send('/api/contribution/donate', 'POST', { itemId: item.id, points: 99999 }, SH)
   ok('超投被拦', over.status >= 400, `实际 ${over.status}`)
 

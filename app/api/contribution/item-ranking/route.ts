@@ -10,7 +10,7 @@ const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
  *
  * GET ?itemId=xxx
  *
- * 数据来源：contribution_logs（item 字段 + kind=donate 的投入记录）
+ * 数据来源：contribution_logs（item 字段 + kind=donate 的投入记录；已退回的不算）
  * 返回：物品进度 + 按投入分数从多到少排的学生列表
  */
 export async function GET(request: NextRequest) {
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       const d = await pbGet(
         token,
         `contribution_logs/records?perPage=500&page=${page}&sort=-created&filter=${encodeURIComponent(
-          `item="${itemId}" && kind="donate"`
+          `item="${itemId}" && kind="donate" && status != "refunded"`
         )}`
       )
       const got = d.items || []
