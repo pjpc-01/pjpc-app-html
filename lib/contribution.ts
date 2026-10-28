@@ -78,3 +78,117 @@ export async function pendingRedeemCost(token: string, studentId: string): Promi
   const d = await pbGet(token, `reward_redemptions/records?perPage=200&filter=${encodeURIComponent(`student="${studentId}" && status="pending"`)}`)
   return (d.items || []).reduce((a: number, x: any) => a + Number(x.cost || 0), 0)
 }
+
+// ── 投入积分的「锁定 → 发放 / 退回」 ──
+//
+// 院长 2026-10-28 定的规则：学生把积分投进中心物品时，积分先从总积分扣掉并**锁住**，
+// 贡献积分要等物品完成（筹够）才发；物品在完成前被删除或下架，投进去的积分**全数退回**。
+// 所有中间状态记在 contribution_logs.status：pending（锁定）/ released（已发放）/ refunded（已退回）。
+
+/** 某个物品还没结算（还在锁定中）的投入记录 */
+export async function pendingItemContributions(token: string, itemId: string): Promise<any[]> {
+  const d = await pbGet(
+    token,
+    `contribution_logs/records?perPage=500&filter=${encodeURIComponent(`item="${itemId}" && kind="donate" && status="pending"`)}`
+  )
+  return d.items || []
+}
+
+/** 物品完成 → 把锁定的贡献积分按各自比率发给投入的学生 */
+export async function releaseItemContributions(
+  token: string,
+  itemId: string,
+  operator = 'system'
+): Promise<{ rows: number; granted: number; students: number; failed: number }> {
+  const rows = await pendingItemContributions(token, itemId)
+  const H = { 'Content-Type': 'application/json', Authorization: token }
+  let granted = 0, students = 0, failed = 0
+
+  for (const r of rows) {
+    const sid = String(r.student || '')
+    const earned = Number(r.earned || 0)
+    try {
+      if (sid && earned > 0) {
+        await addContributionPoints(token, {
+          studentId: sid,
+          studentName: r.student_name || '',
+          amount: earned,
+          kind: 'donate',
+          donatePoints: Number(r.points || 0),
+          rate: Number(r.rate ?? 1),
+          note: `物品完成入账：「${r.item_name || '-'}」`,
+          operator,
+          center: r.center || '',
+        })
+        granted += earned
+        students++
+      }
+      await fetch(`${PB_URL}/api/collections/contribution_logs/records/${r.id}`, {
+        method: 'PATCH', headers: H,
+        body: JSON.stringify({ status: 'released', settled_at: new Date().toISOString() }),
+      })
+    } catch {
+      failed++
+    }
+  }
+  return { rows: rows.length, granted, students, failed }
+}
+
+/** 物品完成前被删除 / 下架 → 投进去的普通积分全数退回 */
+export async function refundItemContributions(
+  token: string,
+  itemId: string,
+  reason = '物品未完成',
+  operator = 'system'
+): Promise<{ rows: number; refunded: number; students: number; failed: number }> {
+  const rows = await pendingItemContributions(token, itemId)
+  const H = { 'Content-Type': 'application/json', Authorization: token }
+  let refunded = 0, students = 0, failed = 0
+
+  for (const r of rows) {
+    const sid = String(r.student || '')
+    const pts = Number(r.points || 0)
+    try {
+      if (sid && pts > 0) {
+        const stu = await pbGet(token, `students/records/${sid}`)
+        if (stu?.id) {
+          const before = Number(stu.points || 0)
+          const after = before + pts
+          await fetch(`${PB_URL}/api/collections/students/records/${sid}`, {
+            method: 'PATCH', headers: H, body: JSON.stringify({ points: after }),
+          })
+          await fetch(`${PB_URL}/api/collections/point_logs/records`, {
+            method: 'POST', headers: H,
+            body: JSON.stringify({
+              student: sid, teacher: '', amount: pts,
+              reason: `${reason}：退回「${r.item_name || '-'}」投入的 ${pts} 分`,
+              points_before: before, points_after: after,
+            }),
+          }).catch(() => {})
+          refunded += pts
+          students++
+        }
+      }
+      await fetch(`${PB_URL}/api/collections/contribution_logs/records/${r.id}`, {
+        method: 'PATCH', headers: H,
+        body: JSON.stringify({ status: 'refunded', settled_at: new Date().toISOString() }),
+      })
+    } catch {
+      failed++
+    }
+  }
+  return { rows: rows.length, refunded, students, failed }
+}
+
+/** 学生被锁住的投入分（还没结算）→ 用于学生页提示「X 分等物品完成才入账」 */
+export async function lockedPointsOf(token: string, studentId: string): Promise<{ points: number; willEarn: number }> {
+  const d = await pbGet(
+    token,
+    `contribution_logs/records?perPage=500&filter=${encodeURIComponent(`student="${studentId}" && kind="donate" && status="pending"`)}`
+  )
+  const rows = d.items || []
+  return {
+    points: rows.reduce((a: number, x: any) => a + Number(x.points || 0), 0),
+    willEarn: rows.reduce((a: number, x: any) => a + Number(x.earned || 0), 0),
+  }
+}

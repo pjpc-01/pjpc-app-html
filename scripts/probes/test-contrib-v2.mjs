@@ -30,10 +30,30 @@ try {
   const stuSetRate = await send('/api/contribution/admin','PATCH',{points_rate:2},SH)
   ok('学生改比率 = 403', stuSetRate.status===403, `实际 ${stuSetRate.status}`)
 
-  // 2) 投 100 → 得 50
+  // 2) 投 100 → 先锁住（物品没完成不发贡献积分）
   const item = await (await fetch(PB+'/api/collections/contribution_items/records',{method:'POST',headers:H,body:JSON.stringify({name:'ZZ v2 物品',target_points:9999,current_points:0,center:'PU1',status:'active'})})).json()
   const don = await send('/api/contribution/donate','POST',{itemId:item.id,points:100},SH)
-  ok('投 100 得 50 贡献积分', don.status===200 && don.body.earned_contribution_points===50 && don.body.contribution_balance===50, JSON.stringify({earned:don.body.earned_contribution_points, bal:don.body.contribution_balance}))
+  ok('投 100 → 锁住 50（还没发）', don.status===200 && don.body.earned_pending===50 && don.body.released_now===false, JSON.stringify({pending:don.body.earned_pending, released:don.body.released_now}))
+  const sumLock = await get('/api/contribution/summary',SH)
+  ok('锁定期间贡献积分还是 0', (sumLock.body.balance?.balance||0)===0, `bal=${sumLock.body.balance?.balance}`)
+  ok('锁定期间学生总积分 500→400', (sumLock.body.balance?.points_now||0)===400, `points=${sumLock.body.balance?.points_now}`)
+
+  // 2b) 下架 → 全数退回
+  const close = await send(`/api/contribution/item?type=upgrade&id=${item.id}`,'PATCH',{action:'close'},AH)
+  const sumRefund = await get('/api/contribution/summary',SH)
+  ok('下架后积分退回 400→500', (sumRefund.body.balance?.points_now||0)===500, `points=${sumRefund.body.balance?.points_now}`)
+  ok('下架不产生贡献积分', (sumRefund.body.balance?.balance||0)===0, `bal=${sumRefund.body.balance?.balance}`)
+  ok('下架结果有记录', close.status===200 && Number(close.body.refunded?.refunded||0)===100, JSON.stringify(close.body.refunded||{}))
+  await fetch(PB+'/api/collections/contribution_items/records/'+item.id,{method:'DELETE',headers:H}).catch(()=>{})
+
+  // 2c) 物品筹够 → 那一刻才发贡献积分
+  const item2 = await (await fetch(PB+'/api/collections/contribution_items/records',{method:'POST',headers:H,body:JSON.stringify({name:'ZZ v2 达标物品',target_points:100,current_points:0,center:'PU1',status:'active'})})).json()
+  const don2 = await send('/api/contribution/donate','POST',{itemId:item2.id,points:100},SH)
+  ok('筹够 → 当场发放 50 贡献积分', don2.status===200 && don2.body.released_now===true && Number(don2.body.released?.granted||0)===50, JSON.stringify({released:don2.body.released_now, granted:don2.body.released?.granted}))
+  const sumAfter = await get('/api/contribution/summary',SH)
+  ok('发放后余额 50', (sumAfter.body.balance?.balance||0)===50, `bal=${sumAfter.body.balance?.balance}`)
+  const item2After = await (await fetch(PB+'/api/collections/contribution_items/records/'+item2.id,{headers:H})).json()
+  ok('物品状态 achieved', item2After.status==='achieved', item2After.status)
 
   // 3) 手动 +30
   const adj = await send('/api/contribution/admin','POST',{studentId:s.id,amount:30,note:'搬桌椅奖励'},AH)

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
-import { addContributionPoints, earnedFrom, getContributionRate } from '@/lib/contribution'
+import { earnedFrom, getContributionRate, releaseItemContributions } from '@/lib/contribution'
 
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
 
@@ -76,45 +76,45 @@ export async function POST(request: NextRequest) {
       }),
     }).catch(() => {})
 
-    // 5) 物品进度 + 贡献记录
+    // 5) 物品进度 + 投入记录（积分先锁定，物品完成才发放贡献积分）
+    const rate = await getContributionRate(token)
+    const earned = earnedFrom(points, rate)
     const nextCurrent = current + points
+    const reached = target > 0 && nextCurrent >= target
+
     await fetch(`${PB_URL}/api/collections/contribution_items/records/${encodeURIComponent(itemId)}`, {
       method: 'PATCH', headers: H,
       body: JSON.stringify({
         current_points: nextCurrent,
-        ...(target > 0 && nextCurrent >= target ? { status: 'achieved' } : {}),
+        ...(reached ? { status: 'achieved' } : {}),
       }),
     }).catch(() => {})
 
-    await fetch(`${PB_URL}/api/collections/contribution_logs/records`, {
+    const logRes = await fetch(`${PB_URL}/api/collections/contribution_logs/records`, {
       method: 'POST', headers: H,
       body: JSON.stringify({
         student: sid, student_name: student.name || '',
         item: itemId, item_name: item.name || '',
         points, kind: 'donate', center: student.center || '',
         note: String(body.note || '').slice(0, 200),
+        // 锁定：物品完成前不发贡献积分，删/下架就把这 points 全数退回（lib/contribution.ts）
+        status: 'pending',
+        rate,
+        earned,
       }),
-    }).catch(() => {})
+    })
+    if (!logRes.ok) {
+      // 记录写不进去就把积分加回去，不能让学生的分数凭空少掉
+      await fetch(`${PB_URL}/api/collections/students/records/${encodeURIComponent(sid)}`, {
+        method: 'PATCH', headers: H, body: JSON.stringify({ points: before }),
+      }).catch(() => {})
+      return NextResponse.json({ success: false, error: '记录投入失败，积分已退回，请再试一次' }, { status: 500 })
+    }
 
-    // 6) 贡献积分（投入 × 比率）入账 + 流水
-    const rate = await getContributionRate(token)
-    const earned = earnedFrom(points, rate)
-    let contributionBalance: number | null = null
-    if (earned > 0) {
-      try {
-        const r = await addContributionPoints(token, {
-          studentId: sid,
-          studentName: student.name || '',
-          amount: earned,
-          kind: 'donate',
-          donatePoints: points,
-          rate,
-          note: `投入 ${points} 分给「${item.name || '-'}」`,
-          operator: student.name || '',
-          center: student.center || '',
-        })
-        contributionBalance = r.balance
-      } catch { /* 贡献积分失败不回滚投入，下次可在管理端补 */ }
+    // 6) 筹够了 → 把锁定的贡献积分发给所有投入的人
+    let released: any = null
+    if (reached) {
+      released = await releaseItemContributions(token, itemId, student.name || 'system')
     }
 
     return NextResponse.json({
@@ -123,8 +123,9 @@ export async function POST(request: NextRequest) {
       points_after: after,
       contributed: points,
       rate,
-      earned_contribution_points: earned,
-      contribution_balance: contributionBalance,
+      earned_pending: earned,          // 锁住的贡献积分（物品完成才入账）
+      released_now: reached,
+      released,                        // 本次触发的发放结果（rows/granted/students）
       item: { id: itemId, name: item.name, current_points: nextCurrent, target_points: target },
     })
   } catch (e) {

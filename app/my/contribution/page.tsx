@@ -190,7 +190,7 @@ export default function MyContributionPage() {
       <section className="space-y-3">
         <div className="flex items-end justify-between">
           <h2 className="flex items-center gap-2 text-base font-semibold"><Heart className="h-4 w-4 text-orange-500" />{t("中心要升级的东西")}</h2>
-          <p className="text-xs text-gray-500">{t("投进去的积分会从总积分扣掉，同时 1:1 攒贡献积分")}</p>
+          <p className="text-xs text-gray-500">{t("投进去的积分先从总积分扣掉并锁着，物品完成才发放贡献积分；物品下架会全数退回")}</p>
         </div>
 
         {items.length === 0 ? (
@@ -323,6 +323,47 @@ export default function MyContributionPage() {
             </div>
           )}
         </div>
+      </section>
+
+      {/* 我投过的物品（按物品汇总） */}
+      <section className="space-y-3">
+        <h2 className="flex items-center gap-2 text-base font-semibold"><Heart className="h-4 w-4 text-orange-500" />{t("我投过的物品")}</h2>
+        {(data.my_donations || []).length === 0 ? (
+          <div className="rounded-xl border bg-white py-6 text-center text-sm text-gray-500">{t("还没有投过积分")}</div>
+        ) : (
+          <div className="overflow-hidden rounded-xl border bg-white">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-gray-50 text-left text-xs text-gray-500">
+                  <th className="px-3 py-2">{t("物品")}</th>
+                  <th className="px-3 py-2 text-right">{t("我投入")}</th>
+                  <th className="px-3 py-2 text-right">{t("贡献积分")}</th>
+                  <th className="px-3 py-2 text-right">{t("次数")}</th>
+                  <th className="px-3 py-2">{t("状态")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(data.my_donations || []).map((x: any) => (
+                  <tr key={x.itemId || x.itemName} className="border-b last:border-0">
+                    <td className="px-3 py-2 font-medium">{x.itemName}</td>
+                    <td className="px-3 py-2 text-right">{x.points}</td>
+                    <td className="px-3 py-2 text-right">{x.earned}</td>
+                    <td className="px-3 py-2 text-right text-xs text-gray-500">{x.times}</td>
+                    <td className="px-3 py-2">
+                      <span className={`rounded px-1.5 py-0.5 text-[11px] ${
+                        x.status === "released" ? "bg-green-50 text-green-700"
+                        : x.status === "refunded" ? "bg-gray-100 text-gray-600"
+                        : "bg-orange-50 text-orange-700"
+                      }`}>
+                        {x.status === "released" ? t("物品完成已入账") : x.status === "refunded" ? t("已退回") : t("等物品完成")}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       {/* 我的贡献积分明细 */}

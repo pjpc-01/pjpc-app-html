@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
-import { pbGet } from '@/lib/contribution'
+import { pbGet, refundItemContributions, releaseItemContributions } from '@/lib/contribution'
 
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
 
@@ -77,6 +77,12 @@ export async function DELETE(request: NextRequest) {
       }
     }
 
+    // 升级物品在完成前被删除 → 投进去的积分全数退回学生（院长 2026-10-28 的规则）
+    let refunded: any = null
+    if (type === 'upgrade') {
+      refunded = await refundItemContributions(token, id, `物品「${item.name || ''}」未完成已删除`, gate.session.name || 'system')
+    }
+
     const r = await fetch(`${PB_URL}/api/collections/${collection}/records/${id}`, {
       method: 'DELETE',
       headers: { Authorization: token },
@@ -86,8 +92,79 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: `删除失败（${r.status}）${t.slice(0, 80)}` }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, deleted: { id, name: item.name || '', type } })
+    return NextResponse.json({ success: true, deleted: { id, name: item.name || '', type }, refunded })
   } catch (e) {
     return NextResponse.json({ success: false, error: e instanceof Error ? e.message : '删除失败' }, { status: 500 })
+  }
+}
+
+/**
+ * 关掉或标记完成物品。
+ *
+ * PATCH ?type=upgrade&id=xxx   body { action: 'close' | 'complete' }
+ *
+ * close     = 下架：投进去的积分全数退回，进度清零（院长 2026-10-28 的规则）
+ * complete  = 手动标记完成：把锁定的贡献积分发给投入的学生
+ */
+export async function PATCH(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
+
+  const { searchParams } = new URL(request.url)
+  const type = String(searchParams.get('type') || 'upgrade')
+  const id = String(searchParams.get('id') || '')
+  let body: any = {}
+  try { body = await request.json() } catch { return NextResponse.json({ success: false, error: '请求格式不对' }, { status: 400 }) }
+  const action = String(body.action || '')
+
+  if (type !== 'upgrade') return NextResponse.json({ success: false, error: '只有中心物品需要这个操作' }, { status: 400 })
+  if (!id) return NextResponse.json({ success: false, error: '要指定物品' }, { status: 400 })
+  if (!['close', 'complete', 'received'].includes(action)) {
+    return NextResponse.json({ success: false, error: 'action 只能是 close / complete / received' }, { status: 400 })
+  }
+
+  try {
+    const token = await getAdminToken()
+    const item = await pbGet(token, `contribution_items/records/${id}`)
+    if (!item?.id) return NextResponse.json({ success: false, error: '这个物品已经不存在' }, { status: 404 })
+
+    if (action === 'close') {
+      const refunded = await refundItemContributions(token, id, `物品「${item.name || ''}」已下架`, gate.session.name || 'system')
+      const r = await fetch(`${PB_URL}/api/collections/contribution_items/records/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: token },
+        body: JSON.stringify({ status: 'closed', current_points: 0 }),
+      })
+      if (!r.ok) throw new Error(`下架失败（${r.status}）`)
+      return NextResponse.json({ success: true, action, refunded })
+    }
+
+    // received：物品达成后校长/老师领了回来，留一条记录（谁、什么时候、备注）
+    if (action === 'received') {
+      const payload = {
+        received_at: new Date().toISOString(),
+        received_by: gate.session.name || gate.session.role || '',
+        received_note: String(body.note || '').slice(0, 300),
+      }
+      const rr = await fetch(`${PB_URL}/api/collections/contribution_items/records/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: token },
+        body: JSON.stringify(payload),
+      })
+      if (!rr.ok) throw new Error(`记录领取失败（${rr.status}）`)
+      return NextResponse.json({ success: true, action, received: payload })
+    }
+
+    // complete
+    const r = await fetch(`${PB_URL}/api/collections/contribution_items/records/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: token },
+      body: JSON.stringify({ status: 'achieved' }),
+    })
+    if (!r.ok) throw new Error(`标记完成失败（${r.status}）`)
+    const released = await releaseItemContributions(token, id, gate.session.name || 'system')
+    return NextResponse.json({ success: true, action, released })
+  } catch (e) {
+    return NextResponse.json({ success: false, error: e instanceof Error ? e.message : '操作失败' }, { status: 500 })
   }
 }

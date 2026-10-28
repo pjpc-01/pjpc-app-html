@@ -181,6 +181,79 @@ export default function ContributionManagementPage() {
     } catch (e: any) { setMsg(String(e?.message || e)) } finally { setBusy(false) }
   }
 
+  // 导出 CSV（Excel 打开不乱码，带 BOM）
+  const downloadCsv = (filename: string, rows: (string | number)[][]) => {
+    const esc = (v: any) => {
+      const t2 = String(v ?? "")
+      return /[",\n]/.test(t2) ? `"${t2.replace(/"/g, '""')}"` : t2
+    }
+    const csv = "\uFEFF" + rows.map(r => r.map(esc).join(",")).join("\n")
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = filename
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
+
+  const today = () => new Date().toISOString().slice(0, 10)
+
+  const exportRank = () => {
+    const v = rankCenter ? (rank.groups || []).find((g: any) => g.center === rankCenter) : rank.overall
+    const list = v?.list || []
+    if (!list.length) { setMsg(t("没有数据可以导出")); return }
+    const rows: (string | number)[][] = [
+      [t("排名"), t("学生"), t("中心"), t("累计贡献"), t("占比"), t("次数")],
+      ...list.map((x: any, i: number) => [i + 1, x.name || "", x.center || "", x.points || 0, (x.percent || 0) + "%", x.times || 0]),
+    ]
+    downloadCsv(`贡献榜_${rankCenter || t("全校")}_${today()}.csv`, rows)
+    setMsg(t("已导出"))
+  }
+
+  const exportLogs = () => {
+    if (!logs.length) { setMsg(t("没有数据可以导出")); return }
+    const rows: (string | number)[][] = [
+      [t("时间"), t("学生"), t("中心"), t("类型"), t("变动"), t("余额"), t("投入"), t("说明"), t("操作人")],
+      ...logs.map((x: any) => [
+        String(x.created || "").slice(0, 16).replace("T", " "),
+        x.student_name || "", x.center || "", KIND_LABEL[x.kind] ? t(KIND_LABEL[x.kind]) : (x.kind || ""),
+        x.amount || 0, x.balance_after || 0, x.donate_points || 0, x.note || "", x.operator || "",
+      ]),
+    ]
+    downloadCsv(`贡献积分流水_${today()}.csv`, rows)
+    setMsg(t("已导出"))
+  }
+
+  const exportItemRank = () => {
+    const rowsRaw = itemRank?.rows || []
+    if (!rowsRaw.length) { setMsg(t("没有数据可以导出")); return }
+    const rows: (string | number)[][] = [
+      [t("排名"), t("学生"), t("中心"), t("投入"), t("次数"), t("占比")],
+      ...rowsRaw.map((r: any) => [r.rank, r.studentName || "", r.center || "", r.points || 0, r.times || 0, (r.share || 0) + "%"]),
+    ]
+    downloadCsv(`物品排行_${itemRank?.item?.name || ""}_${today()}.csv`, rows)
+    setMsg(t("已导出"))
+  }
+
+  // 物品达成后记录谁领取了
+  const markReceived = async (x: any) => {
+    const note = window.prompt(`${t("谁去领取？写个备注（可留空）")}`, "")
+    if (note === null) return
+    setBusy(true); setMsg("")
+    try {
+      const r = await fetch(`/api/contribution/item?type=upgrade&id=${encodeURIComponent(x.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "received", note }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d?.success) throw new Error(d?.error || `记录失败（${r.status}）`)
+      setMsg(`${t("已记录领取")}「${x.name}」`)
+      await load()
+    } catch (e: any) { setMsg(String(e?.message || e)) } finally { setBusy(false) }
+  }
+
   const addItem = async () => {
     if (!iName.trim()) { setMsg(t("先填物品名称")); return }
     setBusy(true); setMsg("")
@@ -216,10 +289,23 @@ export default function ContributionManagementPage() {
     } catch (e: any) { setMsg(String(e?.message || e)) } finally { setBusy(false) }
   }
 
+  // 下架 / 标记完成都走接口：下架会把投进去的积分全数退回，完成才发放贡献积分
   const setStatus = async (item: any, status: string) => {
+    if (status === "closed" && !window.confirm(`${t("下架")}「${item.name}」？${t("已投入的")} ${item.current_points || 0} ${t("分会全数退回给学生")}`)) return
     setBusy(true); setMsg("")
     try {
-      await patch("contribution_items", item.id, { status })
+      const r = await fetch(`/api/contribution/item?type=upgrade&id=${encodeURIComponent(item.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: status === "closed" ? "close" : "complete" }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d?.success) throw new Error(d?.error || `操作失败（${r.status}）`)
+      if (status === "closed") {
+        setMsg(`${t("已下架")}「${item.name}」，${t("退回")} ${d.refunded?.refunded || 0} ${t("分")}`)
+      } else {
+        setMsg(`${t("已标记完成")}「${item.name}」，${t("发放")} ${d.released?.granted || 0} ${t("贡献积分")}`)
+      }
       await load()
     } catch (e: any) { setMsg(String(e?.message || e)) } finally { setBusy(false) }
   }
@@ -480,6 +566,10 @@ export default function ContributionManagementPage() {
                       className={`rounded-md px-3 py-1.5 text-sm ${rankCenter === g.center ? "bg-gray-900 text-white" : "border text-gray-600 hover:bg-gray-50"}`}
                     >{g.center} <span className="text-xs opacity-70">{g.total_points}</span></button>
                   ))}
+                  <button
+                    onClick={exportRank}
+                    className="ml-auto rounded-md border px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+                  >{t("导出")}</button>
                 </div>
 
                 {(() => {
@@ -577,11 +667,24 @@ export default function ContributionManagementPage() {
                         <div className="flex flex-1 flex-col gap-2 p-3">
                           <p className="line-clamp-2 min-h-[2.5rem] text-sm font-medium">{x.name}</p>
                           <p className="text-xs text-gray-500">{x.current_points || 0} / {x.target_points || 0}{x.center ? ` · ${x.center}` : ""}</p>
+                          {x.status === "active" && Number(x.current_points || 0) > 0 && (
+                            <p className="text-[11px] text-orange-600">{t("投进去的积分先锁着，物品完成才发放")}</p>
+                          )}
                           <span className={`w-fit rounded px-1.5 py-0.5 text-[11px] ${
                             x.status === "active" ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"
                           }`}>
                             {x.status === "active" ? t("进行中") : x.status === "achieved" ? t("已完成") : t("已关闭")}
                           </span>
+                          {x.status === "achieved" && (
+                            x.received_at ? (
+                              <p className="text-[11px] text-gray-500">
+                                {t("已领取")} {String(x.received_at).slice(0, 10)}{x.received_by ? ` · ${x.received_by}` : ""}
+                                {x.received_note ? ` · ${x.received_note}` : ""}
+                              </p>
+                            ) : (
+                              <button className="w-fit rounded border border-green-300 px-2 py-1 text-[11px] text-green-700 hover:bg-green-50" disabled={busy} onClick={() => markReceived(x)}>{t("标记已领取")}</button>
+                            )
+                          )}
                           <div className="mt-auto flex items-center gap-2 pt-1">
                             <label className="flex-1 cursor-pointer rounded border px-2 py-1.5 text-center text-xs hover:bg-gray-50">
                               {t("换照片")}
@@ -589,7 +692,10 @@ export default function ContributionManagementPage() {
                                 onChange={(e) => { const f = e.target.files?.[0]; if (f) changeImage("contribution_items", x.id, f) }} />
                             </label>
                             {x.status === "active" && (
-                              <button className="flex-1 rounded border px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50" disabled={busy} onClick={() => setStatus(x, "closed")}>{t("关闭")}</button>
+                              <>
+                                <button className="rounded border px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50" disabled={busy} onClick={() => setStatus(x, "achieved")}>{t("标记完成")}</button>
+                                <button className="rounded border px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50" disabled={busy} onClick={() => setStatus(x, "closed")}>{t("下架")}</button>
+                              </>
                             )}
                           </div>
                           <div className="flex items-center gap-2">
@@ -678,7 +784,10 @@ export default function ContributionManagementPage() {
             {/* 贡献积分流水 */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base"><History className="h-4 w-4" />{t("贡献积分流水")}</CardTitle>
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle className="flex items-center gap-2 text-base"><History className="h-4 w-4" />{t("贡献积分流水")}</CardTitle>
+                  <button onClick={exportLogs} className="rounded-md border px-2 py-1 text-xs text-gray-600 hover:bg-gray-50">{t("导出")}</button>
+                </div>
                 <CardDescription>{t("最近")} {logs.length} {t("笔（投入按比率入账、兑换扣减、退回、手动调整）")}</CardDescription>
               </CardHeader>
               <CardContent>
@@ -738,7 +847,10 @@ export default function ContributionManagementPage() {
                   {itemRank.donors ? ` · ${itemRank.donors} ${t("人")}` : ""}
                 </p>
               </div>
-              <button className="rounded border px-2 py-1 text-xs text-gray-600 hover:bg-gray-50" onClick={() => setItemRank(null)}>{t("关闭")}</button>
+              <div className="flex items-center gap-2">
+                <button className="rounded border px-2 py-1 text-xs text-gray-600 hover:bg-gray-50" onClick={exportItemRank}>{t("导出")}</button>
+                <button className="rounded border px-2 py-1 text-xs text-gray-600 hover:bg-gray-50" onClick={() => setItemRank(null)}>{t("关闭")}</button>
+              </div>
             </div>
             <div className="max-h-[60vh] overflow-y-auto p-4">
               {itemRank.loading ? (
