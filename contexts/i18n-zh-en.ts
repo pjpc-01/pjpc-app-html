@@ -3640,4 +3640,8 @@ export const ZH_TO_EN: Record<string, string> = {
   "评估人": "Evaluator",
   "状态更新失败": "Failed to update status",
   "状态已更新为": "Status updated to ",
+  "永久删除失败：": "Permanent delete failed: ",
+  "恢复失败：": "Restore failed: ",
+  "请先选择科目": "Please choose a subject first",
+  "搜索教师 / 科目 / 日期": "Search teacher / subject / date",
 }

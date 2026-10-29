@@ -24,8 +24,7 @@ import { useTeachers } from "@/hooks/useTeachers"
 import {
   FileText, Save, Send, Plus, Trash2, Edit, ArrowLeft,
   Users, BookOpen, Target, AlertTriangle,
-  ClipboardList, User, Calendar, Image,
-} from "lucide-react"
+  ClipboardList, User, Calendar, Image, Printer, Search } from "lucide-react"
 import { toast } from "sonner"
 import { useLanguage } from "@/contexts/language-context"
 
@@ -116,6 +115,8 @@ interface TeachingReport {
   reviewer: string
   status: string
   center: string
+  _photos?: string[]
+  _documents?: string[]
 }
 
 const emptyReport = (teacherId: string, teacherName: string, center: string): TeachingReport => ({
@@ -240,8 +241,8 @@ async function fetchReport(id: string): Promise<TeachingReport | null> {
   }
 }
 
-async function fetchReports(opts: { teacherId?: string; grade?: string; page?: number; perPage?: number; bin?: boolean } = {}): Promise<{ items: any[]; totalPages: number; totalItems: number }> {
-  const { teacherId, grade, page = 1, perPage = 15, bin = false } = opts
+async function fetchReports(opts: { teacherId?: string; grade?: string; q?: string; page?: number; perPage?: number; bin?: boolean } = {}): Promise<{ items: any[]; totalPages: number; totalItems: number }> {
+  const { teacherId, grade, q, page = 1, perPage = 15, bin = false } = opts
   // Load ALL matching records, then sort + paginate client-side (PB proxy can't sort by created field)
   const allUrl = `${API_BASE}/records?perPage=500`
   const resp = await fetch(allUrl)
@@ -255,6 +256,13 @@ async function fetchReports(opts: { teacherId?: string; grade?: string; page?: n
   // Filter
   if (teacherId) items = items.filter((r: any) => r.teacher_id === teacherId)
   if (grade) items = items.filter((r: any) => r.grade === grade)
+  if (q && q.trim()) {
+    const kw = q.trim().toLowerCase()
+    items = items.filter((r: any) =>
+      [r.teacher_name, r.subject, r.grade, r.date, r.assessment_period, r.teaching_content]
+        .some(v => String(v || '').toLowerCase().includes(kw))
+    )
+  }
   
   // Sort by date descending, then created descending (newest first)
   items.sort((a: any, b: any) => {
@@ -308,6 +316,7 @@ export default function TeacherTeachingReportPage() {
   // ── 筛选 + 分页 ──
   const [filterTeacher, setFilterTeacher] = useState("")
   const [filterGrade, setFilterGrade] = useState("")
+  const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
@@ -331,6 +340,7 @@ export default function TeacherTeachingReportPage() {
     const { items, totalPages: tp, totalItems: ti } = await fetchReports({
       teacherId: effTeacherId,
       grade: effGrade,
+      q: search,
       page: pageNum,
       perPage: PER_PAGE,
       bin: binTab,
@@ -340,7 +350,7 @@ export default function TeacherTeachingReportPage() {
     setTotalItems(ti)
     setPage(pageNum)
     setLoading(false)
-  }, [teacher?.id, user?.teacher_id, user?.role, filterTeacher, filterGrade, binTab])
+  }, [teacher?.id, user?.teacher_id, user?.role, filterTeacher, filterGrade, binTab, search])
 
   useEffect(() => {
     loadReports()
@@ -492,6 +502,10 @@ export default function TeacherTeachingReportPage() {
   const handleSave = async (submitStatus: string = "draft") => {
     if (!report.teacher_id) {
       toast.error(t("请先选择教师"))
+      return
+    }
+    if (!report.subject) {
+      toast.error(t("请先选择科目"))
       return
     }
     // 还没评完就保存 → 提醒一下（不阻止）
@@ -655,7 +669,16 @@ export default function TeacherTeachingReportPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="sm" onClick={() => { setFilterTeacher(""); setFilterGrade(""); setPage(1); }}>
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                <Input
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+                  placeholder={t("搜索教师 / 科目 / 日期")}
+                  className="h-9 w-[220px] pl-7 text-sm"
+                />
+              </div>
+              <Button variant="outline" size="sm" onClick={() => { setFilterTeacher(""); setFilterGrade(""); setSearch(""); setPage(1); }}>
                 {t("重置")}
               </Button>
             </div>
@@ -798,6 +821,10 @@ export default function TeacherTeachingReportPage() {
         <div className="flex gap-2">
           {isView ? (
             <>
+              <Button variant="outline" onClick={() => window.print()} className="gap-2">
+                <Printer className="h-4 w-4" />
+                {t("打印 / 存 PDF")}
+              </Button>
               <Button variant="outline" onClick={() => setViewMode("edit")} className="gap-2">
                 <Edit className="h-4 w-4" />
                 {t("编辑")}
@@ -822,7 +849,7 @@ export default function TeacherTeachingReportPage() {
         </div>
       }
     >
-      <div className="space-y-6">
+      <div className={"space-y-6" + (isView ? " print-area" : "")}>
         {/* ── SECTION 1: Header ── */}
         <Card>
           <CardHeader className="pb-3">

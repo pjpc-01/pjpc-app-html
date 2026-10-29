@@ -97,11 +97,11 @@ export function InvoiceList({
       for (const pay of pays?.items || []) {
         const recs = await (await fetch(`${P}/receipts/records?perPage=200&filter=${encodeURIComponent(`paymentId="${pay.id}"`)}`)).json()
         for (const rc of recs?.items || []) {
-          if (mode === "purge") await fetch(`${P}/receipts/${rc.id}`, { method: "DELETE" })
-          else await fetch(`${P}/receipts/${rc.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deleted: false }) })
+          if (mode === "purge") await fetch(`${P}/receipts/records/${rc.id}`, { method: "DELETE" })
+          else await fetch(`${P}/receipts/records/${rc.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deleted: false }) })
         }
-        if (mode === "purge") await fetch(`${P}/payments/${pay.id}`, { method: "DELETE" })
-        else await fetch(`${P}/payments/${pay.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deleted: false }) })
+        if (mode === "purge") await fetch(`${P}/payments/records/${pay.id}`, { method: "DELETE" })
+        else await fetch(`${P}/payments/records/${pay.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deleted: false }) })
       }
     } catch (e) { console.error("级联处理关联收款/收据失败:", e) }
   }
@@ -247,10 +247,21 @@ export function InvoiceList({
                       </div>
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
-                      <Button size="sm" variant="outline" className="h-8 text-xs" onClick={async () => { await fetch("/api/pocketbase-proxy/api/collections/invoices/" + inv.id, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deleted: false }) }); await cascadeChildren(inv.id, "restore"); fetchDeletedInvoices(); }}>
+                      <Button size="sm" variant="outline" className="h-8 text-xs" onClick={async () => {
+                          const r = await fetch("/api/pocketbase-proxy/api/collections/invoices/records/" + inv.id, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deleted: false }) })
+                          if (!r.ok) { alert(t("恢复失败：") + r.status); return }
+                          await cascadeChildren(inv.id, "restore")
+                          await fetchDeletedInvoices()
+                        }}>
                         {t("恢复")}
                       </Button>
-                      <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={async () => { if (!confirm(t("确定要永久删除这张发票吗？此操作不可恢复！(关联的收款与收据会一并删除)"))) return; await cascadeChildren(inv.id, "purge"); await fetch("/api/pocketbase-proxy/api/collections/invoices/" + inv.id, { method: "DELETE" }); fetchDeletedInvoices(); }}>
+                      <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={async () => {
+                          if (!confirm(t("确定要永久删除这张发票吗？此操作不可恢复！(关联的收款与收据会一并删除)"))) return
+                          await cascadeChildren(inv.id, "purge")
+                          const r = await fetch("/api/pocketbase-proxy/api/collections/invoices/records/" + inv.id, { method: "DELETE" })
+                          if (!r.ok) { alert(t("永久删除失败：") + r.status); return }
+                          await fetchDeletedInvoices()
+                        }}>
                         {t("永久删除")}
                       </Button>
                     </div>

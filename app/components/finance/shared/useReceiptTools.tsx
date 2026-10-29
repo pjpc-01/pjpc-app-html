@@ -301,14 +301,14 @@ export function ReceiptBinDialog({ open, onOpenChange, tools }: { open: boolean;
   useEffect(() => { if (open) load() }, [open])
 
   const restore = async (id: string) => {
-    await fetch(`${PROXY}/receipts/${id}`, {
+    await fetch(`${PROXY}/receipts/records/${id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deleted: false }),
     })
     load()
   }
   const purge = async (id: string) => {
     if (!confirm(t("确定要永久删除这张收据吗？此操作不可恢复！"))) return
-    await fetch(`${PROXY}/receipts/${id}`, { method: 'DELETE' })
+    await fetch(`${PROXY}/receipts/records/${id}`, { method: 'DELETE' })
     load()
   }
 
