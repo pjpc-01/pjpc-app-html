@@ -37,6 +37,7 @@ import {
 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import AccountSettings from "@/components/settings/account-settings"
+import { goBack } from "@/lib/back"
 
 export default function SettingsPage() {
   const { t } = useLanguage()
@@ -257,7 +258,7 @@ export default function SettingsPage() {
         <div className="text-center max-w-md">
           <h2 className="text-2xl font-bold text-red-600 mb-4">{t("访问被拒绝")}</h2>
           <p className="text-gray-600 mb-2">{t("只有管理员可以访问系统设置")}</p>
-          <Button onClick={() => router.push("/")}>{t('system.back_to_home')}</Button>
+          <Button onClick={() => goBack("/")}>{t('system.back_to_home')}</Button>
         </div>
       </div>
     )
@@ -276,7 +277,7 @@ export default function SettingsPage() {
             <CheckCircle2 className="h-3 w-3 text-green-500" />
             {userStats.total} {t("用户")}
           </Badge>
-          <Button variant="outline" onClick={() => router.push("/")}>
+          <Button variant="outline" onClick={() => goBack("/")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             {t("返回仪表板")}
           </Button>

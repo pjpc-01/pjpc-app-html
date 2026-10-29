@@ -7,6 +7,7 @@ import TeacherPerformanceManagement from "@/components/teacher/TeacherPerformanc
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
+import { goBackForRole } from "@/lib/back"
 
 export default function TeacherPerformancePage() {
   const router = useRouter()
@@ -23,11 +24,11 @@ export default function TeacherPerformancePage() {
       actions={
         <Button
           variant="outline"
-          onClick={() => router.push("/")}
+          onClick={() => goBackForRole(userProfile?.role)}
           className="flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          {t("返回仪表板")}
+          {t(userProfile?.role === "teacher" ? "返回工作台" : "返回仪表板")}
         </Button>
       }
     >

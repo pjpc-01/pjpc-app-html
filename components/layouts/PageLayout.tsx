@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 
 export interface PageLayoutProps {
   title: string
-  description: string
+  description?: string
   backUrl?: string
   userRole?: 'admin' | 'teacher' | 'parent' | 'accountant'
   status?: string
@@ -27,9 +27,12 @@ export default function PageLayout({
   children,
 }: PageLayoutProps) {
   const router = useRouter()
-  // 返回按钮：有浏览历史就真的回上一页；直接打开页面(无历史)才回 backUrl
+  // 返回按钮：有站内历史就真的回上一页；直接打开这一页(没有历史)才去 backUrl。
+  // 不能用 history.length > 1 判断 —— 只要浏览器开过一次它就 > 1，于是「返回」会把人弹回首页。
   const goBack = () => {
-    if (typeof window !== "undefined" && window.history.length > 1) router.back()
+    if (typeof window === "undefined") return
+    const idx = (window.history.state && typeof window.history.state.idx === "number") ? window.history.state.idx : 0
+    if (idx > 0) window.history.back()
     else router.push(backUrl || "/")
   }
   return (

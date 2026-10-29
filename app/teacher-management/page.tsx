@@ -9,6 +9,7 @@ import TeachersTab from "@/app/components/dashboards/teachers-tab"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
+import { goBack } from "@/lib/back"
 
 export default function TeacherManagementPage() {
   const { t } = useLanguage()
@@ -60,7 +61,7 @@ export default function TeacherManagementPage() {
             <Button onClick={() => router.push('/login')} className="w-full">
               {t("登录管理员账户")}
             </Button>
-            <Button onClick={() => router.push('/')} variant="outline" className="w-full">
+            <Button onClick={() => goBack('/')} variant="outline" className="w-full">
               {t("返回首页")}
             </Button>
           </div>
@@ -79,7 +80,7 @@ export default function TeacherManagementPage() {
       actions={
         <Button 
           variant="outline" 
-          onClick={() => router.push('/')}
+          onClick={() => goBack('/')}
           className="flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />

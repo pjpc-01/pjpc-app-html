@@ -16,12 +16,14 @@ import { Label } from "@/components/ui/label"
 import { useLanguage } from "@/contexts/language-context"
 import { GRADE_CANON_ALL, gradeLabel } from "@/lib/grades"
 import { AlertCircle, Save, ClipboardList } from "lucide-react"
+import { useAuth } from "@/contexts/pocketbase-auth-context"
 
 type Any_ = Record<string, any>
 
 const now = new Date()
 
 export default function MonthlyTestsPage() {
+  const { userProfile } = useAuth()
   const { t } = useLanguage()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
@@ -104,7 +106,7 @@ export default function MonthlyTestsPage() {
   const totalCells = students.length * subjects.length
 
   return (
-    <PageLayout title={t("安亲班月测成绩")} description={t("安亲班自己每月考的，跟学校的期中期末分开")}>
+    <PageLayout backUrl={userProfile?.role === "teacher" ? "/teacher-workspace" : "/"} title={t("安亲班月测成绩")} description={t("安亲班自己每月考的，跟学校的期中期末分开")}>
       <div className="p-4 md:p-6 max-w-6xl space-y-4">
         <Card>
           <CardHeader className="pb-2">

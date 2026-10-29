@@ -622,6 +622,7 @@ export default function TeacherTeachingReportPage() {
         userRole="admin"
         status={t("系统正常")}
         background="bg-gray-50"
+        backUrl={user?.role === "teacher" ? "/teacher-workspace" : "/"}
         actions={
           <Button onClick={handleStartNew} className="gap-2">
             <Plus className="h-4 w-4" />
@@ -816,7 +817,7 @@ export default function TeacherTeachingReportPage() {
       userRole="admin"
       status={t("系统正常")}
       background="bg-gray-50"
-      backUrl="#"
+      backUrl={user?.role === "teacher" ? "/teacher-workspace" : "/"}
       actions={
         <div className="flex gap-2">
           {isView ? (

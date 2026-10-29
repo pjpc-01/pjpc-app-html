@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/contexts/language-context"
 import { AlertCircle, MessageSquare, Send } from "lucide-react"
+import { useAuth } from "@/contexts/pocketbase-auth-context"
 
 const STATUS_LABEL: Record<string, string> = { new: "待处理", reading: "处理中", done: "已完成" }
 const STATUS_STYLE: Record<string, string> = {
@@ -25,6 +26,7 @@ type Item = {
 }
 
 export default function SuggestionsPage() {
+  const { userProfile } = useAuth()
   const { t } = useLanguage()
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
@@ -75,7 +77,7 @@ export default function SuggestionsPage() {
   const roleLabel = (r: string) => (r === "student" ? t("学生") : r === "teacher" ? t("老师") : t("职员"))
 
   return (
-    <PageLayout title={t("建议箱")} description={t("老师、学生给中心和 PJPC 系统提的改进建议")}>
+    <PageLayout backUrl={userProfile?.role === "teacher" ? "/teacher-workspace" : "/"} title={t("建议箱")} description={t("老师、学生给中心和 PJPC 系统提的改进建议")}>
       <div className="p-4 md:p-6 max-w-4xl space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           <select className="h-9 rounded-md border px-2 text-sm" value={target} onChange={(e) => setTarget(e.target.value)}>

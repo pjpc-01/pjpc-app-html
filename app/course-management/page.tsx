@@ -8,6 +8,7 @@ import GradeGanttChart from "@/components/courses/GradeGanttChart"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
+import { goBackForRole } from "@/lib/back"
 
 export default function CourseManagementPage() {
   const { t } = useLanguage()
@@ -24,11 +25,11 @@ export default function CourseManagementPage() {
       actions={
         <Button
           variant="outline"
-          onClick={() => router.push("/")}
+          onClick={() => goBackForRole(userProfile?.role)}
           size="sm"
         >
           <ArrowLeft className="h-4 w-4 mr-1" />
-          {t("返回仪表板")}
+          {t(userProfile?.role === "teacher" ? "返回工作台" : "返回仪表板")}
         </Button>
       }
     >
