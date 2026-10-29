@@ -250,6 +250,7 @@ const STUDENT_SELF_FIELD: Record<string, string> = {
   point_logs: 'student',
   student_attendance: 'student_id',
   exam_targets: 'student_id',
+  codex_students: 'student_id',
 }
 /** 学生可以整表读的（不含个人数据） */
 const STUDENT_OPEN_READ = new Set(['courses', 'centers', 'homework', 'report_settings'])

@@ -13,12 +13,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useLanguage } from "@/contexts/language-context"
 import { useStudentHome } from "@/hooks/useStudentHome"
 import { formatGrade } from "@/lib/utils"
-import { AlertCircle, Calendar, BookOpen, Trophy, Megaphone, CalendarCheck, FileText, ArrowRight, Award } from "lucide-react"
+import { AlertCircle, Calendar, BookOpen, Trophy, Megaphone, CalendarCheck, FileText, ArrowRight, Award, Target } from "lucide-react"
 
 const LINKS = [
   { href: "/my/timetable", label: "我的课表", icon: Calendar },
   { href: "/my/homework", label: "我的作业", icon: BookOpen },
   { href: "/my/points", label: "我的积分", icon: Trophy },
+  { href: "/my/codex", label: "我的学情", icon: Target },
   { href: "/my/notices", label: "公告", icon: Megaphone },
   { href: "/my/leave", label: "请假", icon: CalendarCheck },
   { href: "/my/reports", label: "我的报告", icon: FileText },
