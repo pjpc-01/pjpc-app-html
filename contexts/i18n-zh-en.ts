@@ -3633,4 +3633,6 @@ export const ZH_TO_EN: Record<string, string> = {
   "添加全部": "Add all",
   "选择学生添加...": "Choose students to add...",
   "确定清空这份报告的学生名单？": "Clear the student list in this report?",
+  "个评价没填，确定要保存吗？": "rating(s) are still empty. Save anyway?",
+  "还有": "Remaining",
 }
