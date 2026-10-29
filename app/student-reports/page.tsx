@@ -19,6 +19,7 @@ import { formatGrade } from "@/lib/utils"
 import { GRADE_CANON_ALL, GRADE_LABEL } from "@/lib/grades"
 import ReportSettingsManager, { type ReportSettingsPreset } from "@/app/components/report/ReportSettingsManager"
 import { REPORT_EN_DEFAULT } from "@/lib/pdf-generator"
+import { useAuth } from "@/contexts/pocketbase-auth-context"
 
 // ── 报告「填写进度」：11 个框，哪些填了、哪些还空着 ──
 const REPORT_FIELDS: [string, string][] = [
@@ -74,6 +75,7 @@ const reportProgress = (r: any) => {
 }
 
 export default function StudentReportsPage() {
+  const { userProfile } = useAuth()
   const { t } = useLanguage()
   const router = useRouter()
   const { students, loading: studentsLoading, refetch } = useStudents()
@@ -285,6 +287,7 @@ export default function StudentReportsPage() {
 
   return (
     <PageLayout
+      backUrl={userProfile?.role === "teacher" ? "/teacher-workspace" : "/"}
       title={t("学生报告")}
       description={t("教师填写学生的学期成绩与评语")}
       userRole="admin"

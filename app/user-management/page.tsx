@@ -17,6 +17,7 @@ import PermissionEditor from "@/components/admin/PermissionEditor"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { goBack } from "@/lib/back"
 
 export default function UserManagementPage() {
   const { t } = useLanguage()
@@ -188,7 +189,7 @@ export default function UserManagementPage() {
         <div className="text-center">
           <ShieldOff className="h-12 w-12 text-red-400 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-red-600 mb-2">{t("访问被拒绝")}</h2>
-          <Button onClick={() => router.push("/")}>{t('system.back_to_home')}</Button>
+          <Button onClick={() => goBack("/")}>{t('system.back_to_home')}</Button>
         </div>
       </div>
     )
@@ -205,7 +206,7 @@ export default function UserManagementPage() {
           <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-2">
             <UserPlus className="h-4 w-4" />{t("新增用户")}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => router.push("/")} className="gap-2">
+          <Button variant="outline" size="sm" onClick={() => goBack("/")} className="gap-2">
             <ArrowLeft className="h-4 w-4" />{t("返回")}
           </Button>
         </div>

@@ -8,6 +8,7 @@ import PageLayout from "@/components/layouts/PageLayout"
 import ResourceLibrary from "@/app/components/features/resource-library"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
+import { goBackForRole } from "@/lib/back"
 
 export default function ResourceLibraryPage() {
   const [showHeader] = useState(false)
@@ -25,11 +26,11 @@ export default function ResourceLibraryPage() {
       actions={
         <Button 
           variant="outline" 
-          onClick={() => router.push('/')}
+          onClick={() => goBackForRole(userProfile?.role)}
           className="flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          {t("返回仪表板")}
+          {t(userProfile?.role === "teacher" ? "返回工作台" : "返回仪表板")}
         </Button>
       }
     >

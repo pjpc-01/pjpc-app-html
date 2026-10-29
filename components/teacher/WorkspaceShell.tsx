@@ -28,7 +28,7 @@ export default function WorkspaceShell({
 
   if (loading) {
     return (
-      <PageLayout title={title} description={description} userRole="teacher" background="bg-gray-50">
+      <PageLayout title={title} description={description} userRole="teacher" background="bg-gray-50" backUrl="/teacher-workspace">
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -48,7 +48,7 @@ export default function WorkspaceShell({
       { href: "/student-leave", label: t("学生请假"), icon: Calendar },
     ]
     return (
-      <PageLayout title={title} description={description} userRole="teacher" status={t("待绑定档案")} background="bg-gray-50">
+      <PageLayout title={title} description={description} userRole="teacher" status={t("待绑定档案")} background="bg-gray-50" backUrl="/teacher-workspace">
         <div className="space-y-6">
           <Alert>
             <Info className="h-4 w-4" />
@@ -93,6 +93,7 @@ export default function WorkspaceShell({
       title={title}
       description={description || `欢迎回来，${teacher.name || ""}`}
       userRole="teacher"
+      backUrl="/teacher-workspace"
       status="系统正常"
       background="bg-gray-50"
     >
