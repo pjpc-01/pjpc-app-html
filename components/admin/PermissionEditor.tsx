@@ -14,11 +14,11 @@ import { useLanguage } from "@/contexts/language-context"
 
 const NAV_TREE: Record<string, { label: string; icon?: string; children?: string[] }> = {
   overview: { label: "概览", children: ["overview.dashboard", "overview.slideshow"] },
-  education: { label: "教务", children: ["education.overview", "education.students", "education.reports", "education.parents", "education.homework", "education.grades", "education.pickup", "education.logs", "education.teachers", "education.teacher_attendance", "education.courses", "education.workspace", "education.teaching_report", "education.resources", "education.student_leave", "education.contribution", "education.monthly_tests", "education.performance", "education.activities"] },
+  education: { label: "教务", children: ["education.overview", "education.students", "education.reports", "education.parents", "education.homework", "education.grades", "education.pickup", "education.logs", "education.teachers", "education.teacher_attendance", "education.courses", "education.workspace", "education.teaching_report", "education.resources", "education.student_leave", "education.contribution", "education.codex", "education.monthly_tests", "education.performance", "education.activities"] },
   finance: { label: "财务", children: ["finance.overview", "finance.fees", "finance.student_fees", "finance.invoices", "finance.payments", "finance.receipts", "finance.payroll", "finance.expenses", "finance.bank", "finance.budget", "finance.debts", "finance.reports", "finance.inventory"] },
   system: { label: "系统", children: ["system.attendance", "system.cards", "system.points", "system.points_rules", "system.points_leaderboard", "system.users", "system.centers", "system.settings", "system.tv_board", "system.suggestions", "system.achievements"] },
   // 学生端（学生账号登入后能看的页面）
-  student_portal: { label: "学生端", children: ["my.home", "my.timetable", "my.homework", "my.points", "my.achievements", "my.contribution", "my.notices", "my.leave", "my.reports", "my.suggestions"] },
+  student_portal: { label: "学生端", children: ["my.home", "my.timetable", "my.homework", "my.points", "my.codex", "my.achievements", "my.contribution", "my.notices", "my.leave", "my.reports", "my.suggestions"] },
 }
 
 const CHILD_LABELS: Record<string, string> = {
@@ -31,7 +31,7 @@ const CHILD_LABELS: Record<string, string> = {
   "education.teacher_attendance": "教师考勤", "education.courses": "课程管理",
   "education.workspace": "教师工作台", "education.teaching_report": "教学评估", "education.resources": "资源库",
   "education.student_leave": "学生请假（审批）", "education.contribution": "贡献兑换",
-  "education.monthly_tests": "安亲班月测", "education.performance": "教师绩效", "education.activities": "活动",
+  "education.monthly_tests": "安亲班月测", "education.performance": "教师绩效", "education.activities": "活动", "education.codex": "学生图鉴",
   // Finance
   "finance.overview": "财务概览", "finance.fees": "收费管理", "finance.student_fees": "学生费用",
   "finance.invoices": "发票管理", "finance.payments": "付款和收据", "finance.receipts": "收据管理",
@@ -43,7 +43,7 @@ const CHILD_LABELS: Record<string, string> = {
   "system.users": "用户管理", "system.centers": "分行管理", "system.settings": "系统设置",
   "system.tv_board": "TV看板", "system.suggestions": "建议箱", "system.achievements": "成就管理",
   // 学生端
-  "my.home": "我的首页", "my.timetable": "我的课表", "my.homework": "我的作业", "my.points": "我的积分",
+  "my.home": "我的首页", "my.timetable": "我的课表", "my.homework": "我的作业", "my.points": "我的积分", "my.codex": "我的学情",
   "my.achievements": "我的成就", "my.contribution": "我的贡献", "my.notices": "公告",
   "my.leave": "请假", "my.reports": "我的报告", "my.suggestions": "我的建议",
 }
