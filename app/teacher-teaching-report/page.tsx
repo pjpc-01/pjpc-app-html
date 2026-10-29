@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -1047,19 +1047,25 @@ export default function TeacherTeachingReportPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* 选学生：单个下拉 + 批量添加（按年级勾） */}
+            {/* 选学生：下拉按年级分组排序；批量添加 = 年级打勾 + 单个打勾 */}
             {!isView && (() => {
               const notAdded = (list: any[]) => list.filter((s: any) =>
                 !report.student_performances.some(p => p.student_name === (s.name || s.student_name)))
-              const allStudents = notAdded(centerStudents)
-              // 按年级分组（顺序用 gradeRank）
-              const groups = Array.from(new Set(allStudents.map((s: any) => toGradeDisplay(s.grade) || t("未填年级"))))
+              const gradeOf = (s: any) => toGradeDisplay(s.grade) || t("未填年级")
+              const allStudents = notAdded(centerStudents).slice().sort((a: any, b: any) => {
+                const d = gradeRank(gradeOf(a)) - gradeRank(gradeOf(b))
+                return d !== 0 ? d : String(a.name || a.student_name || "").localeCompare(String(b.name || b.student_name || ""))
+              })
+              const groups = Array.from(new Set(allStudents.map((s: any) => gradeOf(s))))
                 .sort((a: string, b: string) => gradeRank(a) - gradeRank(b))
-                .map((g: string) => ({
-                  grade: g,
-                  students: allStudents.filter((s: any) => (toGradeDisplay(s.grade) || t("未填年级")) === g),
-                }))
+                .map((g: string) => ({ grade: g, students: allStudents.filter((s: any) => gradeOf(s) === g) }))
               const pendingIds = new Set(bulkPending.map(x => x.id))
+              const toggleOne = (s: any) => setBulkPending(prev =>
+                prev.some(x => x.id === s.id) ? prev.filter(x => x.id !== s.id) : [...prev, s])
+              const toggleGrade = (gStu: any[]) => setBulkPending(prev => {
+                const allIn = gStu.every(s => prev.some(x => x.id === s.id))
+                return allIn ? prev.filter(x => !gStu.some(s => s.id === x.id)) : [...prev, ...gStu.filter(s => !prev.some(x => x.id === s.id))]
+              })
               return (
                 <div className="space-y-3 mb-4">
                   <div className="flex gap-2 flex-wrap items-center">
@@ -1067,14 +1073,17 @@ export default function TeacherTeachingReportPage() {
                       <SelectTrigger className="w-[300px]">
                         <SelectValue placeholder={`${t("选择学生添加...")}（${t("全部")} ${allStudents.length} ${t("人")}）`} />
                       </SelectTrigger>
-                      <SelectContent className="max-h-72 overflow-y-auto">
+                      <SelectContent className="max-h-80 overflow-y-auto">
                         {allStudents.length === 0 ? (
                           <div className="px-2 py-4 text-sm text-gray-400 text-center">{t("没有可添加的学生")}</div>
                         ) : (
-                          allStudents.map((s: any) => (
-                            <SelectItem key={s.id} value={s.id}>
-                              {`${s.name || s.student_name} — ${toGradeDisplay(s.grade) || t("未填年级")}`}
-                            </SelectItem>
+                          groups.map(g => (
+                            <SelectGroup key={g.grade}>
+                              <SelectLabel>{`${g.grade} — ${g.students.length} ${t("人")}`}</SelectLabel>
+                              {g.students.map((s: any) => (
+                                <SelectItem key={s.id} value={s.id}>{s.name || s.student_name}</SelectItem>
+                              ))}
+                            </SelectGroup>
                           ))
                         )}
                       </SelectContent>
@@ -1097,49 +1106,54 @@ export default function TeacherTeachingReportPage() {
                   </div>
 
                   {bulkOpen && (
-                    <div className="rounded-lg border-2 border-amber-300 bg-amber-50 p-3 space-y-3">
-                      <div className="flex items-center justify-between">
+                    <div className="rounded-lg border-2 border-amber-300 bg-amber-50 p-3 space-y-2">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
                         <span className="flex items-center gap-2 text-sm font-medium text-amber-900">
-                          <Layers className="h-4 w-4" />{t("按年级批量加入名单")}
+                          <Layers className="h-4 w-4" />{t("打勾选择（点年级＝整级，点名字＝单人）")}
                         </span>
-                        <Button type="button" variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setBulkOpen(false); setBulkPending([]) }}>
-                          <X className="h-3 w-3 mr-1" />{t("关闭")}
-                        </Button>
-                      </div>
-
-                      {bulkPending.length > 0 ? (
-                        <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto">
-                          {bulkPending.map((s: any) => (
-                            <Badge key={s.id} variant="secondary" className="flex items-center gap-1 bg-white text-xs cursor-pointer"
-                              onClick={() => setBulkPending(prev => prev.filter(x => x.id !== s.id))}>
-                              {s.name || s.student_name} <X className="h-2.5 w-2.5" />
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-gray-500">{t("点下面的年级按钮选中整级学生，可多选。")}</p>
-                      )}
-
-                      <div className="flex flex-wrap gap-2">
-                        {groups.length === 0 && <span className="text-xs text-gray-500">{t("没有可添加的学生")}</span>}
-                        {groups.map(g => (
-                          <Button key={g.grade} type="button" size="sm" variant="outline" className="h-7 text-xs bg-white"
-                            onClick={() => setBulkPending(prev => {
-                              const merged = [...prev]
-                              g.students.forEach((s: any) => { if (!merged.some(m => m.id === s.id)) merged.push(s) })
-                              return merged
-                            })}>
-                            {`${g.grade} — ${g.students.length} ${t("人")}`}
+                        <div className="flex items-center gap-2">
+                          <Button type="button" size="sm" variant="outline" className="h-7 text-xs bg-white"
+                            onClick={() => setBulkPending(bulkPending.length === allStudents.length ? [] : allStudents.slice())}>
+                            {bulkPending.length === allStudents.length && allStudents.length > 0 ? t("全不选") : t("全选")}
                           </Button>
-                        ))}
+                          <Button type="button" variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setBulkOpen(false); setBulkPending([]) }}>
+                            <X className="h-3 w-3 mr-1" />{t("关闭")}
+                          </Button>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="max-h-80 overflow-y-auto rounded border bg-white">
+                        {groups.length === 0 && <p className="px-3 py-4 text-xs text-gray-500">{t("没有可添加的学生")}</p>}
+                        {groups.map(g => {
+                          const selCount = g.students.filter(s => pendingIds.has(s.id)).length
+                          const allIn = selCount === g.students.length && g.students.length > 0
+                          return (
+                            <div key={g.grade}>
+                              <div className="flex items-center gap-2 border-b bg-gray-50 px-2 py-1.5">
+                                <Checkbox
+                                  checked={allIn ? true : selCount > 0 ? "indeterminate" : false}
+                                  onCheckedChange={() => toggleGrade(g.students)}
+                                />
+                                <span className="text-xs font-semibold text-gray-800">{t(g.grade)}</span>
+                                <span className="text-[11px] text-gray-500">
+                                  {selCount > 0 ? `${selCount}/` : ""}{g.students.length} {t("人")}
+                                </span>
+                              </div>
+                              {g.students.map((s: any) => (
+                                <label key={s.id} className="flex items-center gap-2 border-b border-gray-50 px-2 py-1 text-xs hover:bg-amber-50 cursor-pointer">
+                                  <Checkbox checked={pendingIds.has(s.id)} onCheckedChange={() => toggleOne(s)} />
+                                  <span className="flex-1 truncate">{s.name || s.student_name}</span>
+                                  <span className="text-[11px] text-gray-400 shrink-0">{t(g.grade)}</span>
+                                </label>
+                              ))}
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Button type="button" size="sm" disabled={bulkPending.length === 0}
-                          onClick={() => {
-                            addAllStudentsToPerformance(bulkPending)
-                            setBulkPending([]); setBulkOpen(false)
-                          }}>
+                          onClick={() => { addAllStudentsToPerformance(bulkPending); setBulkPending([]); setBulkOpen(false) }}>
                           {`${t("加入名单")} ${bulkPending.length} ${t("人")}`}
                         </Button>
                         {bulkPending.length > 0 && (

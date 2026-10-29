@@ -3692,4 +3692,6 @@ export const ZH_TO_EN: Record<string, string> = {
   "加入名单": "Add to list",
   "清空选择": "Clear selection",
   "名单已有": "In list:",
+  "打勾选择（点年级＝整级，点名字＝单人）": "Check to select (grade = whole class, name = single)",
+  "全不选": "Clear all",
 }
