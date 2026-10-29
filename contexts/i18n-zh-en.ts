@@ -3686,4 +3686,10 @@ export const ZH_TO_EN: Record<string, string> = {
   "未填年级": "no grade",
   "其中": "of which",
   "名属": "are",
+  "批量添加": "Bulk add",
+  "按年级批量加入名单": "Add by grade",
+  "点下面的年级按钮选中整级学生，可多选。": "Click a grade below to select the whole class. Multiple allowed.",
+  "加入名单": "Add to list",
+  "清空选择": "Clear selection",
+  "名单已有": "In list:",
 }
