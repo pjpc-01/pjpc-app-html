@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
+import { requirePermission } from '@/lib/role-perms'
 import { getPocketBase } from '@/lib/pocketbase'
 import { authenticateAdmin } from '@/lib/auth-utils'
 import { TeacherPerformanceEvaluation } from '@/lib/pocketbase-schema'
@@ -20,7 +21,14 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
 
     let filter = '1=1'
-    if (teacherId) {
+    // 老师只看自己的评估（不能靠改参数看同事的分数）
+    if (gate.session.role === 'teacher') {
+      const ownId = String(gate.session.teacherId || '')
+      if (!ownId) {
+        return NextResponse.json({ success: true, data: [], total: 0, page: 1, totalPages: 0 })
+      }
+      filter += ` && teacher_id = "${ownId}"`
+    } else if (teacherId) {
       filter += ` && teacher_id = "${teacherId}"`
     }
     if (year) {
@@ -60,7 +68,7 @@ export async function GET(request: NextRequest) {
 
 // 创建绩效评估
 export async function POST(request: NextRequest) {
-  const gate = await requireRoles(request, ['admin', 'office_admin', 'teacher'])
+  const gate = await requirePermission(request, 'education.performance', ['admin', 'office_admin'])
   if ('error' in gate) return gate.error
 
   try {
@@ -133,7 +141,7 @@ export async function POST(request: NextRequest) {
 
 // 更新绩效评估
 export async function PUT(request: NextRequest) {
-  const gate = await requireRoles(request, ['admin', 'office_admin', 'teacher'])
+  const gate = await requirePermission(request, 'education.performance', ['admin', 'office_admin'])
   if ('error' in gate) return gate.error
 
   try {
@@ -144,9 +152,9 @@ export async function PUT(request: NextRequest) {
     const { id, ...updateData } = body
 
     // 如果更新了评分，重新计算总分
-    if (updateData.teaching_quality || updateData.student_satisfaction || 
-        updateData.attendance_score || updateData.punctuality_score || 
-        updateData.teamwork_score || updateData.communication_score) {
+    if (updateData.teaching_quality !== undefined || updateData.student_satisfaction !== undefined ||
+        updateData.attendance_score !== undefined || updateData.punctuality_score !== undefined ||
+        updateData.teamwork_score !== undefined || updateData.communication_score !== undefined) {
       
       // 获取当前记录
       const currentRecord = await pb.collection('teacher_performance_evaluation').getOne(id)
@@ -187,7 +195,7 @@ export async function PUT(request: NextRequest) {
 
 // 删除绩效评估
 export async function DELETE(request: NextRequest) {
-  const gate = await requireRoles(request, ['admin', 'office_admin', 'teacher'])
+  const gate = await requirePermission(request, 'education.performance', ['admin', 'office_admin'])
   if ('error' in gate) return gate.error
 
   try {

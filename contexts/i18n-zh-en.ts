@@ -3635,4 +3635,9 @@ export const ZH_TO_EN: Record<string, string> = {
   "确定清空这份报告的学生名单？": "Clear the student list in this report?",
   "个评价没填，确定要保存吗？": "rating(s) are still empty. Save anyway?",
   "还有": "Remaining",
+  "一行一条": "One item per line",
+  "审核日期": "Review date",
+  "评估人": "Evaluator",
+  "状态更新失败": "Failed to update status",
+  "状态已更新为": "Status updated to ",
 }
