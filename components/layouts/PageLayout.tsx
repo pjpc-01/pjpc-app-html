@@ -9,6 +9,8 @@ export interface PageLayoutProps {
   title: string
   description?: string
   backUrl?: string
+  /** 自定义返回行为（给了就优先用它，比如「在页面内部的子视图里返回上一级」） */
+  onBack?: () => void
   userRole?: 'admin' | 'teacher' | 'parent' | 'accountant'
   status?: string
   background?: string
@@ -20,6 +22,7 @@ export default function PageLayout({
   title,
   description,
   backUrl,
+  onBack,
   userRole,
   status,
   background = "from-gray-50 to-gray-100",
@@ -42,7 +45,7 @@ export default function PageLayout({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pl-10 lg:pl-0">
         <div className="flex items-center gap-3 min-w-0">
           {backUrl && (
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={goBack}>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => (onBack ? onBack() : goBack())}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
           )}

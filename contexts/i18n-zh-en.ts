@@ -3680,4 +3680,10 @@ export const ZH_TO_EN: Record<string, string> = {
   "本周盯谁 // WATCH LIST": "Watch list",
   "② 实际低于目标 15 分以上": "② Actual 15+ below target",
   "只读模式 —— 下面这些框点不动，要改请点右上角「编辑」。": "Read-only — these fields don't accept input. Click Edit (top right) to make changes.",
+  "添加该年级全部": "Add all of this grade",
+  "添加全部学生": "Add all students",
+  "没有可添加的学生": "No students left to add",
+  "未填年级": "no grade",
+  "其中": "of which",
+  "名属": "are",
 }
