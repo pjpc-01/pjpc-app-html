@@ -440,6 +440,28 @@ export default function TeacherTeachingReportPage() {
     }))
   }
 
+  // 一次把该年级还没加的学生全部加进来（不用一个一个点）
+  const addAllStudentsToPerformance = (students: any[]) => {
+    const existing = new Set(report.student_performances.map(p => p.student_name))
+    const toAdd = students
+      .filter((s: any) => !existing.has(s.name || s.student_name || ""))
+      .map((s: any) => ({
+        student_name: s.name || s.student_name || "",
+        student_grade: toGradeDisplay(s.grade || ""),
+        focus: "优秀", attitude: "优秀", participation: "优秀",
+        homework: "优秀", understanding: "优秀", application: "优秀",
+      } as StudentPerformance))
+    if (!toAdd.length) return
+    setReport(prev => ({ ...prev, student_performances: [...prev.student_performances, ...toAdd] }))
+  }
+
+  const clearPerformances = () => {
+    if (!report.student_performances.length) return
+    if (!window.confirm(t("确定清空这份报告的学生名单？"))) return
+    setReport(prev => ({ ...prev, student_performances: [] }))
+    syncAnalysis({})
+  }
+
   const removePerformance = (idx: number) => {
     setReport(prev => ({
       ...prev,
@@ -863,10 +885,10 @@ export default function TeacherTeachingReportPage() {
                 <div>
                   <Label>{t("科目 Subject")}</Label>
                   {isView ? (
-                    <Input value={t(report)} disabled />
+                    <Input value={t(report.subject) || ""} disabled />
                   ) : (
                     <Select
-                      value={t(report)}
+                      value={report.subject || ""}
                       onValueChange={v => updateField("subject", v)}
                     >
                       <SelectTrigger>
@@ -883,10 +905,10 @@ export default function TeacherTeachingReportPage() {
                 <div>
                   <Label>{t("年级 Grade")}</Label>
                   {isView ? (
-                    <Input value={t(report)} disabled />
+                    <Input value={t(report.grade) || ""} disabled />
                   ) : (
                     <Select
-                      value={t(report)}
+                      value={report.grade || ""}
                       onValueChange={v => updateField("grade", v)}
                     >
                       <SelectTrigger>
@@ -992,7 +1014,7 @@ export default function TeacherTeachingReportPage() {
                     <>
                       <Select value="" onValueChange={addStudentToPerformance}>
                         <SelectTrigger className="w-[280px]">
-                          <SelectValue placeholder={`${t("选择")} ${t(report)} ${t("的学生添加...（")}${gradeStudents.length}${t("人）")}`} />
+                          <SelectValue placeholder={`${t("选择学生添加...")}（${gradeStudents.length}${t("人")}）`} />
                         </SelectTrigger>
                         <SelectContent className="max-h-64 overflow-y-auto">
                           {gradeStudents.length === 0 ? (
@@ -1008,6 +1030,20 @@ export default function TeacherTeachingReportPage() {
                           )}
                         </SelectContent>
                       </Select>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => addAllStudentsToPerformance(gradeStudents)}
+                        disabled={gradeStudents.length === 0}
+                      >
+                        <Users className="h-4 w-4 mr-1" />{t("添加全部")} {gradeStudents.length} {t("人")}
+                      </Button>
+                      {report.student_performances.length > 0 && (
+                        <Button type="button" size="sm" variant="ghost" onClick={clearPerformances} className="text-red-600 hover:bg-red-50">
+                          {t("清空名单")}
+                        </Button>
+                      )}
                       <span className="text-xs text-gray-400 self-center">
                         {t("共")} {centerStudents.length} {t("名学生，")}{gradeStudents.length} {t("名匹配")} {t(report.grade)}
                       </span>
