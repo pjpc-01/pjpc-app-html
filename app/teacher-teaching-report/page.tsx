@@ -18,13 +18,13 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
-import { GRADE_OPTIONS_ZH, gradeLabel } from "@/lib/grades"
+import { GRADE_OPTIONS_ZH, gradeLabel, gradeRank } from "@/lib/grades"
 import { useCurrentTeacher } from "@/hooks/useCurrentTeacher"
 import { useTeachers } from "@/hooks/useTeachers"
 import {
   FileText, Save, Send, Plus, Trash2, Edit, ArrowLeft,
   Users, BookOpen, Target, AlertTriangle,
-  ClipboardList, User, Calendar, Image, Printer, Search } from "lucide-react"
+  ClipboardList, User, Calendar, Image, Printer, Search, Layers, X } from "lucide-react"
 import { toast } from "sonner"
 import { useLanguage } from "@/contexts/language-context"
 
@@ -307,6 +307,8 @@ export default function TeacherTeachingReportPage() {
   )
   const [saving, setSaving] = useState(false)
   const [viewMode, setViewMode] = useState<"list" | "new" | "edit" | "view">("list")
+  const [bulkOpen, setBulkOpen] = useState(false)
+  const [bulkPending, setBulkPending] = useState<any[]>([])
   const [viewReportId, setViewReportId] = useState<string | null>(null)
   const [analysisLevels, setAnalysisLevels] = useState<Record<number, AnalysisLevel>>({})
   const [photoFiles, setPhotoFiles] = useState<File[]>([])
@@ -1045,66 +1047,109 @@ export default function TeacherTeachingReportPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* 选学生：全学生都能选（不再锁年级），选了年级再多一个「添加该年级全部」 */}
+            {/* 选学生：单个下拉 + 批量添加（按年级勾） */}
             {!isView && (() => {
               const notAdded = (list: any[]) => list.filter((s: any) =>
                 !report.student_performances.some(p => p.student_name === (s.name || s.student_name)))
               const allStudents = notAdded(centerStudents)
-              const gradeStudents = report.grade
-                ? allStudents.filter((s: any) => toGradeDisplay(s.grade) === report.grade)
-                : []
+              // 按年级分组（顺序用 gradeRank）
+              const groups = Array.from(new Set(allStudents.map((s: any) => toGradeDisplay(s.grade) || t("未填年级"))))
+                .sort((a: string, b: string) => gradeRank(a) - gradeRank(b))
+                .map((g: string) => ({
+                  grade: g,
+                  students: allStudents.filter((s: any) => (toGradeDisplay(s.grade) || t("未填年级")) === g),
+                }))
+              const pendingIds = new Set(bulkPending.map(x => x.id))
               return (
-                <div className="flex gap-2 mb-4 flex-wrap items-center">
-                  <Select value="" onValueChange={addStudentToPerformance}>
-                    <SelectTrigger className="w-[300px]">
-                      <SelectValue placeholder={`${t("选择学生添加...")}（${t("全部")} ${allStudents.length} ${t("人")}）`} />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-72 overflow-y-auto">
-                      {allStudents.length === 0 ? (
-                        <div className="px-2 py-4 text-sm text-gray-400 text-center">
-                          {t("没有可添加的学生")}
+                <div className="space-y-3 mb-4">
+                  <div className="flex gap-2 flex-wrap items-center">
+                    <Select value="" onValueChange={addStudentToPerformance}>
+                      <SelectTrigger className="w-[300px]">
+                        <SelectValue placeholder={`${t("选择学生添加...")}（${t("全部")} ${allStudents.length} ${t("人")}）`} />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72 overflow-y-auto">
+                        {allStudents.length === 0 ? (
+                          <div className="px-2 py-4 text-sm text-gray-400 text-center">{t("没有可添加的学生")}</div>
+                        ) : (
+                          allStudents.map((s: any) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {`${s.name || s.student_name} — ${toGradeDisplay(s.grade) || t("未填年级")}`}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+
+                    <Button type="button" size="sm" variant={bulkOpen ? "default" : "outline"}
+                      onClick={() => { setBulkOpen(!bulkOpen); setBulkPending([]) }}>
+                      <Layers className="h-4 w-4 mr-1" />
+                      {t("批量添加")}
+                    </Button>
+
+                    {report.student_performances.length > 0 && (
+                      <Button type="button" size="sm" variant="ghost" onClick={clearPerformances} className="text-red-600 hover:bg-red-50">
+                        {t("清空名单")}
+                      </Button>
+                    )}
+                    <span className="text-xs text-gray-400 self-center">
+                      {`${t("名单已有")} ${report.student_performances.length} ${t("人")}`}
+                    </span>
+                  </div>
+
+                  {bulkOpen && (
+                    <div className="rounded-lg border-2 border-amber-300 bg-amber-50 p-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-2 text-sm font-medium text-amber-900">
+                          <Layers className="h-4 w-4" />{t("按年级批量加入名单")}
+                        </span>
+                        <Button type="button" variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setBulkOpen(false); setBulkPending([]) }}>
+                          <X className="h-3 w-3 mr-1" />{t("关闭")}
+                        </Button>
+                      </div>
+
+                      {bulkPending.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto">
+                          {bulkPending.map((s: any) => (
+                            <Badge key={s.id} variant="secondary" className="flex items-center gap-1 bg-white text-xs cursor-pointer"
+                              onClick={() => setBulkPending(prev => prev.filter(x => x.id !== s.id))}>
+                              {s.name || s.student_name} <X className="h-2.5 w-2.5" />
+                            </Badge>
+                          ))}
                         </div>
                       ) : (
-                        allStudents.map((s: any) => (
-                          <SelectItem key={s.id} value={s.id}>
-                            {`${s.name || s.student_name} — ${toGradeDisplay(s.grade) || t("未填年级")}`}
-                          </SelectItem>
-                        ))
+                        <p className="text-xs text-gray-500">{t("点下面的年级按钮选中整级学生，可多选。")}</p>
                       )}
-                    </SelectContent>
-                  </Select>
 
-                  {report.grade && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => addAllStudentsToPerformance(gradeStudents)}
-                      disabled={gradeStudents.length === 0}
-                    >
-                      <Users className="h-4 w-4 mr-1" />
-                      {`${t("添加该年级全部")} ${gradeStudents.length} ${t("人")}`}
-                    </Button>
-                  )}
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => addAllStudentsToPerformance(allStudents)}
-                    disabled={allStudents.length === 0}
-                  >
-                    <Users className="h-4 w-4 mr-1" />
-                    {`${t("添加全部学生")} ${allStudents.length} ${t("人")}`}
-                  </Button>
+                      <div className="flex flex-wrap gap-2">
+                        {groups.length === 0 && <span className="text-xs text-gray-500">{t("没有可添加的学生")}</span>}
+                        {groups.map(g => (
+                          <Button key={g.grade} type="button" size="sm" variant="outline" className="h-7 text-xs bg-white"
+                            onClick={() => setBulkPending(prev => {
+                              const merged = [...prev]
+                              g.students.forEach((s: any) => { if (!merged.some(m => m.id === s.id)) merged.push(s) })
+                              return merged
+                            })}>
+                            {`${g.grade} — ${g.students.length} ${t("人")}`}
+                          </Button>
+                        ))}
+                      </div>
 
-                  {report.student_performances.length > 0 && (
-                    <Button type="button" size="sm" variant="ghost" onClick={clearPerformances} className="text-red-600 hover:bg-red-50">
-                      {t("清空名单")}
-                    </Button>
+                      <div className="flex items-center gap-2">
+                        <Button type="button" size="sm" disabled={bulkPending.length === 0}
+                          onClick={() => {
+                            addAllStudentsToPerformance(bulkPending)
+                            setBulkPending([]); setBulkOpen(false)
+                          }}>
+                          {`${t("加入名单")} ${bulkPending.length} ${t("人")}`}
+                        </Button>
+                        {bulkPending.length > 0 && (
+                          <Button type="button" size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setBulkPending([])}>
+                            {t("清空选择")}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   )}
-                  <span className="text-xs text-gray-400 self-center">
-                    {`${t("共")} ${centerStudents.length} ${t("名学生")}`}
-                    {report.grade ? `，${t("其中")} ${gradeStudents.length} ${t("名属")} ${report.grade}` : ""}
-                  </span>
                 </div>
               )
             })()}
