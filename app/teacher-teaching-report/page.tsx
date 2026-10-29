@@ -31,7 +31,7 @@ import { useLanguage } from "@/contexts/language-context"
 
 // ── Constants ──
 const RATING_OPTIONS = ["优秀", "良好", "中等", "待改善"] as const
-type Rating = typeof RATING_OPTIONS[number]
+type Rating = typeof RATING_OPTIONS[number] | ""
 
 const SUBJECT_OPTIONS = [
   "华文", "国文", "英文", "数学", "科学",
@@ -433,8 +433,8 @@ export default function TeacherTeachingReportPage() {
         {
           student_name: name,
           student_grade: toGradeDisplay(student.grade || ""),
-          focus: "优秀", attitude: "优秀", participation: "优秀",
-          homework: "优秀", understanding: "优秀", application: "优秀",
+          focus: "", attitude: "", participation: "",
+          homework: "", understanding: "", application: "",
         },
       ],
     }))
@@ -448,8 +448,8 @@ export default function TeacherTeachingReportPage() {
       .map((s: any) => ({
         student_name: s.name || s.student_name || "",
         student_grade: toGradeDisplay(s.grade || ""),
-        focus: "优秀", attitude: "优秀", participation: "优秀",
-        homework: "优秀", understanding: "优秀", application: "优秀",
+        focus: "", attitude: "", participation: "",
+        homework: "", understanding: "", application: "",
       } as StudentPerformance))
     if (!toAdd.length) return
     setReport(prev => ({ ...prev, student_performances: [...prev.student_performances, ...toAdd] }))
@@ -494,6 +494,11 @@ export default function TeacherTeachingReportPage() {
       toast.error(t("请先选择教师"))
       return
     }
+    // 还没评完就保存 → 提醒一下（不阻止）
+    const missing = report.student_performances.reduce(
+      (n, perf) => n + PERFORMANCE_COLUMNS.filter(col => !perf[col.key]).length, 0
+    )
+    if (missing > 0 && !window.confirm(`${t("还有")} ${missing} ${t("个评价没填，确定要保存吗？")}`)) return
     setSaving(true)
     try {
       const id = await saveReport({ ...report, status: submitStatus }, photoFiles, docFiles)
@@ -1078,16 +1083,20 @@ export default function TeacherTeachingReportPage() {
                         {PERFORMANCE_COLUMNS.map(col => (
                           <TableCell key={col.key} className="text-center">
                             {isView ? (
-                              <Badge variant={ratingVariant(perf[col.key])}>
-                                {t(perf[col.key])}
-                              </Badge>
+                              perf[col.key] ? (
+                                <Badge variant={ratingVariant(perf[col.key])}>
+                                  {t(perf[col.key])}
+                                </Badge>
+                              ) : (
+                                <span className="text-xs text-gray-300">—</span>
+                              )
                             ) : (
                               <Select
-                                value={perf[col.key] || "优秀"}
+                                value={perf[col.key] || undefined}
                                 onValueChange={v => updatePerformance(idx, col.key, v)}
                               >
                                 <SelectTrigger className="w-24 h-8 text-xs">
-                                  <SelectValue />
+                                  <SelectValue placeholder="—" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {RATING_OPTIONS.map(r => (
@@ -1149,9 +1158,13 @@ export default function TeacherTeachingReportPage() {
                           <TableCell className="text-sm text-gray-500">{perf.student_grade}</TableCell>
                           {PERFORMANCE_COLUMNS.map(col => (
                             <TableCell key={col.key} className="text-center">
-                              <Badge variant={ratingVariant(perf[col.key])}>
-                                {t(perf[col.key])}
-                              </Badge>
+                              {perf[col.key] ? (
+                                <Badge variant={ratingVariant(perf[col.key])}>
+                                  {t(perf[col.key])}
+                                </Badge>
+                              ) : (
+                                <span className="text-xs text-gray-300">—</span>
+                              )}
                             </TableCell>
                           ))}
                           <TableCell className="text-center">
