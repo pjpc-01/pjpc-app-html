@@ -153,6 +153,7 @@ export default function TeacherPerformanceManagement() {
       if (filters.quarter && filters.quarter !== 'all') params.append('quarter', filters.quarter)
       if (filters.status && filters.status !== 'all') params.append('status', filters.status)
       
+      params.append('limit', '200')
       const response = await fetch(`/api/teacher-performance?${params}`)
       const result = await response.json()
       if (result.success) {
@@ -204,19 +205,19 @@ export default function TeacherPerformanceManagement() {
         communication_score: evaluationForm.communication_score
       })
 
+      const isEdit = !!editingEvaluation?.id
       const response = await fetch('/api/teacher-performance', {
-        method: 'POST',
+        method: isEdit ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...evaluationForm,
-          evaluator_id: userProfile?.id,
-          overall_score: overallScore
-        })
+        body: JSON.stringify(isEdit
+          ? { id: editingEvaluation!.id, ...evaluationForm, overall_score: overallScore }
+          : { ...evaluationForm, evaluator_id: userProfile?.id, overall_score: overallScore })
       })
       
       const result = await response.json()
       if (result.success) {
         setEvaluationDialogOpen(false)
+        setEditingEvaluation(null)
         setEvaluationForm({
           teacher_id: '',
           evaluation_period: '',
@@ -240,6 +241,34 @@ export default function TeacherPerformanceManagement() {
       }
     } catch (error) {
       setError(t("创建绩效评估失败"))
+    }
+  }
+
+  // 状态流转：草稿 → 已提交 → 已审核 → 已确认
+  const NEXT_STATUS: Record<string, string> = { draft: 'submitted', submitted: 'reviewed', reviewed: 'finalized' }
+  const STATUS_ACTION_LABEL: Record<string, string> = { draft: '提交', submitted: '审核', reviewed: '确认' }
+
+  const handleAdvanceStatus = async (evaluation: TeacherPerformanceEvaluation) => {
+    const next = NEXT_STATUS[evaluation.status]
+    if (!next) return
+    try {
+      const response = await fetch('/api/teacher-performance', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: evaluation.id, status: next }),
+      })
+      const result = await response.json()
+      if (result.success) {
+        toast.success(`${t("状态已更新为")}${t(getStatusName(next))}`)
+        fetchEvaluations()
+        if (viewingEvaluation?.id === evaluation.id) {
+          setViewingEvaluation({ ...evaluation, ...result.data })
+        }
+      } else {
+        toast.error(result.error || t("状态更新失败"))
+      }
+    } catch {
+      toast.error(t("状态更新失败"))
     }
   }
 
@@ -341,7 +370,7 @@ export default function TeacherPerformanceManagement() {
           <p className="text-gray-600">{t("管理教师绩效评估和考核记录")}</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setEvaluationDialogOpen(true)}>
+          <Button onClick={() => { setEditingEvaluation(null); setEvaluationDialogOpen(true) }}>
             <Plus className="w-4 h-4 mr-2" />
             {t("新建绩效评估")}
           </Button>
@@ -519,7 +548,7 @@ export default function TeacherPerformanceManagement() {
                     </TableCell>
                     <TableCell>
                       <Badge className={`${scoreLevel.color} bg-opacity-20`}>
-                        {t(scoreLevel)}
+                        {t(scoreLevel.level)}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -556,6 +585,11 @@ export default function TeacherPerformanceManagement() {
                         }}>
                           <Edit className="w-4 h-4" />
                         </Button>
+                        {NEXT_STATUS[evaluation.status] && (
+                          <Button size="sm" onClick={() => handleAdvanceStatus(evaluation)}>
+                            {t(STATUS_ACTION_LABEL[evaluation.status])}
+                          </Button>
+                        )}
                         <Button size="sm" variant="outline" onClick={() => handleDeleteEvaluation(evaluation.id)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -588,6 +622,30 @@ export default function TeacherPerformanceManagement() {
                 <div>
                   <Label>{t("评估期间")}</Label>
                   <p className="font-medium">{viewingEvaluation.evaluation_period}</p>
+                </div>
+                <div>
+                  <Label>{t("评估人")}</Label>
+                  <p className="font-medium">
+                    {viewingEvaluation.expand?.evaluator_id?.name
+                      || viewingEvaluation.expand?.evaluator_id?.email
+                      || '—'}
+                  </p>
+                </div>
+                <div>
+                  <Label>{t('teacher.status')}</Label>
+                  <p>
+                    <Badge className={getStatusColor(viewingEvaluation.status)}>
+                      {getStatusName(viewingEvaluation.status)}
+                    </Badge>
+                  </p>
+                </div>
+                <div>
+                  <Label>{t("评估日期")}</Label>
+                  <p className="font-medium">{formatDate(viewingEvaluation.evaluation_date)}</p>
+                </div>
+                <div>
+                  <Label>{t("审核日期")}</Label>
+                  <p className="font-medium">{(viewingEvaluation as any).review_date ? formatDate((viewingEvaluation as any).review_date) : '—'}</p>
                 </div>
                 <div>
                   <Label>{t("总分")}</Label>
@@ -626,13 +684,33 @@ export default function TeacherPerformanceManagement() {
                   <p>{viewingEvaluation.communication_score}/10</p>
                 </div>
               </div>
+              {([
+                ["优点", viewingEvaluation.strengths],
+                ["待改进", viewingEvaluation.areas_for_improvement],
+                ["下期目标", viewingEvaluation.goals_next_period],
+                ["建议", viewingEvaluation.recommendations],
+              ] as Array<[string, any]>).map(([label, arr]) => (
+                Array.isArray(arr) && arr.length > 0 ? (
+                  <div key={label}>
+                    <Label>{t(label)}</Label>
+                    <ul className="list-disc pl-5 text-sm text-gray-600 mt-1 space-y-0.5">
+                      {arr.map((x: string, i: number) => <li key={i}>{x}</li>)}
+                    </ul>
+                  </div>
+                ) : null
+              ))}
               {viewingEvaluation.notes && (
                 <div>
                   <Label>{t("评估备注")}</Label>
                   <p className="text-sm text-gray-600 mt-1">{viewingEvaluation.notes}</p>
                 </div>
               )}
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2">
+                {NEXT_STATUS[viewingEvaluation.status] && (
+                  <Button onClick={() => handleAdvanceStatus(viewingEvaluation)}>
+                    {t(STATUS_ACTION_LABEL[viewingEvaluation.status])}
+                  </Button>
+                )}
                 <Button variant="outline" onClick={() => setViewingEvaluation(null)}>{t('teacher.close')}</Button>
               </div>
             </div>
@@ -644,7 +722,7 @@ export default function TeacherPerformanceManagement() {
       <Dialog open={evaluationDialogOpen} onOpenChange={setEvaluationDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{t("新建绩效评估")}</DialogTitle>
+            <DialogTitle>{t(editingEvaluation ? "编辑绩效评估" : "新建绩效评估")}</DialogTitle>
             <DialogDescription>{t("对教师进行全面的绩效评估")}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEvaluationSubmit} className="space-y-6">
@@ -660,7 +738,7 @@ export default function TeacherPerformanceManagement() {
                   <SelectContent>
                     {Array.isArray(teachers) && teachers.map((teacher) => (
                       <SelectItem key={teacher.id} value={teacher.id}>
-                        {teacher.name} - {teacher.email}
+                        {teacher.name}{teacher.email ? ` - ${teacher.email}` : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -828,6 +906,27 @@ export default function TeacherPerformanceManagement() {
             </div>
 
             <div>
+              {([
+                ["优点", "strengths"],
+                ["待改进", "areas_for_improvement"],
+                ["下期目标", "goals_next_period"],
+                ["建议", "recommendations"],
+              ] as Array<[string, "strengths" | "areas_for_improvement" | "goals_next_period" | "recommendations"]>).map(([label, key]) => (
+                <div key={key}>
+                  <Label htmlFor={key}>{t(label)}</Label>
+                  <p className="text-xs text-gray-400 mb-1">{t("一行一条")}</p>
+                  <Textarea
+                    id={key}
+                    rows={2}
+                    value={((evaluationForm as any)[key] || []).join("\n")}
+                    onChange={(e) => setEvaluationForm(prev => ({
+                      ...prev,
+                      [key]: e.target.value.split("\n").map(x => x.trim()).filter(Boolean),
+                    }))}
+                    placeholder={t(label)}
+                  />
+                </div>
+              ))}
               <Label htmlFor="notes">{t("评估备注")}</Label>
               <Textarea
                 id="notes"
@@ -845,7 +944,7 @@ export default function TeacherPerformanceManagement() {
               <Button type="button" variant="outline" onClick={() => setEvaluationDialogOpen(false)}>
                 {t("取消")}
               </Button>
-              <Button type="submit">{t("创建评估")}</Button>
+              <Button type="submit">{t(editingEvaluation ? "保存修改" : "创建评估")}</Button>
             </div>
           </form>
         </DialogContent>
