@@ -819,6 +819,7 @@ export default function TeacherTeachingReportPage() {
       status={t("系统正常")}
       background="bg-gray-50"
       backUrl={user?.role === "teacher" ? "/teacher-workspace" : "/"}
+      onBack={() => setViewMode("list")}
       actions={
         <div className="flex gap-2">
           {isView ? (
@@ -1044,57 +1045,69 @@ export default function TeacherTeachingReportPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Add student selector — filtered by selected grade */}
-            {!isView && (
-              <div className="flex gap-2 mb-4 flex-wrap">
-                {!report.grade ? (
-                  <p className="text-sm text-gray-400">{t("请先在基本信息中选择年级，再添加学生")}</p>
-                ) : (() => {
-                  const gradeStudents = centerStudents
-                    .filter((s: any) => toGradeDisplay(s.grade) === report.grade)
-                    .filter((s: any) => !report.student_performances.some(p => p.student_name === (s.name || s.student_name)))
-                  return (
-                    <>
-                      <Select value="" onValueChange={addStudentToPerformance}>
-                        <SelectTrigger className="w-[280px]">
-                          <SelectValue placeholder={`${t("选择学生添加...")}（${gradeStudents.length}${t("人")}）`} />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-64 overflow-y-auto">
-                          {gradeStudents.length === 0 ? (
-                            <div className="px-2 py-4 text-sm text-gray-400 text-center">
-                              {t("该年级没有可添加的学生")}
-                            </div>
-                          ) : (
-                            gradeStudents.map((s: any) => (
-                              <SelectItem key={s.id} value={s.id}>
-                                {s.name || s.student_name}
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => addAllStudentsToPerformance(gradeStudents)}
-                        disabled={gradeStudents.length === 0}
-                      >
-                        <Users className="h-4 w-4 mr-1" />{t("添加全部")} {gradeStudents.length} {t("人")}
-                      </Button>
-                      {report.student_performances.length > 0 && (
-                        <Button type="button" size="sm" variant="ghost" onClick={clearPerformances} className="text-red-600 hover:bg-red-50">
-                          {t("清空名单")}
-                        </Button>
+            {/* 选学生：全学生都能选（不再锁年级），选了年级再多一个「添加该年级全部」 */}
+            {!isView && (() => {
+              const notAdded = (list: any[]) => list.filter((s: any) =>
+                !report.student_performances.some(p => p.student_name === (s.name || s.student_name)))
+              const allStudents = notAdded(centerStudents)
+              const gradeStudents = report.grade
+                ? allStudents.filter((s: any) => toGradeDisplay(s.grade) === report.grade)
+                : []
+              return (
+                <div className="flex gap-2 mb-4 flex-wrap items-center">
+                  <Select value="" onValueChange={addStudentToPerformance}>
+                    <SelectTrigger className="w-[300px]">
+                      <SelectValue placeholder={`${t("选择学生添加...")}（${t("全部")} ${allStudents.length} ${t("人")}）`} />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-72 overflow-y-auto">
+                      {allStudents.length === 0 ? (
+                        <div className="px-2 py-4 text-sm text-gray-400 text-center">
+                          {t("没有可添加的学生")}
+                        </div>
+                      ) : (
+                        allStudents.map((s: any) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {`${s.name || s.student_name} — ${toGradeDisplay(s.grade) || t("未填年级")}`}
+                          </SelectItem>
+                        ))
                       )}
-                      <span className="text-xs text-gray-400 self-center">
-                        {t("共")} {centerStudents.length} {t("名学生，")}{gradeStudents.length} {t("名匹配")} {t(report.grade)}
-                      </span>
-                    </>
-                  )
-                })()}
-              </div>
-            )}
+                    </SelectContent>
+                  </Select>
+
+                  {report.grade && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => addAllStudentsToPerformance(gradeStudents)}
+                      disabled={gradeStudents.length === 0}
+                    >
+                      <Users className="h-4 w-4 mr-1" />
+                      {`${t("添加该年级全部")} ${gradeStudents.length} ${t("人")}`}
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => addAllStudentsToPerformance(allStudents)}
+                    disabled={allStudents.length === 0}
+                  >
+                    <Users className="h-4 w-4 mr-1" />
+                    {`${t("添加全部学生")} ${allStudents.length} ${t("人")}`}
+                  </Button>
+
+                  {report.student_performances.length > 0 && (
+                    <Button type="button" size="sm" variant="ghost" onClick={clearPerformances} className="text-red-600 hover:bg-red-50">
+                      {t("清空名单")}
+                    </Button>
+                  )}
+                  <span className="text-xs text-gray-400 self-center">
+                    {`${t("共")} ${centerStudents.length} ${t("名学生")}`}
+                    {report.grade ? `，${t("其中")} ${gradeStudents.length} ${t("名属")} ${report.grade}` : ""}
+                  </span>
+                </div>
+              )
+            })()}
 
             {report.student_performances.length === 0 ? (
               <p className="text-gray-400 text-center py-4">{t("尚未添加学生")}</p>
