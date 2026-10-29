@@ -3679,4 +3679,5 @@ export const ZH_TO_EN: Record<string, string> = {
   "目标分是学生自定目标，不是考出来的成绩。等级 Lv ＝ 交卷数累积 EXP（每份 +40），与分数无关。雷达虚线＝目标，实线＝实际。": "Targets are self-set goals, not exam results. Level = EXP from papers submitted (+40 each), unrelated to scores. Radar: dashed = target, solid = actual.",
   "本周盯谁 // WATCH LIST": "Watch list",
   "② 实际低于目标 15 分以上": "② Actual 15+ below target",
+  "只读模式 —— 下面这些框点不动，要改请点右上角「编辑」。": "Read-only — these fields don't accept input. Click Edit (top right) to make changes.",
 }

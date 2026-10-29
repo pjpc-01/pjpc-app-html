@@ -702,7 +702,8 @@ export default function TeacherTeachingReportPage() {
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
                     onClick={() => {
                       setViewReportId(r.id)
-                      setViewMode("view")
+                      // 草稿直接进编辑态 —— 之前一律进「查看」，框全是灰的，老师以为填不了
+                      setViewMode(r.status === "draft" && !binTab ? "edit" : "view")
                     }}
                   >
                     <div className="flex items-center gap-4">
@@ -851,6 +852,15 @@ export default function TeacherTeachingReportPage() {
       }
     >
       <div className={"space-y-6" + (isView ? " print-area" : "")}>
+        {isView && (
+          <div className="no-print flex items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">
+            <span>{t("只读模式 —— 下面这些框点不动，要改请点右上角「编辑」。")}</span>
+            <Button size="sm" variant="outline" onClick={() => setViewMode("edit")} className="gap-1.5 shrink-0">
+              <Edit className="h-3.5 w-3.5" />
+              {t("编辑")}
+            </Button>
+          </div>
+        )}
         {/* ── SECTION 1: Header ── */}
         <Card>
           <CardHeader className="pb-3">
