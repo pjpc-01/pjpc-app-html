@@ -46,7 +46,7 @@ function isAuthEndpoint(path: string): boolean {
 // ─── 守门：谁在调、能碰什么 ─────────────────────────────────────────────
 // 原来所有请求都套 superuser token → 不带任何登录就能读工资表/学生/发票（公网实测 200）。
 // 现在：除登录类接口与图片文件外，一律要求有效登录，并按角色挡敏感集合。
-type Session = { id: string; role: string; studentId?: string; name?: string } | null
+type Session = { id: string; role: string; studentId?: string; name?: string ; teacherId?: string } | null
 const sessionCache = new Map<string, { s: Session; exp: number }>()
 
 async function getSession(request: NextRequest): Promise<Session> {
@@ -71,6 +71,7 @@ async function getSession(request: NextRequest): Promise<Session> {
       id: d?.record?.id || '',
       role: String(d?.record?.role || ''),
       studentId: d?.record?.student_id || '',
+      teacherId: d?.record?.teacher_id || '',
       name: String(d?.record?.name || d?.record?.username || d?.record?.email || ''),
     }
     sessionCache.set(token, { s, exp: Date.now() + 60_000 })
@@ -263,7 +264,14 @@ function withStudentFilter(pbPath: string, search: string, field: string, sid: s
   return q ? `${pbPath}?${q}` : pbPath
 }
 
+/** 老师角色只能碰自己名下的数据（读、改、删都限自己；新建时强制填自己的 id） */
+const TEACHER_SELF_FIELD: Record<string, string> = {
+  teacher_teaching_reports: 'teacher_id',
+  teacher_leave_record: 'teacher_id',
+}
+
 async function proxyRequest(method: string, request: NextRequest) {
+  let selfScope: { field: string; ownId: string } | null = null
   const url = new URL(request.url)
   const pbPath = url.pathname.replace('/api/pocketbase-proxy', '')
   let targetPath = pbPath
@@ -351,6 +359,28 @@ async function proxyRequest(method: string, request: NextRequest) {
           { error: `没有权限修改这个数据：${COLLECTION_PERM[col]}（请管理员到「用户管理 → 角色权限」开启）` },
           { status: 403 }
         )
+      } else if (session.role === 'teacher' && col && TEACHER_SELF_FIELD[col]) {
+        // ★ 老师只能碰自己的：读列表强制过滤、单条读写先核对归属
+        const field = TEACHER_SELF_FIELD[col]
+        const ownId = String(session.teacherId || '')
+        if (!ownId) {
+          return NextResponse.json({ error: '这个账号还没绑定教师资料，请联系管理员' }, { status: 403 })
+        }
+        selfScope = { field, ownId }
+        const rid = (pbPath.match(/\/records\/([^/?#]+)\/?$/) || [])[1]
+        if (rid) {
+          const tok = await getAdminToken()
+          const chk = await fetch(`${POCKETBASE_URL}/api/collections/${col}/records/${rid}`, {
+            headers: { Authorization: `Bearer ${tok}` },
+          })
+          const rec = chk.ok ? await chk.json().catch(() => null) : null
+          if (!rec || String(rec[field]) !== ownId) {
+            return NextResponse.json({ error: '只能查看和修改自己的资料' }, { status: 403 })
+          }
+        } else if (method === 'GET') {
+          targetPath = withStudentFilter(pbPath, targetSearch, field, ownId)
+          targetSearch = ''
+        }
       } else if (session.role !== 'admin' && col && ADMIN_ONLY.has(col)) {
         // ★ 例外：任何人都能读「自己」的 users 记录（前端要拿姓名/角色/绑定信息）
         const selfId = (pbPath.match(/\/records\/([^/?#]+)/) || [])[1]
@@ -391,6 +421,14 @@ async function proxyRequest(method: string, request: NextRequest) {
     } else {
       headers['Content-Type'] = 'application/json'
       body = await request.text()
+      // ★ 老师新建：强制 owner 字段 = 自己（不能替别人建）
+      if (selfScope && method === 'POST' && typeof body === 'string' && body) {
+        try {
+          const parsed = JSON.parse(body)
+          parsed[selfScope.field] = selfScope.ownId
+          body = JSON.stringify(parsed)
+        } catch { /* 非 JSON 就原样发 */ }
+      }
 
       // ★ 匿名注册：不让前端决定角色（否则谁都能注册成管理员）
       const isAnonSignup = method === 'POST'
