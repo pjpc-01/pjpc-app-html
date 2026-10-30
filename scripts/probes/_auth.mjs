@@ -19,6 +19,12 @@ function readEnv() {
   return out;
 }
 
+// 探针用的管理员账号口令：从 .env.local 读，禁止硬编码
+const ENV = readEnv();
+export const ADMIN_EMAIL = ENV.ADMIN_EMAIL || ENV.POCKETBASE_ADMIN_EMAIL || 'admin@pjpc.com';
+/** 应用后台登录口令（users 集合的 admin 账号，不是 PB superuser） */
+export const ADMIN_LOGIN_PASS = ENV.PJPC_ADMIN_LOGIN_PASS || '';
+
 export async function suToken() {
   const env = readEnv();
   const r = await fetch(PB + '/api/collections/_superusers/auth-with-password', {
