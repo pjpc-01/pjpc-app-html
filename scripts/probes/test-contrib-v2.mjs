@@ -1,4 +1,4 @@
-import { suToken, SITE } from './_auth.mjs'
+import { suToken, SITE, ADMIN_LOGIN_PASS } from './_auth.mjs'
 const PB = 'http://127.0.0.1:8090'
 const su = await suToken()
 const H = { 'Content-Type': 'application/json', Authorization: su }
@@ -19,7 +19,7 @@ const s = await (await fetch(PB+'/api/collections/students/records',{method:'POS
 const u = await (await fetch(PB+'/api/collections/users/records',{method:'POST',headers:H,body:JSON.stringify({username:'zzv2',email:'zzv2@student.pjpc.local',password:'pjpcZZV2',passwordConfirm:'pjpcZZV2',name:'ZZ 贡献v2',role:'student',student_id:s.id,center:'PU1'})})).json()
 const lg = await (await fetch(PB+'/api/collections/users/auth-with-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identity:'zzv2',password:'pjpcZZV2'})})).json()
 const SH = { 'Content-Type':'application/json', Authorization:'Bearer '+lg.token }
-const adm = await (await fetch(PB+'/api/collections/users/auth-with-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identity:'admin@pjpc.com',password:'1234567890'})})).json()
+const adm = await (await fetch(PB+'/api/collections/users/auth-with-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identity:'admin@pjpc.com',password:ADMIN_LOGIN_PASS})})).json()
 const AH = { 'Content-Type':'application/json', Authorization:'Bearer '+adm.token }
 const get = async (p,h=AH) => { const r = await fetch(SITE+p,{headers:h}); return { status:r.status, body: await r.json().catch(()=>({})) } }
 const send = async (p,m,b,h=AH) => { const r = await fetch(SITE+p,{method:m,headers:h,body:b?JSON.stringify(b):undefined}); return { status:r.status, body: await r.json().catch(()=>({})) } }

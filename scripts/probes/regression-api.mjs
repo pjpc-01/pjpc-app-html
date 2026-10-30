@@ -4,7 +4,7 @@
  * 覆盖：匿名拦截、学生越权、月测、成就、建议箱、贡献/兑换/按中心排行、学生首页。
  * 所有临时数据自建自删，不动真实数据。
  */
-import { suToken, SITE } from './_auth.mjs'
+import { suToken, SITE, ADMIN_LOGIN_PASS } from './_auth.mjs'
 
 const PB = 'http://127.0.0.1:8090'
 const su = await suToken()
@@ -38,7 +38,7 @@ const SH = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t1.t
 
 const adm = await (await fetch(PB + '/api/collections/users/auth-with-password', {
   method: 'POST', headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ identity: 'admin@pjpc.com', password: '1234567890' }),
+  body: JSON.stringify({ identity: 'admin@pjpc.com', password: ADMIN_LOGIN_PASS }),
 })).json()
 const AH = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adm.token }
 

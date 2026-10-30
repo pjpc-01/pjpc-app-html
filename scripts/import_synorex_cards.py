@@ -1,6 +1,24 @@
 #!/usr/bin/env python3
 """Import Synorex NFC card IDs into PJPC PocketBase"""
-import json, urllib.request, sys
+import json, os, urllib.request, sys
+# 读 .env.local 取管理员口令，不硬编码
+_ENV = {}
+def _env(key, default=""):
+    global _ENV
+    if not _ENV:
+        try:
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env.local")) as f:
+                for line in f:
+                    if "=" in line and not line.strip().startswith("#"):
+                        k, v = line.split("=", 1)
+                        _ENV[k.strip()] = v.strip().strip('"').strip("'")
+        except Exception:
+            pass
+    return _ENV.get(key, default)
+
+ADMIN_EMAIL = _env("POCKETBASE_ADMIN_EMAIL", "admin@pjpc.com")
+ADMIN_PASS = _env("POCKETBASE_ADMIN_PASSWORD")
+
 
 PB_URL = "http://127.0.0.1:8090"
 API_URL = "http://127.0.0.1:3001"
@@ -14,7 +32,7 @@ def api_req(method, url, data=None):
 
 # 1. Get PB token
 auth = api_req("POST", f"{PB_URL}/api/admins/auth-with-password", 
-               {"identity": "admin@pjpc.com", "password": "1234567890"})
+               {"identity": ADMIN_EMAIL, "password": ADMIN_PASS})
 token = auth["token"]
 print(f"✅ PB Auth OK")
 

@@ -1,4 +1,4 @@
-import { suToken, SITE } from './_auth.mjs'
+import { suToken, SITE, ADMIN_LOGIN_PASS } from './_auth.mjs'
 const PB = 'http://127.0.0.1:8090'
 const su = await suToken()
 const H = { 'Content-Type': 'application/json', Authorization: su }
@@ -49,7 +49,7 @@ const approve = await fetch(SITE + '/api/contribution/requests', { method: 'PATC
 console.log('学生身份审批（应 403）→', approve.status)
 
 // 9) 用管理员审批
-const adm = await fetch(PB + '/api/collections/users/auth-with-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identity: 'admin@pjpc.com', password: '1234567890' }) }).catch(() => null)
+const adm = await fetch(PB + '/api/collections/users/auth-with-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identity: 'admin@pjpc.com', password: ADMIN_LOGIN_PASS }) }).catch(() => null)
 let okApprove = null
 if (adm && adm.ok) {
   const aj = await adm.json()

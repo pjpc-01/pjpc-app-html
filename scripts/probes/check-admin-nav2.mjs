@@ -1,4 +1,4 @@
-import { SITE } from './_auth.mjs'
+import { SITE, ADMIN_LOGIN_PASS } from './_auth.mjs'
 import { chromium } from 'playwright'
 const b = await chromium.launch({ headless: true, args: ['--no-sandbox'] })
 const c = await b.newContext({ viewport: { width: 1400, height: 1100 }, locale: 'zh-CN', deviceScaleFactor: 1.3 })
@@ -6,7 +6,7 @@ const p = await c.newPage()
 await p.goto(SITE + '/login', { waitUntil: 'networkidle' }).catch(() => {})
 await p.waitForTimeout(1600)
 await p.fill('#login-email', 'admin@pjpc.com')
-await p.fill('#login-password', '1234567890')
+await p.fill('#login-password', ADMIN_LOGIN_PASS)
 await p.locator('button:has-text("安全登录")').first().click()
 await p.waitForTimeout(8000)
 await p.goto(SITE + '/contribution-management', { waitUntil: 'networkidle' }).catch(() => {})

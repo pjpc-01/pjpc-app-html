@@ -1,11 +1,30 @@
+import os
 #!/usr/bin/env python3
 """Pull missing student data from Synorex edit pages."""
 import asyncio, json, re, requests
 from playwright.async_api import async_playwright
+# 读 .env.local 取管理员口令，不硬编码
+_ENV = {}
+def _env(key, default=""):
+    global _ENV
+    if not _ENV:
+        try:
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env.local")) as f:
+                for line in f:
+                    if "=" in line and not line.strip().startswith("#"):
+                        k, v = line.split("=", 1)
+                        _ENV[k.strip()] = v.strip().strip('"').strip("'")
+        except Exception:
+            pass
+    return _ENV.get(key, default)
+
+ADMIN_EMAIL = _env("POCKETBASE_ADMIN_EMAIL", "admin@pjpc.com")
+ADMIN_PASS = _env("POCKETBASE_ADMIN_PASSWORD")
+
 
 BASE = "https://pjpc2479.tuitionsys.synorex.work"
 PB = "http://127.0.0.1:8090"
-PB_AUTH = ("admin@pjpc.com", "1234567890")
+PB_AUTH = ("admin@pjpc.com", "ADMIN_PASS")
 
 def get_pb_students():
     """Get all active students that need data."""

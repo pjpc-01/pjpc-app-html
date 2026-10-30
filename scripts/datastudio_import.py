@@ -1,9 +1,28 @@
+import os
 """DataStudio grade scraper v5 — fixed tab clicking + new page format"""
 import asyncio, json, sys, subprocess, urllib.parse, re
+# 读 .env.local 取管理员口令，不硬编码
+_ENV = {}
+def _env(key, default=""):
+    global _ENV
+    if not _ENV:
+        try:
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env.local")) as f:
+                for line in f:
+                    if "=" in line and not line.strip().startswith("#"):
+                        k, v = line.split("=", 1)
+                        _ENV[k.strip()] = v.strip().strip('"').strip("'")
+        except Exception:
+            pass
+    return _ENV.get(key, default)
+
+ADMIN_EMAIL = _env("POCKETBASE_ADMIN_EMAIL", "admin@pjpc.com")
+ADMIN_PASS = _env("POCKETBASE_ADMIN_PASSWORD")
+
 
 PB_URL = "http://127.0.0.1:8090"
 PB_USER = "admin@pjpc.com"
-PB_PASS = "1234567890"
+PB_PASS = "ADMIN_PASS"
 DS_URL = "https://datastudio.google.com/u/0/reporting/5755410c-43ab-4d79-afa7-a770c11eef2a/page/bEQqD"
 
 SUBJECT_MAP = {

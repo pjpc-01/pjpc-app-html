@@ -1,4 +1,4 @@
-import { suToken, SITE } from './_auth.mjs'
+import { suToken, SITE, ADMIN_LOGIN_PASS } from './_auth.mjs'
 import { chromium } from 'playwright'
 const PB = 'http://127.0.0.1:8090'
 const su = await suToken()
@@ -40,7 +40,7 @@ const p2 = await c.newPage()
 await p2.goto(SITE + '/login', { waitUntil: 'networkidle' }).catch(() => {})
 await p2.waitForTimeout(1500)
 await p2.fill('#login-email', 'admin@pjpc.com')
-await p2.fill('#login-password', '1234567890')
+await p2.fill('#login-password', ADMIN_LOGIN_PASS)
 await p2.locator('button:has-text("安全登录")').first().click()
 await p2.waitForTimeout(8000)
 await p2.goto(SITE + '/contribution-management', { waitUntil: 'networkidle' })
