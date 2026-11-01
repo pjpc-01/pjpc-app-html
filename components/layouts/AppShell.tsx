@@ -210,6 +210,7 @@ const FIN_HR_GROUP: NavItem[] = [
 ]
 
 const FIN_ACCOUNTING_GROUP: NavItem[] = [
+  { label: "财务核对", href: "/finance/check", icon: ClipboardCheck },
   { label: "债务管理", href: "/finance/debts", icon: Wallet },
   { label: "银行对账", href: "/finance/bank", icon: Building2 },
   { label: "预算管理", href: "/finance/budget", icon: PieChart },
@@ -626,6 +627,7 @@ export default function AppShell({
     "/finance/bank": "finance.bank", "/finance/budget": "finance.budget",
     "/finance/debts": "finance.debts",
     "/finance/reports": "finance.reports", "/inventory": "finance.inventory",
+    "/finance/check": "finance.check",
     "/attendance": "system.attendance", "/card-management": "system.cards",
     "/points": "system.points", "/points/rules": "system.points_rules",
     "/points/leaderboard": "system.points_leaderboard",
