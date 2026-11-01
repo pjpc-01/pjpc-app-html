@@ -49,17 +49,12 @@ def main():
         if not acc_num or not period:
             skipped += 1
             continue
-        # skip if a row already exists for this account + period
-        exists = cur.execute(
-            'SELECT 1 FROM utility_bills WHERE provider=? AND account_number=? AND (bill_date=? OR due_date=?) LIMIT 1',
-            (provider, acc_num, period, period)).fetchone()
-        if exists:
-            skipped += 1
-            continue
         name = a.get('account_name') or a.get('name') or ''
         status = a.get('status', 'Active')
         # branch mapping by provider prefix
         branch = 'Secondary' if ('PU1' in name or acc_num == '2837070000' or acc_num == '220104544209') else 'Primary'
+        # Resolve the canonical period BEFORE deduping: 'period' is the scraped
+        # due date, but Air rows land on bill_date = (due month - 1) day 21.
         if provider == 'Air Selangor':
             # Air bills are issued in the month BEFORE their due date (e.g. due 21 Sep = Aug bill).
             # So store bill_date = (due month - 1) on the 21st, matching "Bill issued" month.
@@ -72,6 +67,14 @@ def main():
                 bill_date = ''
         else:
             bill_date, due_date = period, ''
+        # Dedupe on the key actually written (bill_date), never on the raw scraped
+        # period — otherwise Air rows never match and every run duplicates them.
+        exists = cur.execute(
+            'SELECT 1 FROM utility_bills WHERE provider=? AND account_number=? AND bill_date=? LIMIT 1',
+            (provider, acc_num, bill_date or due_date)).fetchone()
+        if exists:
+            skipped += 1
+            continue
         amount = float(a.get('current_charges', a.get('amount', 0)) or 0)
         prev = float(a.get('previous_balance', 0) or 0)
         lastpay = float(a.get('last_payment_amount', 0) or 0)

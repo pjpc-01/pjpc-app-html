@@ -26,6 +26,15 @@ NUM_RE = r'my-water-account_accountNumber__\w+[^>]*>([^<]+)<'
 DUE_RE = r'my-water-account_column2__\w+[^>]*>\s*([^<]+)<'
 AMT_RE = r'my-water-account_column3__\w+[^>]*>\s*RM\s*([\d.]+)'
 
+# v4 — per-account detail page (/my-water-account/view?acc=GUID) innerText.
+# The accounts TABLE only shows "Amount due", which is RM 0.00 once the bill is paid.
+# The detail page carries the real bill: Current bill / Pay before / Previous balance.
+CUR_RE = r'Current bill\s*\n?\s*RM\s*([\d.]+)'
+PREV_RE = r'Previous balance\s*\n?\s*RM\s*(-?[\d.]+)'
+PAID_RE = r'Amount to be paid\s*\n?\s*RM\s*([\d.]+)'
+PAYBY_RE = r'Pay before\s*\n?\s*([0-9]{1,2}\s+[A-Za-z]{3}\s+[0-9]{4})'
+OWNER_RE = r'My water accounts\s*\n([^\n]+)\n(\d{8,14})'
+
 # v2 — legacy dashboard classes (fallback if the accounts page changes)
 L_NAME_RE = r'dashboard_waterAccountsName__\w+[^>]*>([^<]+)<'
 L_NUM_RE = r'dashboard_waterAccountsNumber__\w+[^>]*>([^<]+)<'
@@ -97,6 +106,58 @@ def parse_accounts(html):
     return accounts
 
 
+def parse_detail(txt):
+    """Extract the real bill from a detail page's innerText. Returns {} if not found."""
+    m_own = re.search(OWNER_RE, txt)
+    if not m_own:
+        return {}
+    out = {"number": m_own.group(2).strip(), "name": m_own.group(1).strip()}
+    m = re.search(CUR_RE, txt)
+    if m:
+        out["current_bill"] = float(m.group(1))
+    m = re.search(PAID_RE, txt)
+    if m:
+        out["amount_due"] = float(m.group(1))
+    m = re.search(PREV_RE, txt)
+    if m:
+        out["previous_balance"] = float(m.group(1))
+    m = re.search(PAYBY_RE, txt)
+    if m:
+        out["pay_before"] = re.sub(r'\s+', ' ', m.group(1)).strip()
+    return out if "current_bill" in out or "pay_before" in out else {}
+
+
+async def enrich_from_details(page, accounts):
+    """The accounts table shows Amount DUE (0.00 once paid). Read each detail page
+    for Current bill + Pay before so a paid-but-current bill is still captured."""
+    links = await page.eval_on_selector_all(
+        'a[href*="my-water-account/view"]', 'els => els.map(e => e.href)')
+    details = {}
+    for lk in links:
+        try:
+            await page.goto(lk, wait_until='domcontentloaded', timeout=40000)
+            await page.wait_for_timeout(4000)
+            txt = await page.inner_text('body')
+            d = parse_detail(txt)
+            if d.get("number"):
+                details[d["number"]] = d
+            print(f"  detail {lk.split('acc=')[-1][:8]}: {d}", file=sys.stderr)
+        except Exception as e:
+            print(f"  detail error {lk}: {e}", file=sys.stderr)
+    for a in accounts:
+        d = details.get(str(a["number"]).strip())
+        if not d:
+            continue
+        if "current_bill" in d:
+            a["amount"] = a["current_charges"] = d["current_bill"]
+        if d.get("pay_before"):
+            a["due"] = a["due_date"] = d["pay_before"]
+        a["amount_due"] = d.get("amount_due", 0.0)
+        a["previous_balance"] = d.get("previous_balance", 0.0)
+        a["source"] = "account-detail"
+    return accounts
+
+
 def parse_accounts_legacy(html):
     names = [n.strip() for n in re.findall(L_NAME_RE, html)]
     numbers = [n.strip() for n in re.findall(L_NUM_RE, html)]
@@ -129,6 +190,8 @@ async def fetch_accounts(page):
             await page.wait_for_timeout(1500)
         accounts = parse_accounts(html)
         if accounts:
+            # Table shows Amount DUE (0.00 when paid) — enrich with the real bill.
+            accounts = await enrich_from_details(page, accounts)
             return accounts, page.url
         # fallback: dashboard v2 regexes
         await page.goto('https://www.airselangor.com/dashboard?lang=en', wait_until='domcontentloaded', timeout=30000)
