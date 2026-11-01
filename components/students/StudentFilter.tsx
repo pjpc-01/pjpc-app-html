@@ -239,7 +239,8 @@ export default function StudentFilters({
       {showFilters && (
         <AdvancedFilters
           students={students}
-          onFiltersChange={(newFilters) => {
+          value={currentFilters as any}
+          onChange={(newFilters: any) => {
             // 更新本地状态
             if (newFilters.selectedGrade !== undefined) setSelectedGrade(newFilters.selectedGrade)
             if (newFilters.selectedCenter !== undefined) setSelectedCenter(newFilters.selectedCenter)
@@ -259,7 +260,7 @@ export default function StudentFilters({
             if (newFilters.sortOrder !== undefined) setSortOrder(newFilters.sortOrder)
             if (newFilters.quickFilters !== undefined) setQuickFilters(newFilters.quickFilters)
           }}
-          onClearFilters={clearAllFilters}
+          onClear={clearAllFilters}
         />
       )}
 

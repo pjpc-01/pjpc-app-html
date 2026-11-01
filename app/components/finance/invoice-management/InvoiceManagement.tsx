@@ -103,7 +103,7 @@ export default function InvoiceManagement() {
     schoolLogo: "", schoolAddress: "", schoolPhone: "", schoolEmail: "", schoolWebsite: "",
     taxNumber: "", bankName: "", bankAccount: "", bankHolder: "",
     primaryColor: "#1e40af", secondaryColor: "#3b82f6", accentColor: "#f59e0b",
-    footerText: "", paymentTerms: "", receiptNote: "",
+    footerText: "", paymentTerms: "", receiptNote: "", latePaymentRule: "",
     isDefault: true, createdAt: "", updatedAt: ""
   })
 
@@ -991,7 +991,7 @@ Prospek Cemerlang`,
                       <Label htmlFor="whatsappSubject">{t("消息主题")}</Label>
                       <Input
                         id="whatsappSubject"
-                        value={t(messageFormats.whatsapp)}
+                        value={messageFormats.whatsapp.subject}
                         onChange={(e) => setMessageFormats(prev => ({
                           ...prev,
                           whatsapp: { ...prev.whatsapp, subject: e.target.value }
@@ -1032,7 +1032,7 @@ Prospek Cemerlang`,
                       <Label htmlFor="emailSubject">{t("邮件主题")}</Label>
                       <Input
                         id="emailSubject"
-                        value={t(messageFormats.email)}
+                        value={messageFormats.email.subject}
                         onChange={(e) => setMessageFormats(prev => ({
                           ...prev,
                           email: { ...prev.email, subject: e.target.value }

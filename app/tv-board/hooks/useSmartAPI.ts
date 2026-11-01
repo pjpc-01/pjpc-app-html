@@ -40,7 +40,7 @@ export function useSmartAPI<T>(
 
   const cacheRef = useRef<Map<string, CacheEntry<T>>>(new Map())
   const retryCountRef = useRef(0)
-  const intervalRef = useRef<NodeJS.Timeout>()
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // 检查缓存是否有效
   const isCacheValid = useCallback((entry: CacheEntry<T>): boolean => {

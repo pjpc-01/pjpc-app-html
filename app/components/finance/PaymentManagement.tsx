@@ -250,7 +250,7 @@ export default function PaymentManagement() {
         date: new Date().toISOString(),
         status: 'completed',
         notes: `Payment for invoice ${selectedInvoice.invoiceNumber}`
-      }, selectedInvoice)
+      }, selectedInvoice as any)
 
       // 2. Automatically generate the Receipt
       await createReceipt({

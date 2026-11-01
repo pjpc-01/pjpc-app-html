@@ -333,8 +333,9 @@ export interface Receipt {
   studentId: string
   status: string
   notes?: string
-  created: string
-  updated: string
+  // PB 自动填，创建时不用给
+  created?: string
+  updated?: string
 }
 
 /**
@@ -468,6 +469,7 @@ export interface TeacherSalaryStructure {
   pcb_rate?: number
   pcb_amount?: number
   epf_employer_rate?: number
+  no_statutory?: boolean
   salary_type: 'monthly' | 'hourly' | 'commission'
   effective_date: string
   end_date?: string

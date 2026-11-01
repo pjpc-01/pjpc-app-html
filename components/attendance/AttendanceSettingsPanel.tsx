@@ -210,7 +210,7 @@ export default function AttendanceSettingsPanel() {
                   {config.grade_overrides.length > 0 && (
                     <div className="space-y-1 mb-2">
                       {config.grade_overrides.map(g => (
-                        <div key={t(g)} className="flex items-center gap-2 bg-gray-50 rounded px-2 py-1">
+                        <div key={String(g.grade || g)} className="flex items-center gap-2 bg-gray-50 rounded px-2 py-1">
                           <Badge variant="secondary" className="text-[10px]">{t(g.grade)}</Badge>
                           <span className="text-[10px] text-gray-500">{t("签到 ≤")}{g.checkin_deadline}</span>
                           <span className="text-[10px] text-gray-500">{t("签退 ≥")}{g.checkout_minimum}</span>
@@ -255,12 +255,12 @@ export default function AttendanceSettingsPanel() {
                   <p className="text-xs font-semibold text-gray-500 mb-2">{t("按老师")}</p>
                   {config.teacher_overrides.length > 0 && (
                     <div className="space-y-1 mb-2">
-                      {config.teacher_overrides.map(t => (
-                        <div key={t.teacher_id} className="flex items-center gap-2 bg-gray-50 rounded px-2 py-1">
-                          <Badge variant="secondary" className="text-[10px]">{t.teacher_name}</Badge>
-                          <span className="text-[10px] text-gray-500">{t("签到 ≤")}{t.checkin_deadline}</span>
-                          <span className="text-[10px] text-gray-500">{t("签退 ≥")}{t.checkout_minimum}</span>
-                          <button onClick={() => removeTeacher(t.teacher_id)} className="ml-auto text-red-400 hover:text-red-600">
+                      {config.teacher_overrides.map(ov => (
+                        <div key={ov.teacher_id} className="flex items-center gap-2 bg-gray-50 rounded px-2 py-1">
+                          <Badge variant="secondary" className="text-[10px]">{ov.teacher_name}</Badge>
+                          <span className="text-[10px] text-gray-500">{t("签到 ≤")}{ov.checkin_deadline}</span>
+                          <span className="text-[10px] text-gray-500">{t("签退 ≥")}{ov.checkout_minimum}</span>
+                          <button onClick={() => removeTeacher(ov.teacher_id)} className="ml-auto text-red-400 hover:text-red-600">
                             <Trash2 className="h-3 w-3" />
                           </button>
                         </div>

@@ -7,10 +7,12 @@ export interface FeeItem {
   name: string;
   amount: number;
   active: boolean;
+  quantity?: number;
 }
 
 export interface StudentAdjustment {
-  discount: number;           // discount value (RM or % depending on discount_type)
+  discount: number;
+  six_month_pay?: boolean;    // 是否走半年缴           // discount value (RM or % depending on discount_type)
   discount_type: 'amount' | 'percent'; // how to interpret discount
   six_month_fee_ids: string[]; // fee item IDs for 6-month prepay
   six_month_pay_rate: number; // discount value (RM or % depending on six_month_pay_rate_type)

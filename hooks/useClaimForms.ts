@@ -50,7 +50,7 @@ export const useClaimForms = () => {
   const fetchClaims = useCallback(async () => {
     try {
       setLoading(true); setError(null)
-      const data = await fetchSecureData<ClaimForm>('claim_forms', { sort: '-created', fullList: true })
+      const data = await fetchSecureData<ClaimForm[]>('claim_forms', { sort: '-created', fullList: true })
       setClaims(data)
     } catch (e) {
       console.error('fetch claim_forms:', e)

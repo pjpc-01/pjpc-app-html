@@ -51,7 +51,7 @@ export default function GlobalCardScanner() {
   const [status, setStatus] = useState<"success" | "error" | "loading" | null>(null)
   const [msg, setMsg] = useState("")
   const [personName, setPersonName] = useState("")
-  const dismissRef = useRef<ReturnType<typeof setTimeout>>()
+  const dismissRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const show = useCallback((s: "success" | "error" | "loading", m: string, name?: string) => {
     if (dismissRef.current) clearTimeout(dismissRef.current)
