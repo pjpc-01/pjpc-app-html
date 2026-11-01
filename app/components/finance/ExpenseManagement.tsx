@@ -85,7 +85,8 @@ export default function ExpenseManagement() {
     error, 
     createExpense, 
     createExpenseWithReceipt,
-    deleteExpense 
+    deleteExpense,
+    clearExpenseReceipt
   } = useExpenses()
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -593,15 +594,27 @@ export default function ExpenseManagement() {
                     <TableCell className="text-slate-500 font-mono text-xs">{(expense as any).voucher_no || "—"}</TableCell>
                     <TableCell className="text-center">
                       {expense.receipt ? (
-                        <a 
-                          href={getReceiptUrl(expense.receipt, expense.id)} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors"
-                          title={t("查看收据")}
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                        </a>
+                        <div className="inline-flex items-center gap-1">
+                          <a 
+                            href={getReceiptUrl(expense.receipt, expense.id)} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors"
+                            title={t("查看收据")}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </a>
+                          <button
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
+                            title={t("删收据")}
+                            onClick={async () => {
+                              if (!confirm(t("确定删除这条支出的收据附件吗？"))) return
+                              try { await clearExpenseReceipt(expense.id) } catch (e: any) { alert(String(e?.message || e)) }
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       ) : (
                         <span className="inline-flex items-center rounded-full bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 text-[10px] font-medium" title={t("没有收据附件，报税时无法举证")}>
                           {t("缺")}

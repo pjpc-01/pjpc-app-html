@@ -1,6 +1,14 @@
 // USB NFC/RFID 读卡器支持
 // 扩展原有的NFC系统以支持USB读卡器
 
+// TypeScript 标准 lib 里没有 WebUSB（navigator.usb），这里补一个声明
+declare global {
+  interface Navigator {
+    usb: any
+    serial: any
+  }
+}
+
 // USB设备信息接口
 export interface USBDevice {
   id: string
@@ -58,7 +66,7 @@ export class WebNFCReader implements NFCReader {
     this.checkConnection()
   }
 
-  private async checkConnection() {
+  async checkConnection() {
     if (typeof window === 'undefined') {   // SSR 保护：服务端没有 window
       this.isConnected = false
       return
@@ -92,7 +100,19 @@ export class WebNFCReader implements NFCReader {
           console.log(`[Web NFC] ${this.name} 检测到NFC标签:`, event)
           
           // 提取UID
-          const uid = this.extractUIDFromNFC(event)
+          // 从 NDEF reading 事件里取 UID（Web NFC: event.message.records[0].data 是字节数组）
+          let uid = ""
+          try {
+            const recs = (event as any)?.message?.records || []
+            for (const r of recs) {
+              const d = r?.data
+              if (d) {
+                const bytes = Array.from(d as Uint8Array)
+                uid = bytes.map((b: number) => b.toString(16).padStart(2, "0")).join("").toUpperCase()
+                break
+              }
+            }
+          } catch { /* 忽略，拿不到就当没读到 */ }
           if (uid) {
             const cardData = {
               uid: uid,
@@ -162,13 +182,13 @@ export class USBNFCReader implements NFCReader {
     this.checkConnection()
   }
 
-  private async checkConnection() {
+  async checkConnection() {
     try {
       if ('usb' in navigator) {
         const devices = await navigator.usb.getDevices()
         
         // 首先尝试查找标准的NFC/RFID设备
-        let nfcDevice = devices.find(device => 
+        let nfcDevice = devices.find((device: any) => 
           device.productName?.toLowerCase().includes('nfc') ||
           device.productName?.toLowerCase().includes('rfid') ||
           device.productName?.toLowerCase().includes('card reader') ||
@@ -188,7 +208,7 @@ export class USBNFCReader implements NFCReader {
         // 如果没有找到标准设备，尝试查找任何HID设备
         if (!nfcDevice && devices.length > 0) {
           console.log(`[USB NFC] ${this.name} 检测到 ${devices.length} 个USB设备:`)
-          devices.forEach((device, index) => {
+          devices.forEach((device: any, index: number) => {
             console.log(`  设备 ${index + 1}:`, {
               productName: device.productName,
               vendorId: device.vendorId,
@@ -232,13 +252,13 @@ export class USBNFCReader implements NFCReader {
 
   async startScan(): Promise<void> {
     try {
-      let device: USBDevice
+      let device: any // WebUSB 原生设备对象（本文件的 USBDevice 是业务用的设备信息结构，不是它）
 
       if (this.isConnected && this.device) {
         // 如果已有设备，尝试使用现有设备
         try {
           const devices = await navigator.usb.getDevices()
-          const existingDevice = devices.find(d => 
+          const existingDevice = devices.find((d: any) => 
             d.vendorId === this.device!.vendorId && 
             d.productId === this.device!.productId
           )
@@ -583,7 +603,7 @@ export class SerialNFCReader implements NFCReader {
     this.checkConnection()
   }
 
-  private async checkConnection() {
+  async checkConnection() {
     try {
       if ('serial' in navigator) {
         // 检查是否有可用的串口设备
@@ -706,7 +726,7 @@ export class SerialNFCReader implements NFCReader {
       this.reader = this.port.readable.getReader()
 
       while (this.isScanning) {
-        const { value, done } = await this.reader.read()
+        const { value, done } = await this.reader!.read()
         
         if (done) {
           break
@@ -929,7 +949,7 @@ export class UnifiedNFCManager {
         console.log('[Unified NFC] 请求USB设备访问权限')
         
         // 请求用户选择USB设备
-        const device = await navigator.usb.requestDevice({
+        const device: any = await navigator.usb.requestDevice({
           filters: [] // 空过滤器，显示所有设备
         })
         
@@ -970,7 +990,7 @@ export class UnifiedNFCManager {
           if (serialReader.isConnected) {
             // 尝试检查串口是否真正可用
             const ports = await navigator.serial.getPorts()
-            const hasAvailablePort = ports.some(port => {
+            const hasAvailablePort = ports.some((port: any) => {
               try {
                 return port.readable && port.writable
               } catch {
