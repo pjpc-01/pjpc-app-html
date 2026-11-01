@@ -140,6 +140,22 @@ export default function ContributionManagementPage() {
     } catch (e: any) { setMsg(String(e?.message || e)) } finally { setBusy(false) }
   }
 
+  // 清空物品照片：文件字段必须用 JSON PATCH 传空数组，用 multipart 反而会把附件清不干净
+  const clearImage = async (col: string, id: string) => {
+    if (!confirm(t("确定删除这张照片吗？"))) return
+    setBusy(true); setMsg("")
+    try {
+      const r = await fetch(`${API}/${col}/records/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: [] }),
+      })
+      if (!r.ok) throw new Error(`删除失败（${r.status}）`)
+      setMsg(t("照片已删除"))
+      await load()
+    } catch (e: any) { setMsg(String(e?.message || e)) } finally { setBusy(false) }
+  }
+
   const patch = async (col: string, id: string, body: any) => {
     const r = await fetch(`${API}/${col}/records/${id}`, {
       method: "PATCH",
@@ -691,6 +707,10 @@ export default function ContributionManagementPage() {
                               <input type="file" accept="image/*" className="hidden"
                                 onChange={(e) => { const f = e.target.files?.[0]; if (f) changeImage("contribution_items", x.id, f) }} />
                             </label>
+                            {x.image && (
+                              <button className="rounded border border-red-200 px-2 py-1.5 text-xs text-red-600 hover:bg-red-50" disabled={busy}
+                                onClick={() => clearImage("contribution_items", x.id)}>{t("删照片")}</button>
+                            )}
                             {x.status === "active" && (
                               <>
                                 <button className="rounded border px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50" disabled={busy} onClick={() => setStatus(x, "achieved")}>{t("标记完成")}</button>
@@ -768,6 +788,10 @@ export default function ContributionManagementPage() {
                               <input type="file" accept="image/*" className="hidden"
                                 onChange={(e) => { const f = e.target.files?.[0]; if (f) changeImage("reward_items", x.id, f) }} />
                             </label>
+                            {x.image && (
+                              <button className="rounded border border-red-200 px-2 py-1.5 text-xs text-red-600 hover:bg-red-50" disabled={busy}
+                                onClick={() => clearImage("reward_items", x.id)}>{t("删照片")}</button>
+                            )}
                             <button className="flex-1 rounded border px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50" disabled={busy}
                               onClick={async () => { await patch("reward_items", x.id, { status: x.status === "active" ? "closed" : "active" }); load() }}>
                               {x.status === "active" ? t("下架") : t("上架")}

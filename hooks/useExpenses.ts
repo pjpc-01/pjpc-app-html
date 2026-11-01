@@ -85,6 +85,18 @@ export const useExpenses = () => {
     }
   }
 
+  // 删掉支出收据附件：文件字段必须用 JSON PATCH 传空数组
+  const clearExpenseReceipt = async (id: string) => {
+    try {
+      const updated = await updateRecord('expenses', id, { receipt: [] } as any) as Expense
+      setExpenses(prev => prev.map(e => e.id === id ? { ...e, ...updated, receipt: undefined } : e))
+      return updated
+    } catch (err) {
+      console.error('Error clearing receipt:', err)
+      throw err
+    }
+  }
+
   useEffect(() => {
     fetchExpenses()
   }, [fetchExpenses])
@@ -97,6 +109,7 @@ export const useExpenses = () => {
     createExpense,
     createExpenseWithReceipt,
     updateExpense,
-    deleteExpense
+    deleteExpense,
+    clearExpenseReceipt
   }
 }
