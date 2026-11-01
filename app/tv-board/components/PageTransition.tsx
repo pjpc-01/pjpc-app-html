@@ -25,7 +25,7 @@ export default function PageTransition({ children, currentPage, direction = 'rig
     })
   }
 
-  const lightSweepVariants = {
+  const lightSweepVariants: any = {
     initial: { x: '-100%', opacity: 0 },
     animate: { 
       x: '100%', 

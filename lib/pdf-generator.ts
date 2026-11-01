@@ -1495,7 +1495,7 @@ export const generatePayslipHTML = (
   record: PayslipRecord,
   settings: PayslipSettingsPreset,
   teacherName: string,
-  teacherInfo?: { epfNo?: number; socsoNo?: number; bankName?: string; bankAccountNo?: number }
+  teacherInfo?: { epfNo?: number | string; socsoNo?: number | string; bankName?: string; bankAccountNo?: number | string }
 ): string => {
   const primaryColor = settings.primaryColor || '#1e40af'
   const secondaryColor = settings.secondaryColor || '#3b82f6'
@@ -1796,7 +1796,7 @@ export const generatePayslipPDF = async (
   record: PayslipRecord,
   settings: PayslipSettingsPreset,
   teacherName: string,
-  teacherInfo?: { epfNo?: number; socsoNo?: number; bankName?: string; bankAccountNo?: number }
+  teacherInfo?: { epfNo?: number | string; socsoNo?: number | string; bankName?: string; bankAccountNo?: number | string }
 ): Promise<Blob> => {
   const html = generatePayslipHTML(record, settings, teacherName, teacherInfo)
 
@@ -1868,7 +1868,7 @@ export const downloadPayslipPDF = async (
   record: PayslipRecord,
   settings: PayslipSettingsPreset,
   teacherName: string,
-  teacherInfo?: { epfNo?: number; socsoNo?: number; bankName?: string; bankAccountNo?: number }
+  teacherInfo?: { epfNo?: number | string; socsoNo?: number | string; bankName?: string; bankAccountNo?: number | string }
 ): Promise<void> => {
   try {
     const blob = await generatePayslipPDF(record, settings, teacherName, teacherInfo)

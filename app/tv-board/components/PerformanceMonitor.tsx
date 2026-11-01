@@ -33,7 +33,7 @@ export default function PerformanceMonitor({
   const [isVisible, setIsVisible] = useState(false)
   const frameCountRef = useRef(0)
   const lastTimeRef = useRef(performance.now())
-  const animationFrameRef = useRef<number>()
+  const animationFrameRef = useRef<number | null>(null)
   const renderStartRef = useRef(0)
 
   // 渲染时间测量 - 合并为单个effect避免无限循环

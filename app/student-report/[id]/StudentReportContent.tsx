@@ -464,7 +464,7 @@ export default function StudentReportContent() {
       setSaving(true)
       await downloadReportPDF(report, reportSettings, {
         name: student.name,
-        student_id: student.student_id || student.code,
+        student_id: student.student_id || (student as any).code,
         dob: student.dob,
         grade: student.grade,
         avatar: avatarSrc,
@@ -638,7 +638,7 @@ export default function StudentReportContent() {
           ref={printRef as any}
           srcDoc={report ? generateReportHTML(report, reportSettings, {
             name: student?.name || '',
-            student_id: student?.student_id || student?.code || '',
+            student_id: student?.student_id || (student as any)?.code || '',
             dob: student?.dob || '',
             grade: student?.grade || '',
             avatar: avatarSrc,

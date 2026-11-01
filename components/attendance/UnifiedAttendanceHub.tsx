@@ -448,12 +448,12 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
                   <td className="px-4 py-2.5">
                     {item._isAbsent ? <span className="text-[11px] text-gray-300">—</span> : (
                       <>
-                        <span className={`font-mono text-xs ${item.is_early ? "text-orange-500" : "text-amber-600"}`}>{item.check_out_time || "—"}</span>
+                        <span className={`font-mono text-xs ${item.is_early ? "text-orange-500" : "text-amber-600"}`}>{(item as any).check_out_time || "—"}</span>
                         {item.is_early && <Badge className="ml-1.5 text-[9px] bg-orange-50 text-orange-500 px-1.5 py-0 h-4 font-normal">{t('teacher.early_leave')}</Badge>}
                       </>
                     )}
                   </td>
-                  <td className="px-4 py-2.5 font-mono text-[11px] text-gray-500">{item._isAbsent ? <span className="text-gray-300">—</span> : calcDuration(item.check_in as any, item.check_out as any)}</td>
+                  <td className="px-4 py-2.5 font-mono text-[11px] text-gray-500">{item._isAbsent ? <span className="text-gray-300">—</span> : calcDuration((item as any).check_in as any, (item as any).check_out as any)}</td>
                   <td className="px-4 py-2.5">
                     {item._isAbsent ? (
                       <span className="inline-flex items-center gap-1 text-[10px] text-gray-400">
@@ -461,7 +461,7 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
                       </span>
                     ) : item.status === "late" ? <Badge className="text-[9px] bg-orange-50 text-orange-600 font-normal">{t('teacher.late')}</Badge> :
                        item.status === "on_time" ? <Badge className="text-[9px] bg-emerald-50 text-emerald-600 font-normal">{t("准时")}</Badge> :
-                       <Badge variant="secondary" className="text-[9px] font-normal">{item.check_out_time ? "已签退" : "仅签到"}</Badge>}
+                       <Badge variant="secondary" className="text-[9px] font-normal">{(item as any).check_out_time ? "已签退" : "仅签到"}</Badge>}
                   </td>
                 </tr>
               ))}

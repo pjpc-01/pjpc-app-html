@@ -14,6 +14,7 @@ const EMPTY: CenterMaps = {
   teacherCenterCode: new Map(),
   invoiceCenterCode: new Map(),
   centers: [],
+  crossCenterTeacherIds: new Set(),
 }
 
 /**

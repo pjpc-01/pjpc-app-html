@@ -678,8 +678,9 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                   label={({ name, value, cx, cy, midAngle, innerRadius, outerRadius }) => {
                     const RADIAN = Math.PI / 180
                     const radius = outerRadius * 1.35
-                    const x = cx + radius * Math.cos(-midAngle * RADIAN)
-                    const y = cy + radius * Math.sin(-midAngle * RADIAN)
+                    const ang = midAngle ?? 0
+                    const x = cx + radius * Math.cos(-ang * RADIAN)
+                    const y = cy + radius * Math.sin(-ang * RADIAN)
                     return (
                       <text
                         x={x}

@@ -63,7 +63,7 @@ export function useAttendance(centerId?: string) {
         sort: '-timestamp'
       })
 
-      setAttendanceRecords(records.items as AttendanceRecord[])
+      setAttendanceRecords(records.items as unknown as AttendanceRecord[])
     } catch (err) {
       setError('获取考勤记录失败')
       console.error('获取考勤记录失败:', err)
@@ -95,7 +95,7 @@ export function useAttendance(centerId?: string) {
       const record = await pb.collection('attendance').create(attendanceData)
       
       // 更新本地状态
-      setAttendanceRecords(prev => [record as AttendanceRecord, ...prev])
+      setAttendanceRecords(prev => [record as unknown as AttendanceRecord, ...prev])
       
       return record
     } catch (err) {
@@ -164,7 +164,7 @@ export function useCenters() {
         sort: 'name'
       })
 
-      setCenters(records.items as Center[])
+      setCenters(records.items as unknown as Center[])
     } catch (err) {
       setError('获取中心信息失败')
       console.error('获取中心信息失败:', err)
@@ -177,7 +177,7 @@ export function useCenters() {
   const fetchCenter = async (centerId: string) => {
     try {
       const record = await pb.collection('centers').getOne(centerId)
-      return record as Center
+      return record as unknown as Center
     } catch (err) {
       setError('获取中心信息失败')
       console.error('获取中心信息失败:', err)

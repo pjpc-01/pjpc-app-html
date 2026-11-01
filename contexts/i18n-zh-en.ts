@@ -3693,4 +3693,6 @@ export const ZH_TO_EN: Record<string, string> = {
   "确定删除这张照片吗？": "Delete this photo?",
   "删收据": "Delete receipt",
   "确定删除这条支出的收据附件吗？": "Delete the receipt attachment of this expense?",
+  "财务管理是独立页面，点下面按钮进去": "Finance management is a separate page — use the button below.",
+  "打开财务管理": "Open finance management",
 }

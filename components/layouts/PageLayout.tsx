@@ -11,7 +11,8 @@ export interface PageLayoutProps {
   backUrl?: string
   /** 自定义返回行为（给了就优先用它，比如「在页面内部的子视图里返回上一级」） */
   onBack?: () => void
-  userRole?: 'admin' | 'teacher' | 'parent' | 'accountant'
+  // 角色直接用 UserProfile 的联合类型，免得每加一个角色就要改这里
+  userRole?: import('@/lib/pocketbase').UserProfile['role']
   status?: string
   background?: string
   actions?: React.ReactNode

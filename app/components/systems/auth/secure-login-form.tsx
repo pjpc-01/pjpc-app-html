@@ -160,7 +160,7 @@ export default function SecureLoginForm() {
         setNfcStatus({ ok: true, msg: `读取卡号: ${lookupIds[0]}，验证中...` })
 
         // Try each format until one works
-        let result = { success: false, error: "" }
+        let result: { success: boolean; error?: string } = { success: false, error: "" }
         for (const id of lookupIds) {
           result = await loginWithCard(id)
           if (result.success) break

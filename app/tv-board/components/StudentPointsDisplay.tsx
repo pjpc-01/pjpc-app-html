@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Trophy, Medal, Award, Star, Users } from "lucide-react"
-import { ThemeColors } from "../hooks/useTheme"
+import type { ThemeColors } from "../types"
 import { useLanguage } from "@/contexts/language-context";
 
 interface StudentPointsDisplayProps {

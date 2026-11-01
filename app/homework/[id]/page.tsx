@@ -68,7 +68,7 @@ export default function HomeworkDetailPage() {
   // Build submission map
   const submissionMap = new Map<string, any>()
   submissions.forEach((sub) => {
-    const studentId = typeof sub.studentId === "string" ? sub.studentId : sub.studentId?.id
+    const studentId = typeof sub.studentId === "string" ? sub.studentId : (sub.studentId as any)?.id
     if (studentId) submissionMap.set(studentId, sub)
   })
 

@@ -77,16 +77,16 @@ const processData = (
       debugLog('学生数据获取失败，使用 Mock 数据', studentsResult.error)
       
       const mockStudents = MOCK_STUDENTS.filter(s => s.center === center)
-      setStudents(mockStudents)
+      setStudents(mockStudents as any)
       
       const mockPoints = mockStudents.map(s => ({
         student_id: s.id,
         points: Math.floor(Math.random() * 500) + 100,
         last_update: new Date().toISOString()
       }))
-      setPoints(mockPoints)
+      setPoints(mockPoints as any)
       
-      setAnnouncements([{ id: 'mock-1', content: 'Welcome to TV Board (Mock Mode)!', type: 'info', center: center }])
+      setAnnouncements([{ id: 'mock-1', content: 'Welcome to TV Board (Mock Mode)!', type: 'info', center: center }] as any)
       setTransactions([])
       setLastUpdate(new Date())
       setReady(true) 
@@ -187,9 +187,9 @@ export function useTVBoardData(center: string): TVBoardDataResult {
         debugLog('取数失败，退回 Mock:', err)
         try {
           const mockStudents = MOCK_STUDENTS.filter(s => s.center === center)
-          setStudents(mockStudents)
-          setPoints(mockStudents.map(s => ({ student_id: s.id, points: 0, last_update: new Date().toISOString() })))
-          setAnnouncements([{ id: 'mock-err', content: '看板取数失败，显示的是占位数据，请检查网络或接口', type: 'warning', center }])
+          setStudents(mockStudents as any)
+          setPoints(mockStudents.map(s => ({ student_id: s.id, points: 0, last_update: new Date().toISOString() })) as any)
+          setAnnouncements([{ id: 'mock-err', content: '看板取数失败，显示的是占位数据，请检查网络或接口', type: 'warning', center }] as any)
           setTransactions([])
           setLastUpdate(new Date())
           setReady(true)
@@ -301,9 +301,9 @@ export function useTVBoardData(center: string): TVBoardDataResult {
         apiService.getPoints(),
         apiService.getAnnouncements()
       ])
-      let transactionsResult = { success: false, data: [] }
+      let transactionsResult: { success: boolean; data: any[] } = { success: false, data: [] }
       try {
-        transactionsResult = await apiService.getTransactions(center, 10)
+        transactionsResult = (await apiService.getTransactions(center, 10)) as any
       } catch (error) {}
       processData(
         studentsResult,

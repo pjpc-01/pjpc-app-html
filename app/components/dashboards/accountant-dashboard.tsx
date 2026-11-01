@@ -8,7 +8,6 @@ import PageLayout from "@/components/layouts/PageLayout"
 import TabbedPage from "@/components/layouts/TabbedPage"
 import StatsGrid from "@/components/ui/StatsGrid"
 import { Badge } from "@/components/ui/badge"
-import FinanceManagement from "@/app/finance-management/page"
 import {
   DollarSign,
   Calculator,
@@ -260,7 +259,15 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
         </TabsContent>
 
         <TabsContent value="finance" className="mt-6">
-          <FinanceManagement />
+          {/* 财务页是独立的 server page（内部 redirect 到 /finance/overview），不能当组件塞进来 */}
+          <Card>
+            <CardContent className="py-10 text-center space-y-3">
+              <p className="text-sm text-gray-600">{t("财务管理是独立页面，点下面按钮进去")}</p>
+              <Button onClick={() => (window.location.href = "/finance/overview")}>
+                <DollarSign className="h-4 w-4 mr-2" />{t("打开财务管理")}
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="reports" className="mt-6">

@@ -12,9 +12,7 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // TS 错误现在清零了，构建时真的检查类型（2026-11-01 起不再跳过）
   images: {
     unoptimized: true,
     domains: ['localhost', '127.0.0.1', 'pjpc.tplinkdns.com'],

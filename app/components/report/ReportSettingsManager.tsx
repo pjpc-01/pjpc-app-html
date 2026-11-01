@@ -31,31 +31,31 @@ export interface ReportSection {
 
 export interface ReportSettingsPreset {
   id: string
-  name: string
-  schoolName: string
-  schoolNameEn: string
-  schoolLogo: string
-  schoolLogo2: string
+  name?: string
+  schoolName?: string
+  schoolNameEn?: string
+  schoolLogo?: string
+  schoolLogo2?: string
   schoolAddress: string
-  schoolPhone: string
-  schoolEmail: string
-  primaryColor: string
+  schoolPhone?: string
+  schoolEmail?: string
+  primaryColor?: string
   headerTitle: string
-  headerSubtitle: string
+  headerSubtitle?: string
   footerText: string
   defaultSubjects: string[]
   growthMessage: string
   problems: string[]
   improvements: string[]
-  activities: string[]
+  activities?: string[]
   futureGoalAcademic: string
   futureGoalAbility: string
   futureGoalCharacter: string
   summary: string
   sections: ReportSection[]
   isDefault: boolean
-  createdAt: string
-  updatedAt: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 const DEFAULT_SECTIONS: ReportSection[] = [
@@ -471,9 +471,9 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
           if (cancelled) return
         if (items.length > 0) {
           setPresets(items)
-          const defId = activePresetId || items.find(p => p.isDefault)?.id || items[0].id
+          const defId = activePresetId || items.find((p: any) => p.isDefault)?.id || items[0].id
           setActiveId(defId)
-          const active = items.find(p => p.id === defId)
+          const active = items.find((p: any) => p.id === defId)
           if (active) { setSettings(active); onSettingsChange?.(active) }
         } else {
           const d = createDefaultPreset()

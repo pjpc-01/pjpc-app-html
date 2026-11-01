@@ -22,6 +22,7 @@ export interface Teacher {
   experience?: number
   status?: 'active' | 'inactive' | 'on_leave'
   joinDate?: string
+  resignationDate?: string
   lastActive?: string
   courses?: number
   students?: number
@@ -55,7 +56,8 @@ export const useTeachers = (includeInactive = false) => {
       setLoading(true)
       setError(null)
       const data = await getAllTeachers(includeInactive)
-      setTeachers(data)
+      // lib 里的 Teacher 和这里的应用层 Teacher 字段有出入，统一断言
+      setTeachers(data as unknown as Teacher[])
     } catch (err: any) {
       console.error('获取教师数据失败:', err)
       setError(err.message || '获取教师数据失败')
