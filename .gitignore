@@ -139,3 +139,6 @@ public/invoices/
 # 构建产物（不该进版本库）
 tsconfig.tsbuildinfo
 *.tsbuildinfo
+
+# 本地数据库备份，不入库（含学生资料）
+backups/
