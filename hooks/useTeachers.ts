@@ -5,6 +5,9 @@ import { getAllTeachers, Teacher as PocketBaseTeacher, addTeacher as addTeacherT
 export interface Teacher {
   id: string
   teacher_name?: string
+  name?: string
+  idNumber?: string | number
+  hireDate?: string
   teacher_id?: string
   nric?: string
   email?: string

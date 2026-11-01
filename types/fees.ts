@@ -10,8 +10,14 @@ export interface Fee {
   icon?: string          // Lucide icon name for the category (e.g. "GraduationCap")
   applicableCenters?: string[]
   applicableLevels?: string[]
-  // NOTE: discount / sixMonthPay / latePaymentFee moved to student_fees
-  //       (per-student) and invoice_settings (global rules).
+  // 历史表单仍在读这些键；已迁到 student_fees / invoice_settings，这里留可选兼容
+  discount?: number
+  discountType?: 'amount' | 'percent'
+  sixMonthPay?: boolean
+  sixMonthPayRate?: number
+  latePaymentFee?: number
+  latePaymentRule?: string
+  notes?: string
 }
 
 // Optional helper subtype used in forms when creating/updating

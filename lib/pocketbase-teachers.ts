@@ -61,6 +61,9 @@ export interface TeacherCreateData {
   address?: string
   emergencyContact?: string
   notes?: string
+  centerId?: string
+  hireDate?: string
+  joinedAt?: string
   
   // 新增字段
   taxNo?: string
@@ -447,7 +450,7 @@ export const updateTeacher = async (teacherData: TeacherUpdateData): Promise<Tea
       
       // 如果直接更新失败，尝试使用管理员认证
       try {
-        await authenticateAdmin(pb)
+        await authenticateAdmin()
         console.log('✅ 管理员认证成功，重试更新')
         const record = await pb.collection('teachers').update(id, mappedUpdateData)
         console.log('✅ 使用管理员权限更新成功:', record)

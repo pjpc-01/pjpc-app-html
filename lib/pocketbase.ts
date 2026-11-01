@@ -151,8 +151,9 @@ export interface UserProfile {
   id: string
   email: string
   name: string
-  role: "admin" | "teacher" | "parent" | "accountant"
-  status: "pending" | "approved" | "suspended"
+  // 角色含 student（学生端 /my）和 pending（注册待审核，未分配角色）
+  role: "admin" | "teacher" | "parent" | "accountant" | "student" | "pending" | "office_admin" | "boss"
+  status: "pending" | "approved" | "suspended" | "active" | "inactive" 
   emailVerified: boolean
   createdAt: string
   updatedAt: string

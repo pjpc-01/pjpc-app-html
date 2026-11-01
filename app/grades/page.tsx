@@ -175,7 +175,7 @@ export default function GradesManagementPage() {
       map[g.studentId].scores.push(g.score!)
     }
     return Object.entries(map).map(([id, d]) => ({
-      id, name: d.name, grade: d.grade,
+      id, name: d.name, student_name: d.name, grade: d.grade, standard: d.grade,
       avg: Math.round(d.scores.reduce((a, b) => a + b, 0) / d.scores.length * 10) / 10,
       subjects: d.scores.length,
     })).sort((a, b) => b.avg - a.avg)
@@ -340,7 +340,7 @@ export default function GradesManagementPage() {
                               </TableCell>
                             )
                           })}
-                          <TableCell className={`text-xs text-right font-bold ${s.avg >= 70 ? "text-emerald-600" : s.avg >= 50 ? "text-slate-700" : "text-red-600"}`}>{(() => { const subjects = studentSubjectMap[s.id] || {}; const scores = Object.values(subjects).filter((d) => !isNaN(d.score)).map((d) => d.score); const avg = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length * 10) / 10 : 0; return avg > 0 ? avg : "-" })()}</TableCell>
+                          <TableCell className="text-xs text-right font-bold">{(() => { const subjects = studentSubjectMap[s.id] || {}; const scores = Object.values(subjects).filter((d) => !isNaN(d.score)).map((d) => d.score); const avg = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length * 10) / 10 : 0; return <span className={avg >= 70 ? "text-emerald-600" : avg >= 50 ? "text-slate-700" : "text-red-600"}>{avg > 0 ? avg : "-"}</span> })()}</TableCell>
                           <TableCell className="text-center">
                             <button
                               type="button"
@@ -396,7 +396,7 @@ export default function GradesManagementPage() {
                 {subjectStats.map(s => {
                   const max = Math.max(...Object.values(s.dist), 1)
                   return (
-                    <div key={t(s)} className="flex items-center gap-3">
+                    <div key={s.subject} className="flex items-center gap-3">
                       <div className="w-20 text-xs font-medium shrink-0 text-right">{t(s.subject)}</div>
                       <div className="flex-1 flex items-center gap-1">
                         {(["A", "B", "C", "D", "F"] as const).map(l => {

@@ -12,7 +12,7 @@ import { CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
-import { Teacher } from '@/types/teacher'
+import type { Teacher } from '@/hooks/useTeachers'
 import { useLanguage } from "@/contexts/language-context"
 
 interface TeacherFormProps {

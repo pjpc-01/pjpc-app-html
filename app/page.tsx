@@ -137,7 +137,7 @@ export default function Dashboard() {
   }
 
   const getRoleTitle = () => {
-    switch (userProfile.role) {
+    switch (userProfile?.role) {
       case "admin": return "Admin Console"
       case "teacher": return "Teacher Workspace"
       case "parent": return "Parent Portal"
@@ -147,12 +147,12 @@ export default function Dashboard() {
   }
 
   const getRoleLabel = () => {
-    switch (userProfile.role) {
+    switch (userProfile?.role) {
       case "admin": return "Administrator"
       case "teacher": return "Teacher"
       case "parent": return "Parent"
       case "accountant": return "Accountant"
-      default: return userProfile.role
+      default: return userProfile?.role || ""
     }
   }
 

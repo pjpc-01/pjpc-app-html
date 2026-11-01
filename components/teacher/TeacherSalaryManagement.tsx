@@ -81,6 +81,10 @@ interface TeacherSalaryStructure {
     teacher_id: {
       name: string
       email: string
+      epfNo?: string | number
+      socsoNo?: string | number
+      bankName?: string
+      bankAccountNo?: string | number
     }
   }
 }
@@ -116,6 +120,10 @@ interface TeacherSalaryRecord {
     teacher_id: {
       name: string
       email: string
+      epfNo?: string | number
+      socsoNo?: string | number
+      bankName?: string
+      bankAccountNo?: string | number
     }
   }
 }
@@ -127,6 +135,10 @@ interface Teacher {
   department?: string
   position?: string
   status?: string
+  epfNo?: string | number
+  socsoNo?: string | number
+  bankName?: string
+  bankAccountNo?: string | number
 }
 
 export default function TeacherSalaryManagement() {

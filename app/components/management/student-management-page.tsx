@@ -82,6 +82,15 @@ import StudentList from "../student/StudentList"
 import AdvancedFilters from "../student/AdvancedFilters"
 import StudentAnalytics from "../student/StudentAnalytics"
 
+// 学生头像文件名 → 走代理的文件 URL（页面里原来直接引用了不存在的函数名）
+const studentAvatarUrl = (st: any): string | undefined => {
+  const f = st?.avatar || st?.photo
+  if (!f) return undefined
+  if (String(f).startsWith('http')) return String(f)
+  return `/api/pocketbase-proxy/api/files/students/${st.id}/${f}`
+}
+
+
 interface FilterState {
   // 基本信息筛选
   searchTerm: string
