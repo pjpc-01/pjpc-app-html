@@ -18,10 +18,17 @@ const getAvatarUrl = (record: any): string | undefined => {
 export interface Student {
   id: string
   
-  // 基本信息
+  // 基本信息（PB students 集合实际字段是 camelCase，snake_case 只为兼容老代码保留）
   student_id?: string
   student_name?: string
+  name?: string
+  grade?: string
+  is_peralihan?: boolean
   dob?: string
+  fatherName?: string
+  motherName?: string
+  fatherPhone?: string
+  motherPhone?: string
   father_name?: string
   mother_name?: string
   father_phone?: string
@@ -83,6 +90,8 @@ export interface Student {
   address?: string
   medicalInfo?: string
   notes?: string
+  collectionId?: string
+  collectionName?: string
   usageCount?: number
   lastUsed?: string
   points?: number

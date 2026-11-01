@@ -24,6 +24,10 @@ export interface BankTransaction {
   category?: string
   notes?: string
   created?: string
+  // 对账状态（BankReconciliation 页面用）
+  reconciled?: boolean
+  matchedTo?: string
+  matchType?: 'invoice' | 'payment' | 'expense' | 'manual'
 }
 
 const ACCOUNTS_COLLECTION = 'bank_accounts'

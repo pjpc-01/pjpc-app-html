@@ -1,7 +1,8 @@
 // 年级显示统一走 @/lib/grades
 // 原来这里自己写：canonical 输入原样返回（'Standard 1'），中文输入却转成 'Standard 1（一年级）'
 // → 同一个年级两种显示。现在统一。
-export { gradeLabel as convertGradeToChinese } from '@/lib/grades'
+import { gradeLabel } from '@/lib/grades'
+export const convertGradeToChinese = gradeLabel
 
 // 格式化出生日期
 export const formatBirthDate = (dateString: string): string => {

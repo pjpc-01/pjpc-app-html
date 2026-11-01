@@ -82,6 +82,7 @@ export const fetchSecureData = async <T>(
     perPage?: number
     filter?: string
     sort?: string
+    expand?: string
     fullList?: boolean
   } = {}
 ): Promise<T> => {

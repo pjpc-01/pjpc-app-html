@@ -185,7 +185,7 @@ export default function StudentDetails({
                           variant="link" 
                           size="sm" 
                           className="h-auto p-0 text-xs text-blue-600"
-                          onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(student.home_address)}`, '_blank')}
+                          onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(student.home_address || "")}`, '_blank')}
                         >
                           <ExternalLink className="h-3 w-3 inline mr-1" /> {t("在地图中查看")}
                         </Button>
@@ -274,7 +274,7 @@ function DetailSection({ title, children }: { title: string; children: React.Rea
   )
 }
 
-function PickupPerson({ name, relation, phone, index }: { name: string; relation: string; phone: string; index: number }) {
+function PickupPerson({ name, relation, phone, index }: { name?: string; relation?: string; phone?: string; index: number }) {
   return (
     <div className="bg-white border border-slate-200 rounded-lg p-2 flex items-center justify-between text-xs">
       <div className="flex items-center gap-2">

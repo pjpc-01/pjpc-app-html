@@ -4,7 +4,6 @@ import { getAdminToken } from "@/lib/pb-admin-token"
 
 const PB_URL = process.env.POCKETBASE_URL || process.env.NEXT_PUBLIC_POCKETBASE_URL || "http://127.0.0.1:8090"
 
-import { NextRequest } from 'next/server'
 export const dynamic = "force-dynamic"
 
 export async function GET(request: NextRequest) {

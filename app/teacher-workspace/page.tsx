@@ -46,7 +46,7 @@ import {
   Info,
   Clock,
   ChevronLeft,
-} from "lucide-react"
+  AlertCircle } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { usePendingGradingCount } from "@/hooks/useHomework"
 

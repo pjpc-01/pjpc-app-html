@@ -473,6 +473,14 @@ export interface TeacherSalaryStructure {
   end_date?: string
   status: 'active' | 'inactive'
   notes?: string
+  // PB teacher_salary_structures 实际还有这些明细字段
+  allowance_items?: any
+  bonus_items?: any
+  allowance_travel?: number
+  custom_bonuses?: any
+  epf_employer?: number
+  socso_employer?: number
+  eis_employer?: number
   created: string
   updated: string
 }
