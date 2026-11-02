@@ -69,9 +69,12 @@ def main():
             bill_date, due_date = period, ''
         # Dedupe on the key actually written (bill_date), never on the raw scraped
         # period — otherwise Air rows never match and every run duplicates them.
+        # 注意：PB 里 date 字段存成 'YYYY-MM-DD 00:00:00.000Z'，脚本早先写的是 'YYYY-MM-DD'，
+        # 直接 = 比较会把同一张单当新单再插一遍 —— 一律按前 10 位比。
+        key = (bill_date or due_date)[:10]
         exists = cur.execute(
-            'SELECT 1 FROM utility_bills WHERE provider=? AND account_number=? AND bill_date=? LIMIT 1',
-            (provider, acc_num, bill_date or due_date)).fetchone()
+            "SELECT 1 FROM utility_bills WHERE provider=? AND account_number=? AND substr(bill_date,1,10)=? LIMIT 1",
+            (provider, acc_num, key)).fetchone()
         if exists:
             skipped += 1
             continue
@@ -82,8 +85,8 @@ def main():
         # 跨期缺口检查：抓取只拿得到「当期账单」，中间漏跑一次就永久丢一期。
         # 插入前比对该账号上一期的 bill_date，间隔 >45 天就报出来，别静默吞掉。
         prev_row = cur.execute(
-            'SELECT bill_date FROM utility_bills WHERE provider=? AND account_number=? AND bill_date<? '
-            'ORDER BY bill_date DESC LIMIT 1', (provider, acc_num, bill_date)).fetchone()
+            'SELECT substr(bill_date,1,10) AS bd FROM utility_bills WHERE provider=? AND account_number=? AND substr(bill_date,1,10)<? '
+            'ORDER BY bd DESC LIMIT 1', (provider, acc_num, key)).fetchone()
         if prev_row and prev_row[0]:
             try:
                 gap = (datetime.datetime.strptime(bill_date, '%Y-%m-%d')
@@ -96,10 +99,19 @@ def main():
             "INSERT INTO utility_bills (id,created,updated,provider,account_name,account_number,branch,amount,bill_date,due_date,status,previous_balance,last_payment,last_payment_date) "
             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (str(uuid.uuid4()), now, now, provider, name, acc_num, branch, amount,
-             bill_date, due_date, status, prev, lastpay, lastpaydate))
+             (bill_date + ' 00:00:00.000Z') if bill_date else '',
+             (due_date + ' 00:00:00.000Z') if due_date else '',
+             status, prev, lastpay, lastpaydate))
         inserted += 1
     conn.commit()
     print(json.dumps({"provider": provider, "inserted": inserted, "skipped": skipped}))
+    # 抓完顺手把当期账单截图挂到对应支出的凭证字段（只在 receipt 为空时挂）
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import utility_receipts
+        utility_receipts.main_for(which)
+    except Exception as e:
+        print(json.dumps({"receipts": "skipped", "reason": str(e)[:160]}, ensure_ascii=False))
 
 
 if __name__ == '__main__':
