@@ -28,6 +28,8 @@ TNB_EMAIL = os.environ.get("TNB_EMAIL", "")
 TNB_PASSWORD = os.environ.get("TNB_PASSWORD", "")
 
 PJPC_ACCOUNT_NUMBERS = {'220077824105', '220077881101', '220104544209'}
+# 当期账单截图放这里，upsert 会把它当凭证挂到对应支出
+SHOT_DIR = '/tmp/utility_shots'
 
 BRANCH_MAP = {
     '220077824105': 'Primary',
@@ -211,6 +213,15 @@ async def main():
             bill = await extract_billing_from_body(page)
             bill['branch'] = BRANCH_MAP.get(acc['number'], 'Unknown')
             print(f"     RM {bill.get('current_charges', 0):.2f} ({bill.get('status', '?')})")
+            # 存一份当期账单页面截图，靠它当凭证（upsert 会挂到对应支出上）
+            try:
+                os.makedirs(SHOT_DIR, exist_ok=True)
+                shot = os.path.join(SHOT_DIR, f'tnb_{acc["number"]}.png')
+                await page.screenshot(path=shot, full_page=False)
+                bill['screenshot'] = shot
+                print(f"     📷 {shot}")
+            except Exception as e:
+                print(f"     screenshot 失败: {e}")
             all_bills.append(bill)
 
         await browser.close()

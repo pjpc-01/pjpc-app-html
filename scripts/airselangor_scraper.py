@@ -17,8 +17,28 @@ from playwright.async_api import async_playwright
 
 LOGIN_URL = "https://www.airselangor.com/login?lang=en"
 ACCOUNTS_URL = "https://www.airselangor.com/my-water-account?lang=en"
+
+
+def _load_env():
+    """从项目 .env.local 读凭据，命令行没传就用文件里的（cron 就不用把口令写进提示词）。"""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.env.local')
+    try:
+        for line in open(path):
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                k, _, v = line.partition('=')
+                k, v = k.strip(), v.strip().strip('"').strip("'")
+                if k and not os.environ.get(k):
+                    os.environ[k] = v
+    except OSError:
+        pass
+
+
+_load_env()
 LOGIN_ID = os.environ.get("AIR_LOGIN_ID", "")
 PASSWORD = os.environ.get("AIR_PASSWORD", "")
+# 详情页截图放这里，upsert 会把它当凭证挂到对应支出
+SHOT_DIR = '/tmp/utility_shots'
 
 # v3 — Manage water accounts table (tolerates extra classes after the hashed suffix)
 NAME_RE = r'my-water-account_displayName__\w+[^>]*>\s*<a[^>]*>([^<]+)</a>'
@@ -142,6 +162,17 @@ async def enrich_from_details(page, accounts):
             if d.get("number"):
                 details[d["number"]] = d
             print(f"  detail {lk.split('acc=')[-1][:8]}: {d}", file=sys.stderr)
+            # 详情页截图当凭证：只有 8~14 位账号才算数
+            try:
+                num = (d.get("number") or '').strip()
+                if num:
+                    os.makedirs(SHOT_DIR, exist_ok=True)
+                    shot = os.path.join(SHOT_DIR, f'air_{num}.png')
+                    await page.screenshot(path=shot, full_page=False)
+                    d['screenshot'] = shot
+                    print(f"  📷 {shot}", file=sys.stderr)
+            except Exception as e:
+                print(f"  screenshot 失败: {e}", file=sys.stderr)
         except Exception as e:
             print(f"  detail error {lk}: {e}", file=sys.stderr)
     for a in accounts:
@@ -155,6 +186,8 @@ async def enrich_from_details(page, accounts):
         a["amount_due"] = d.get("amount_due", 0.0)
         a["previous_balance"] = d.get("previous_balance", 0.0)
         a["source"] = "account-detail"
+        if d.get("screenshot"):
+            a["screenshot"] = d["screenshot"]
         # 解析伪影保护：详情页偶尔出现「Previous balance RM -115.85」，绝对值恰好等于本期
         # 账单（115.85），这是页面排版把减号串进数字，不是真的贷记。判为 0，别写进历史表。
         prev = a["previous_balance"] or 0
