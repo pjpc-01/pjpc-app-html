@@ -193,9 +193,9 @@ export default function ExpenseManagement() {
     }
   }
 
-  const POCKETBASE_URL = 'http://127.0.0.1:8090'
+  // 凭证必须走 Next 代理：直连 127.0.0.1:8090 只有本机能开，用户在自己电脑上点就是空页
   const getReceiptUrl = (filename: string, recordId: string) => {
-    return `${POCKETBASE_URL}/api/files/expenses/${recordId}/${filename}`
+    return `/api/pocketbase-proxy/api/files/expenses/${recordId}/${encodeURIComponent(filename)}`
   }
 
   const handleDeleteExpense = async (id: string) => {
