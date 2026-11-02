@@ -79,6 +79,19 @@ def main():
         prev = float(a.get('previous_balance', 0) or 0)
         lastpay = float(a.get('last_payment_amount', 0) or 0)
         lastpaydate = a.get('last_payment_date', '') or ''
+        # 跨期缺口检查：抓取只拿得到「当期账单」，中间漏跑一次就永久丢一期。
+        # 插入前比对该账号上一期的 bill_date，间隔 >45 天就报出来，别静默吞掉。
+        prev_row = cur.execute(
+            'SELECT bill_date FROM utility_bills WHERE provider=? AND account_number=? AND bill_date<? '
+            'ORDER BY bill_date DESC LIMIT 1', (provider, acc_num, bill_date)).fetchone()
+        if prev_row and prev_row[0]:
+            try:
+                gap = (datetime.datetime.strptime(bill_date, '%Y-%m-%d')
+                       - datetime.datetime.strptime(prev_row[0], '%Y-%m-%d')).days
+                if gap > 45:
+                    print(f"WARN 跨期漏抓: {provider} {acc_num} 上期 {prev_row[0]} → 本期 {bill_date} 相隔 {gap} 天")
+            except (ValueError, TypeError):
+                pass
         cur.execute(
             "INSERT INTO utility_bills (id,created,updated,provider,account_name,account_number,branch,amount,bill_date,due_date,status,previous_balance,last_payment,last_payment_date) "
             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",

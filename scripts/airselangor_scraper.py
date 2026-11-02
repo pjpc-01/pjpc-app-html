@@ -155,6 +155,13 @@ async def enrich_from_details(page, accounts):
         a["amount_due"] = d.get("amount_due", 0.0)
         a["previous_balance"] = d.get("previous_balance", 0.0)
         a["source"] = "account-detail"
+        # 解析伪影保护：详情页偶尔出现「Previous balance RM -115.85」，绝对值恰好等于本期
+        # 账单（115.85），这是页面排版把减号串进数字，不是真的贷记。判为 0，别写进历史表。
+        prev = a["previous_balance"] or 0
+        cur = a.get("current_charges") or a.get("amount") or 0
+        if prev < 0 and abs(abs(prev) - cur) < 0.005:
+            print(f"  warn {a.get('number')}: previous_balance {prev} 与本期 {cur} 绝对值相同 → 判为解析伪影，置 0", file=sys.stderr)
+            a["previous_balance"] = 0.0
     return accounts
 
 
