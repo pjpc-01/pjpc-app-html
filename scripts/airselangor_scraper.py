@@ -147,6 +147,20 @@ def parse_detail(txt):
     return out if "current_bill" in out or "pay_before" in out else {}
 
 
+def parse_history(txt):
+    """从「Bill & payment history」整页文本里抽出每一条 Bill issued / Payment made。
+    有了这张表，跑一次就能把之前漏掉的期数补齐，不用靠运气赶上当期。"""
+    flat = re.sub(r'\s+', ' ', txt)
+    out = []
+    for m in re.finditer(r'(Bill issued|Payment made)\s+(\d{1,2}\s+[A-Za-z]{3}\s+\d{4})\s+RM\s*([\d.]+)', flat):
+        try:
+            dt = datetime.datetime.strptime(m.group(2), '%d %b %Y').strftime('%Y-%m-%d')
+        except ValueError:
+            continue
+        out.append({'type': m.group(1), 'date': dt, 'amount': float(m.group(3))})
+    return out
+
+
 async def enrich_from_details(page, accounts):
     """The accounts table shows Amount DUE (0.00 once paid). Read each detail page
     for Current bill + Pay before so a paid-but-current bill is still captured."""
@@ -175,10 +189,17 @@ async def enrich_from_details(page, accounts):
                     # 门户只给当期账单，万一周跑漏了一期，翻这张历史表还能把凭证补回来。
                     try:
                         await page.locator('text=View all').first.click(timeout=4000)
-                        await page.wait_for_timeout(3500)
+                        # 表格有时比截图慢半拍：等一下，等到出现 Bill issued 再解析
+                        for _ in range(12):
+                            await page.wait_for_timeout(1000)
+                            if 'Bill issued' in (await page.inner_text('body')):
+                                break
                         hist = os.path.join(SHOT_DIR, f'air_history_{num}.png')
                         await page.screenshot(path=hist, full_page=True)
                         print(f"  📜 {hist}", file=sys.stderr)
+                        # 顺手把表里的每条 Bill issued 解析出来，upsert 会拿它补漏掉的期
+                        d['history'] = parse_history(await page.inner_text('body'))
+                        print(f"  history {num}: {len(d['history'])} 条", file=sys.stderr)
                     except Exception as e:
                         print(f"  history 截图跳过: {str(e)[:80]}", file=sys.stderr)
             except Exception as e:
@@ -198,6 +219,8 @@ async def enrich_from_details(page, accounts):
         a["source"] = "account-detail"
         if d.get("screenshot"):
             a["screenshot"] = d["screenshot"]
+        if d.get("history"):
+            a["history"] = d["history"]
         # 解析伪影保护：详情页偶尔出现「Previous balance RM -115.85」，绝对值恰好等于本期
         # 账单（115.85），这是页面排版把减号串进数字，不是真的贷记。判为 0，别写进历史表。
         prev = a["previous_balance"] or 0

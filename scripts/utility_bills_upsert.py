@@ -25,6 +25,15 @@ def parse_period(provider: str, bill: dict) -> str:
     return ''
 
 
+def _already(cur, provider, acc_num, ymd, amount):
+    """同账号 + 同一个月 + 金额相同 → 认为这期已在库里。
+    门户历史表用真实开单日、脚本按 21 号记，差两三天属同一个月，不能按日死比。"""
+    return cur.execute(
+        "SELECT 1 FROM utility_bills WHERE provider=? AND account_number=? "
+        "AND substr(bill_date,1,7)=? AND abs(amount-?)<0.01 LIMIT 1",
+        (provider, acc_num, (ymd or '')[:7], amount)).fetchone()
+
+
 def main():
     which = sys.argv[1] if len(sys.argv) > 1 else 'tnb'
     src = '/tmp/tnb_bills.json' if which == 'tnb' else '/tmp/airselangor_bills.json'
@@ -53,6 +62,29 @@ def main():
         status = a.get('status', 'Active')
         # branch mapping by provider prefix
         branch = 'Secondary' if ('PU1' in name or acc_num == '2837070000' or acc_num == '220104544209') else 'Primary'
+        # 门户历史表（Air 有）里列出所有 Bill issued：先把缺的月份补进去，
+        # 再处理当期账单。这样一个月才跑一次、甚至漏跑两个月，下次跑也能补齐。
+        for h in (a.get('history') or []):
+            if str(h.get('type', '')).strip().lower() != 'bill issued':
+                continue
+            hd, amt = str(h.get('date') or ''), float(h.get('amount') or 0)
+            if len(hd) != 10 or amt <= 0:
+                continue
+            # 只补最近 120 天，别把门户里几年前的老账单一股脑塞进库
+            try:
+                if (datetime.date.today() - datetime.datetime.strptime(hd, '%Y-%m-%d').date()).days > 120:
+                    continue
+            except ValueError:
+                continue
+            if _already(cur, provider, acc_num, hd, amt):
+                continue
+            cur.execute(
+                "INSERT INTO utility_bills (id,created,updated,provider,account_name,account_number,branch,amount,bill_date,due_date,status,previous_balance,last_payment,last_payment_date) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (str(uuid.uuid4()), now, now, provider, name, acc_num, branch, amt,
+                 hd + ' 00:00:00.000Z', '', status, 0.0, 0.0, ''))
+            inserted += 1
+            print(f"  历史补期: {acc_num} {hd} RM{amt}", file=sys.stderr)
         # Resolve the canonical period BEFORE deduping: 'period' is the scraped
         # due date, but Air rows land on bill_date = (due month - 1) day 21.
         if provider == 'Air Selangor':
@@ -69,16 +101,17 @@ def main():
             bill_date, due_date = period, ''
         # Dedupe on the key actually written (bill_date), never on the raw scraped
         # period — otherwise Air rows never match and every run duplicates them.
-        # 注意：PB 里 date 字段存成 'YYYY-MM-DD 00:00:00.000Z'，脚本早先写的是 'YYYY-MM-DD'，
-        # 直接 = 比较会把同一张单当新单再插一遍 —— 一律按前 10 位比。
+        # 注意两点：
+        # 1) PB 里 date 字段存成 'YYYY-MM-DD 00:00:00.000Z'，脚本早先写的是 'YYYY-MM-DD'，
+        #    直接 = 比较会把同一张单当新单再插一遍 —— 一律按前 10 位比。
+        # 2) 门户历史表写的是真实开单日（如 Bill issued 23 Oct），本脚本按「到期月-1、21 号」
+        #    记（2026-10-21），同一个月差两三天。所以去重放宽成「同账号 + 同月 + 金额相同」。
         key = (bill_date or due_date)[:10]
-        exists = cur.execute(
-            "SELECT 1 FROM utility_bills WHERE provider=? AND account_number=? AND substr(bill_date,1,10)=? LIMIT 1",
-            (provider, acc_num, key)).fetchone()
+        amount = float(a.get('current_charges', a.get('amount', 0)) or 0)
+        exists = _already(cur, provider, acc_num, key, amount)
         if exists:
             skipped += 1
             continue
-        amount = float(a.get('current_charges', a.get('amount', 0)) or 0)
         prev = float(a.get('previous_balance', 0) or 0)
         lastpay = float(a.get('last_payment_amount', 0) or 0)
         lastpaydate = a.get('last_payment_date', '') or ''
