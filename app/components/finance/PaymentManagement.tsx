@@ -76,7 +76,7 @@ const formatDate = (dateStr: string) => {
 export default function PaymentManagement() {
   const { t } = useLanguage()
   const { invoices, loading: invoicesLoading } = useInvoices()
-  const { payments, loading: paymentsLoading, createPayment, deletePayment, refetch } = usePayments()
+  const { payments, loading: paymentsLoading, createPayment, deletePayment, updatePayment, resyncInvoiceStatus, refetch } = usePayments()
   const { createReceipt, receipts } = useReceipts()
   const { refunds, createRefund, getTotalRefundedAmount } = useRefunds()
   
@@ -282,15 +282,23 @@ export default function PaymentManagement() {
 
     setIsRefunding(true)
     try {
+      const refundValue = parseFloat(refundAmount)
       await createRefund({
         paymentId: refundPayment.id,
         invoiceId: refundPayment.invoiceId,
-        amount: parseFloat(refundAmount),
+        amount: refundValue,
         reason: refundReason,
         method: refundMethod,
         status: 'completed',
         notes: refundNotes || undefined,
       })
+
+      // 退款要回写付款状态，否则这笔钱还算「已收」：全额退 → refunded，部分退 → 保留但发票状态重算
+      if (refundValue >= Number(refundPayment.amount || 0) - 0.01) {
+        await updatePayment(refundPayment.id, { status: 'refunded' })
+      } else {
+        await resyncInvoiceStatus(refundPayment.invoiceId)
+      }
 
       toast.success(t("退款处理成功"))
       setIsRefundDialogOpen(false)

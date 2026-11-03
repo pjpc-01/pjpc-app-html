@@ -55,33 +55,47 @@ export const usePayments = () => {
     fetchPayments()
   }, [fetchPayments])
 
+  /**
+   * 重算发票状态：以数据库里的实际付款为准，不再用「内存里的 payments + 本次金额」那种
+   * 会漏算的算法（删一笔、改金额之后状态就会残留）。所有改动付款的地方都调它。
+   */
+  const resyncInvoiceStatus = useCallback(async (invoiceId: string) => {
+    if (!invoiceId) return
+    try {
+      const [payRes, invRes] = await Promise.all([
+        fetchSecureData<Payment[]>('payments', { fullList: true, filter: `invoiceId='${invoiceId}' && deleted!=true` }),
+        fetchSecureData<any[]>('invoices', { filter: `id='${invoiceId}'` }),
+      ])
+      const inv = (invRes || [])[0]
+      if (!inv) return
+      const paid = (payRes || [])
+        .filter(p => p.status !== 'failed' && p.status !== 'refunded')
+        .reduce((s, p) => s + (Number(p.amount) || 0), 0)
+      const face = Number(inv.totalAmount || 0)
+      let status = inv.status
+      if (paid >= face - 0.01 && face > 0) status = 'paid'
+      else if (paid > 0) status = 'partially_paid'
+      else if (['paid', 'partially_paid'].includes(inv.status)) status = 'issued'
+      if (status !== inv.status) await updateRecord('invoices', invoiceId, { status })
+    } catch (err) {
+      console.warn('[payments] 发票状态重算失败', err)
+    }
+  }, [])
+
   const createPayment = useCallback(async (paymentData: Omit<Payment, 'id'>, invoice?: Invoice) => {
     try {
       // 1. Create the payment record
       const result = await createRecord('payments', paymentData) as Payment
       setPayments(prev => [result, ...prev])
 
-      // 2. Auto-Sync Invoice Status
-      if (invoice) {
-        const totalPaid = (payments.filter(p => p.invoiceId === invoice.id).reduce((sum, p) => sum + p.amount, 0)) + paymentData.amount
-        
-        let newStatus = invoice.status
-        if (totalPaid >= (invoice as any).totalAmount) {
-          newStatus = 'paid'
-        } else if (totalPaid > 0) {
-          newStatus = 'partially_paid'
-        }
-
-        if (newStatus !== invoice.status) {
-          await updateRecord('invoices', invoice.id, { status: newStatus })
-        }
-      }
+      // 2. 发票状态统一由 resyncInvoiceStatus 重算（别在这里再写一套算法）
+      if (invoice) await resyncInvoiceStatus(invoice.id)
 
       return result
     } catch (err) {
       throw err
     }
-  }, [payments])
+  }, [resyncInvoiceStatus])
 
   const updatePayment = useCallback(async (paymentId: string, updates: Partial<Payment>) => {
     try {
@@ -89,20 +103,32 @@ export const usePayments = () => {
       setPayments(prev => prev.map(payment => 
         payment.id === paymentId ? { ...payment, ...updates } : payment
       ))
+      const target = payments.find(p => p.id === paymentId)
+      if (target?.invoiceId) await resyncInvoiceStatus(target.invoiceId)
       return result
     } catch (err) {
       throw err
     }
-  }, [])
+  }, [payments, resyncInvoiceStatus])
 
   const deletePayment = useCallback(async (paymentId: string) => {
     try {
+      const target = payments.find(p => p.id === paymentId)
+      // 删付款必须连带删掉它开出的收据，否则收据变孤儿（库里已有一张 RCP-2026-239 就是这样）
+      try {
+        const recs = await fetchSecureData<any[]>('receipts', { fullList: true, filter: `paymentId='${paymentId}' && deleted!=true` })
+        for (const r of recs || []) await deleteRecord('receipts', r.id)
+      } catch (err) {
+        console.warn('[payments] 连带删除收据失败', err)
+      }
       await deleteRecord('payments', paymentId)
       setPayments(prev => prev.filter(payment => payment.id !== paymentId))
+      // 删完钱少了，发票状态要跟着回落（paid → partially_paid / issued）
+      if (target?.invoiceId) await resyncInvoiceStatus(target.invoiceId)
     } catch (err) {
       throw err
     }
-  }, [])
+  }, [payments, resyncInvoiceStatus])
 
   const getFilteredPayments = useCallback(() => {
     return payments.filter(payment => {
@@ -164,6 +190,7 @@ export const usePayments = () => {
     createPayment,
     updatePayment,
     deletePayment,
+    resyncInvoiceStatus,
     getFilteredPayments,
     getPaymentsByInvoice,
     getPaymentStatistics,
