@@ -10,6 +10,7 @@ import { SearchAndFilter } from "./SearchAndFilter"
 import { FeeCard } from "./FeeCard"
 import { useLanguage } from "@/contexts/language-context"
 import { toLocalMonthKey } from "@/lib/utils"
+import { round2 } from "@/lib/finance-calc"
 import { gradeRank } from "@/lib/grades"
 
 export const StudentFeeMatrix = () => {
@@ -139,11 +140,10 @@ export const StudentFeeMatrix = () => {
       items.push({ name: discountLabel, amount: -actualDiscount })
     }
 
-    // Compute total from items (guarantees subtotal = total even with discount line)
-    const itemsTotal = Math.round(items.reduce((sum, it) => sum + it.amount, 0) * 100) / 100
-    // Use getStudentAmount for consistency with card display
-    const cardTotal = getStudentAmount(studentId, allFees)
-    const total = cardTotal || itemsTotal
+    const itemsTotal = round2(items.reduce((sum, it) => sum + (it.amount || 0), 0))
+    // 发票总额只认明细合计。以前用「卡片金额 cardTotal 兜底」，卡片口径和明细口径一旦不同
+    // （少一项费、数量不同），就会开出「明细 612、总计 622」的票，家长当场发现对不上。
+    const total = itemsTotal || getStudentAmount(studentId, allFees)
 
     // Get late payment rule from invoice_settings
     let latePaymentRule = ''
