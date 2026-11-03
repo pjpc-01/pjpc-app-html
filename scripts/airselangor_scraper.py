@@ -171,6 +171,16 @@ async def enrich_from_details(page, accounts):
                     await page.screenshot(path=shot, full_page=False)
                     d['screenshot'] = shot
                     print(f"  📷 {shot}", file=sys.stderr)
+                    # 再把「Bill & payment history → View all」整页也截一张：
+                    # 门户只给当期账单，万一周跑漏了一期，翻这张历史表还能把凭证补回来。
+                    try:
+                        await page.locator('text=View all').first.click(timeout=4000)
+                        await page.wait_for_timeout(3500)
+                        hist = os.path.join(SHOT_DIR, f'air_history_{num}.png')
+                        await page.screenshot(path=hist, full_page=True)
+                        print(f"  📜 {hist}", file=sys.stderr)
+                    except Exception as e:
+                        print(f"  history 截图跳过: {str(e)[:80]}", file=sys.stderr)
             except Exception as e:
                 print(f"  screenshot 失败: {e}", file=sys.stderr)
         except Exception as e:
