@@ -48,10 +48,14 @@ export async function POST(request: NextRequest) {
     const token = await getAdminToken()
     const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
 
+    // 账期 = 下个月。PJPC 的规矩是提前一个月开下个月的学费（10-25 开 11 月的票），
+    // 所以自动生成不能写当月，否则 11 月点一下就把 11 月的票又开一遍、12 月永远没人开。
+    // 需要特殊月份时可以 body 传 { period: 'YYYY-MM' }。
+    const body = await request.json().catch(() => ({} as any))
     const now = new Date()
-    const year = now.getFullYear()
-    const month = now.getMonth() + 1
-    const period = `${year}-${String(month).padStart(2, "0")}`
+    const next = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    const requested = typeof body?.period === 'string' && /^\d{4}-\d{2}$/.test(body.period) ? body.period : ''
+    const period = requested || `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`
 
     // 0. 获取全局 invoice_settings（迟付费规则）
     let latePaymentFee = 0
