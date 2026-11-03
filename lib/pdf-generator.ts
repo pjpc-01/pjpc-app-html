@@ -97,22 +97,13 @@ const getStatusText = (status: string): string => {
 
 // ── Generate invoice HTML (same styling as preview) ──
 export const generateInvoiceHTML = (invoice: Invoice, settings: InvoiceSettingsPreset): string => {
+  // 金额只在这里算一次，规则跟全站一样：小计=折扣前原价，总计=票面（=明细合计）。
+  // 明细与票面的不一致在「写入时」就已经补齐（createInvoice 那道闸），渲染层不再二次兜底。
   const items = (invoice.items && invoice.items.length > 0
     ? invoice.items
     : [{ name: '学生费用', amount: invoice.totalAmount || 0 }])
-
-  // 金额单源：lib/finance-calc。票面必须自洽，家长一眼就能把明细加回去：
-  //   小计 = 折扣前原价（只加非折扣行）
-  //   总计 = 票面金额（invoice.totalAmount）
-  //   明细合计跟票面对不上时（历史上有过「明细 612、总计 622」），补一条差额行，
-  //   而不是悄悄改票面 —— 票面是收到钱的依据，不能为了让页面好看去动它。
   const subtotal = subtotalOf(items as any)
-  const itemsSum = sumLines(items as any)
-  const total = round2(invoice.totalAmount || itemsSum || 0)
-  const gap = round2(total - itemsSum)
-  const renderItems: any[] = Math.abs(gap) > 0.01
-    ? [...items, { name: gap > 0 ? '其他费用（未分项）' : '其他调整', amount: gap }]
-    : items
+  const total = round2(invoice.totalAmount || sumLines(items as any) || 0)
   const statusText = getStatusText(invoice.status)
   const primaryColor = settings.primaryColor || '#1e40af'
   const secondaryColor = settings.secondaryColor || '#3b82f6'
@@ -328,7 +319,7 @@ export const generateInvoiceHTML = (invoice: Invoice, settings: InvoiceSettingsP
           </tr>
         </thead>
         <tbody>
-          ${renderItems.map(item => `
+          ${items.map(item => `
           <tr>
             <td>${item.name}</td>
             <td>${(item.amount || 0).toFixed(2)}</td>
