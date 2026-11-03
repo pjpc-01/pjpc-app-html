@@ -98,6 +98,18 @@ export const useInvoices = () => {
   }, [])
 
   const createInvoice = useCallback(async (invoiceData: Omit<Invoice, 'id' | 'invoiceNumber'>) => {
+    // 票面金额与明细合计不一致时，不偷偷改金额（票面是收钱依据），而是在明细里补一条差额行，
+    // 让家长能把明细加回票面。历史上出现过「明细 612、总计 622」这种偏差（学费矩阵那条路
+    // 用卡片金额兜底，卡片口径与明细口径不同）。
+    let items = Array.isArray((invoiceData as any).items) ? [...(invoiceData as any).items] : []
+    const linesSum = sumLines(items)
+    const face = Number(invoiceData.totalAmount || 0)
+    if (items.length > 0 && face !== 0 && Math.abs(linesSum - face) > 0.01) {
+      const gap = round2(face - linesSum)
+      console.warn('[invoices] 票面与明细合计不一致，已补差额行：', { 明细: linesSum, 票面: face, 差额: gap, 学生: invoiceData.studentName })
+      items = [...items, { name: gap > 0 ? '其他费用（未分项）' : '其他调整', amount: gap }]
+      invoiceData = { ...invoiceData, items } as any
+    }
     // 票号有数据库唯一约束；万一撞号（并发），自动换号重试，绝不静默写重复号
     let lastError: any = null
     for (let attempt = 0; attempt < 5; attempt++) {

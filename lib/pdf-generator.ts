@@ -8,7 +8,7 @@ import { type PayslipSettingsPreset } from '@/app/components/report/PayslipSetti
 import { StudentReport, ReportSubject } from '@/hooks/useStudentReports'
 import { getSocsoEmployer, getEisContribution } from '@/lib/perkeso-rates'
 import { scoreToGrade } from '@/lib/utils'
-import { round2, sumLines } from '@/lib/finance-calc'
+import { round2, sumLines, subtotalOf } from '@/lib/finance-calc'
 
 // ── Enrichment Class 名单：学生(中文名) → 参加的课程名（2026-10-16 依最新分班表更新，57 人） ──
 export const ENRICHMENT_MAP: Record<string, string> = {
@@ -101,9 +101,18 @@ export const generateInvoiceHTML = (invoice: Invoice, settings: InvoiceSettingsP
     ? invoice.items
     : [{ name: '学生费用', amount: invoice.totalAmount || 0 }])
 
-  // 金额单源：lib/finance-calc（以前各处自己 reduce，改一处别处不动）
-  const subtotal = sumLines(items as any)
-  const total = round2(invoice.totalAmount || subtotal)
+  // 金额单源：lib/finance-calc。票面必须自洽，家长一眼就能把明细加回去：
+  //   小计 = 折扣前原价（只加非折扣行）
+  //   总计 = 票面金额（invoice.totalAmount）
+  //   明细合计跟票面对不上时（历史上有过「明细 612、总计 622」），补一条差额行，
+  //   而不是悄悄改票面 —— 票面是收到钱的依据，不能为了让页面好看去动它。
+  const subtotal = subtotalOf(items as any)
+  const itemsSum = sumLines(items as any)
+  const total = round2(invoice.totalAmount || itemsSum || 0)
+  const gap = round2(total - itemsSum)
+  const renderItems: any[] = Math.abs(gap) > 0.01
+    ? [...items, { name: gap > 0 ? '其他费用（未分项）' : '其他调整', amount: gap }]
+    : items
   const statusText = getStatusText(invoice.status)
   const primaryColor = settings.primaryColor || '#1e40af'
   const secondaryColor = settings.secondaryColor || '#3b82f6'
@@ -319,7 +328,7 @@ export const generateInvoiceHTML = (invoice: Invoice, settings: InvoiceSettingsP
           </tr>
         </thead>
         <tbody>
-          ${items.map(item => `
+          ${renderItems.map(item => `
           <tr>
             <td>${item.name}</td>
             <td>${(item.amount || 0).toFixed(2)}</td>
