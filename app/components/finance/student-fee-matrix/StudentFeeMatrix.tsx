@@ -10,7 +10,7 @@ import { SearchAndFilter } from "./SearchAndFilter"
 import { FeeCard } from "./FeeCard"
 import { useLanguage } from "@/contexts/language-context"
 import { toLocalMonthKey } from "@/lib/utils"
-import { round2 } from "@/lib/finance-calc"
+import { sumLines, subtotalOf, discountValueOf } from "@/lib/finance-calc"
 import { gradeRank } from "@/lib/grades"
 
 export const StudentFeeMatrix = () => {
@@ -130,20 +130,16 @@ export const StudentFeeMatrix = () => {
     const discount = adj.discount || 0
     const discountType = adj.discount_type || 'amount'
     if (discount > 0) {
-      const baseAmount = items.reduce((sum, it) => sum + it.amount, 0)
-      const actualDiscount = discountType === 'percent'
-        ? Math.round(baseAmount * (discount / 100) * 100) / 100
-        : discount
+      const baseAmount = subtotalOf(items)
+      const actualDiscount = discountValueOf(baseAmount, discount, discountType)
       const discountLabel = discountType === 'percent'
         ? `学生折扣 (${discount}%)`
         : '学生折扣'
       items.push({ name: discountLabel, amount: -actualDiscount })
     }
 
-    const itemsTotal = round2(items.reduce((sum, it) => sum + (it.amount || 0), 0))
-    // 发票总额只认明细合计。以前用「卡片金额 cardTotal 兜底」，卡片口径和明细口径一旦不同
-    // （少一项费、数量不同），就会开出「明细 612、总计 622」的票，家长当场发现对不上。
-    const total = itemsTotal || getStudentAmount(studentId, allFees)
+    // 总额只认明细合计（sumLines 是全站唯一算法，别再自己 reduce）
+    const total = sumLines(items)
 
     // Get late payment rule from invoice_settings
     let latePaymentRule = ''
