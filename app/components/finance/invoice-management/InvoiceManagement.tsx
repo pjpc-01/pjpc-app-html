@@ -32,6 +32,7 @@ import { InvoiceList } from "./InvoiceList"
 import { InvoiceByStudent } from "./InvoiceByStudent"
 import InvoiceSettingsManager, { type InvoiceSettingsPreset } from "./InvoiceSettingsManager"
 import { getStatusBadge, defaultInvoiceDates } from "@/lib/utils"
+import { sumLines, applyItemDiscounts, discountValueOf } from "@/lib/finance-calc"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 // Types
@@ -481,34 +482,49 @@ Prospek Cemerlang`,
     }
   }
 
-  const handleDirectCreate = async (student: any, dueDate: string, notes: string, period?: string) => {
-    const invoiceItems = activeFees
+  const handleDirectCreate = async (student: any, dueDate: string, notes: string, period?: string, discounts?: any) => {
+    const feeLines = activeFees
       .filter(fee => isAssigned(student.id, fee.id))
       .map(fee => ({ name: fee.name, amount: fee.amount }))
 
-    // Fetch student fee adjustment for discount
+    // 分项折扣：每个项目各自的折扣 → 展开成「原价行 + 折扣负数行」
+    let invoiceItems: any[] = applyItemDiscounts(feeLines, discounts?.items)
+
+    // 整单折扣：勾选了才打；这里填了数就用这里的，没填就沿用学生费用里设定的
     let discount = 0
     let discountType: 'amount' | 'percent' = 'amount'
-    try {
-      const r = await fetch(`/api/pocketbase-proxy/api/collections/student_fees/records?filter=(student_id='${student.id}')&perPage=1`)
-      if (r.ok) {
-        const data = await r.json()
-        if (data.items?.length > 0) {
-          discount = data.items[0].discount || 0
-          discountType = data.items[0].discount_type || 'amount'
+    const overallDisabled = discounts?.overall?.enabled === false
+    const overallGiven = Number(discounts?.overall?.value) > 0
+    if (!overallDisabled && !overallGiven) {
+      try {
+        const r = await fetch(`/api/pocketbase-proxy/api/collections/student_fees/records?filter=(student_id='${student.id}')&perPage=1`)
+        if (r.ok) {
+          const data = await r.json()
+          if (data.items?.length > 0) {
+            discount = data.items[0].discount || 0
+            discountType = data.items[0].discount_type || 'amount'
+          }
         }
-      }
-    } catch {}
-
-    if (discount > 0) {
-      const baseAmount = invoiceItems.reduce((sum, it) => sum + it.amount, 0)
-      const actualDiscount = discountType === 'percent'
-        ? Math.round(baseAmount * (discount / 100) * 100) / 100
-        : discount
-      invoiceItems.push({ name: discountType === 'percent' ? `学生折扣 (${discount}%)` : '学生折扣', amount: -actualDiscount })
+      } catch {}
+    } else if (overallGiven) {
+      discount = Number(discounts.overall.value)
+      discountType = discounts.overall.type || 'amount'
     }
 
-    const totalAmount = invoiceItems.reduce((sum, item) => sum + item.amount, 0)
+    if (!overallDisabled && discount > 0) {
+      // 整单折扣作用在「分项折后」的金额上，不重复打折
+      const baseAmount = sumLines(invoiceItems)
+      const actualDiscount = discountValueOf(baseAmount, discount, discountType)
+      if (actualDiscount > 0) {
+        invoiceItems.push({
+          name: discountType === 'percent' ? `整单折扣 (${discount}%)` : '整单折扣',
+          amount: -actualDiscount,
+        })
+      }
+    }
+
+    const totalAmount = sumLines(invoiceItems)
+    const discountTotal = Math.abs(sumLines(invoiceItems) - sumLines(feeLines))
     
     createInvoice({
       studentName: student.name || student.student_name,
@@ -522,8 +538,8 @@ Prospek Cemerlang`,
       notes: notes || '',
       period: period || undefined,
       totalAmount: totalAmount || 0,
-      discount: discount || undefined,
-      discountType: discount > 0 ? discountType : undefined,
+      discount: discountTotal > 0 ? discountTotal : undefined,
+      discountType: discountTotal > 0 ? 'amount' : undefined,
     } as any)
   }
 
@@ -927,11 +943,26 @@ Prospek Cemerlang`,
           const target = studentsWithAmounts.filter((s: any) => 
             selectedGrades.length === 0 || selectedGrades.includes(s.standard)
           )
+          const discounts = formData?.discounts
           target.forEach((student: any) => {
-            const invoiceItems = activeFees
+            const feeLines = activeFees
               .filter(fee => isAssigned(student.id, fee.id))
               .map(fee => ({ name: fee.name, amount: fee.amount }))
-            const totalAmount = invoiceItems.reduce((sum: number, item: any) => sum + item.amount, 0)
+            // 批量开票也走同一套折扣：分项先展开，整单再作用在分项折后金额上
+            const invoiceItems = applyItemDiscounts(feeLines, discounts?.items)
+            let discountTotal = Math.abs(sumLines(invoiceItems) - sumLines(feeLines))
+            if (discounts?.overall?.enabled !== false && Number(discounts?.overall?.value) > 0) {
+              const base = sumLines(invoiceItems)
+              const d = discountValueOf(base, discounts.overall.value, discounts.overall.type || 'amount')
+              if (d > 0) {
+                invoiceItems.push({
+                  name: discounts.overall.type === 'percent' ? `整单折扣 (${discounts.overall.value}%)` : '整单折扣',
+                  amount: -d,
+                })
+                discountTotal += d
+              }
+            }
+            const totalAmount = sumLines(invoiceItems)
             
             createInvoice({
               studentName: student.name || student.student_name,
@@ -943,7 +974,9 @@ Prospek Cemerlang`,
               dueDate: formData.dueDate || defaultInvoiceDates().dueDate,
               notes: formData.notes || '',
               period: formData.period || undefined,
-              totalAmount: totalAmount || 0
+              totalAmount: totalAmount || 0,
+              discount: discountTotal > 0 ? discountTotal : undefined,
+              discountType: discountTotal > 0 ? 'amount' : undefined,
             } as any)
           })
           setIsCreateInvoiceDialogOpen(false)

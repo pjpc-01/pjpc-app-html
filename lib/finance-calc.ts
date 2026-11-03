@@ -46,7 +46,34 @@ export function discountValueOf(base: number, value: number | string | null | un
   const v = Number(value) || 0
   if (v <= 0) return 0
   const b = Number(base) || 0
-  return round2(String(type) === 'percent' ? (b * v) / 100 : v)
+  const d = round2(String(type) === 'percent' ? (b * v) / 100 : v)
+  return d > b ? b : d   // 折扣不能超过原价，否则这一项变成倒贴
+}
+
+/** 单项折扣规则：value 可以是钱或百分比 */
+export type ItemDiscountRule = { value: number | string; type?: 'amount' | 'percent' }
+
+/**
+ * 把「每个项目自己的折扣」展开成明细行：原价行 + 「<项目> 折扣」负数行。
+ * 为什么要展开而不是改 amount：全站的总额/小计/PDF/报表都是「明细相加、折扣写成负数行」，
+ * 展开后所有下游一行都不用改，也不会出现「明细 100 却收 80」这种对不上的账。
+ * 规则按项目名匹配（同名项目套同一条规则）。整单折扣仍然单独一层，走 discountValueOf。
+ */
+export function applyItemDiscounts(
+  lines: MoneyLine[] | null | undefined,
+  rules?: Record<string, ItemDiscountRule> | null
+): MoneyLine[] {
+  const base = (lines || []).map(l => ({ ...l }))
+  if (!rules || Object.keys(rules).length === 0) return base
+  const out: MoneyLine[] = []
+  for (const l of base) {
+    out.push(l)
+    const rule = rules[String(l?.name || '')]
+    if (!rule) continue
+    const d = discountValueOf(Number(l?.amount) || 0, rule.value, rule.type || 'amount')
+    if (d > 0) out.push({ name: `${l?.name} 折扣`, amount: -d })
+  }
+  return out
 }
 
 export interface InvoiceTotals {
