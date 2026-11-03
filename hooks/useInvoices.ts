@@ -66,9 +66,15 @@ export const useInvoices = () => {
   // 本次会话内已分配的序号 —— 防止批量/并发开票时多个请求查到同一个"最小空号"
   const allocatedSeqRef = useRef<Set<number>>(new Set())
 
-  const generateInvoiceNumber = useCallback(async (): Promise<string> => {
+  const generateInvoiceNumber = useCallback(async (period?: string): Promise<string> => {
     const now = new Date()
-    const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
+    // 票号必须跟着「账期」走，不是跟着开票当天的月份走。
+    // 提前一个月开下月学费时（10 月开 11 月的票），票号要是 INV-202611-xxx，
+    // 否则账期 2026-11 配 INV-202610-xxx，对账时看不懂（用户 2026-11-03 提的）。
+    const fromPeriod = /^(\d{4})-(\d{2})$/.exec(period || '')
+    const yearMonth = fromPeriod
+      ? `${fromPeriod[1]}${fromPeriod[2]}`
+      : `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
     try {
       const prefix = `INV-${yearMonth}-`
       // perPage 拉大，避免当月发票超过 200 张时漏号
@@ -95,7 +101,7 @@ export const useInvoices = () => {
     // 票号有数据库唯一约束；万一撞号（并发），自动换号重试，绝不静默写重复号
     let lastError: any = null
     for (let attempt = 0; attempt < 5; attempt++) {
-      const invoiceNumber = await generateInvoiceNumber()
+      const invoiceNumber = await generateInvoiceNumber((invoiceData as any).period)
       try {
         const result = await createRecord('invoices', {
           ...invoiceData,
