@@ -263,8 +263,10 @@ export async function POST(request: NextRequest) {
         issueDate: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-25` })(),
         dueDate: (() => { const d = new Date(); const t = new Date(d.getFullYear(), d.getMonth() + 1, 7); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}` })(),
         notes: "Auto-generated invoice",
+        // 口径：discount 一律存「实际扣掉的钱」，搭配 discountType='amount'。
+        // 因为明细里的折扣行已经是钱，再标 percent 就会变成「50 元的 50%」这种二次解释错误。
         discount: discountValue,
-        discountType: discountType,
+        discountType: 'amount',
         latePaymentRule: latePaymentRule || undefined,
       }
 

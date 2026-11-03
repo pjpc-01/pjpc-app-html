@@ -121,8 +121,9 @@ export async function POST(request: NextRequest) {
           items: p.items,
           totalAmount: p.newTotal,
           amount: p.newTotal,
+          // 同 auto-generate：存的是钱，类型就说 amount，别留 percent 让人再乘一次
           discount: p.newDiscount,
-          discountType: p.discountType,
+          discountType: 'amount',
         }),
       })
       if (r.ok) updated++
