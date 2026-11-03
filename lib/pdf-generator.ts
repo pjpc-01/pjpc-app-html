@@ -9,6 +9,7 @@ import { StudentReport, ReportSubject } from '@/hooks/useStudentReports'
 import { getSocsoEmployer, getEisContribution } from '@/lib/perkeso-rates'
 import { scoreToGrade } from '@/lib/utils'
 import { round2, sumLines, subtotalOf } from '@/lib/finance-calc'
+import { invoiceView } from '@/lib/invoice-build'
 
 // ── Enrichment Class 名单：学生(中文名) → 参加的课程名（2026-10-16 依最新分班表更新，57 人） ──
 export const ENRICHMENT_MAP: Record<string, string> = {
@@ -97,13 +98,8 @@ const getStatusText = (status: string): string => {
 
 // ── Generate invoice HTML (same styling as preview) ──
 export const generateInvoiceHTML = (invoice: Invoice, settings: InvoiceSettingsPreset): string => {
-  // 金额只在这里算一次，规则跟全站一样：小计=折扣前原价，总计=票面（=明细合计）。
-  // 明细与票面的不一致在「写入时」就已经补齐（createInvoice 那道闸），渲染层不再二次兜底。
-  const items = (invoice.items && invoice.items.length > 0
-    ? invoice.items
-    : [{ name: '学生费用', amount: invoice.totalAmount || 0 }])
-  const subtotal = subtotalOf(items as any)
-  const total = round2(invoice.totalAmount || sumLines(items as any) || 0)
+  // 明细/小计/总计一律走 lib/invoice-build 的 invoiceView（全站唯一出口）
+  const { items, subtotal, total } = invoiceView(invoice as any)
   const statusText = getStatusText(invoice.status)
   const primaryColor = settings.primaryColor || '#1e40af'
   const secondaryColor = settings.secondaryColor || '#3b82f6'

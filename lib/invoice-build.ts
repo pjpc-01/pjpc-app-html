@@ -106,3 +106,20 @@ export function buildInvoiceLines(input: BuildInvoiceLinesInput): BuiltInvoice {
 
   return { items, subtotal, discountAmount, prepayDiscount, total: sumLines(items) }
 }
+
+/**
+ * 把「一张已存在的发票」换算成票面要显示的三样东西：明细、小计（折扣前）、总计。
+ * PDF、预览、打印都调这里 —— 渲染层以前各自 subtotalOf/sumLines 一遍，虽然用的是同一个
+ * 算法，但定义散在好几处；现在只有一个出口。发票表里只存 items 和 totalAmount，没有存小计，
+ * 所以小计必须从明细推出来，这就是「PDF 也要算一次」的原因，不是另一套算法。
+ */
+export function invoiceView(invoice: { items?: any[] | null; totalAmount?: number | null }) {
+  const list = Array.isArray(invoice?.items) && invoice.items.length > 0
+    ? invoice.items
+    : [{ name: '学生费用', amount: Number(invoice?.totalAmount) || 0 }]
+  return {
+    items: list as { name: string; amount: number }[],
+    subtotal: subtotalOf(list as any),
+    total: round2(Number(invoice?.totalAmount) || sumLines(list as any) || 0),
+  }
+}
