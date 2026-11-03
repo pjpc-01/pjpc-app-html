@@ -1,6 +1,6 @@
 "use client"
 
-import { sumLines } from '@/lib/finance-calc'
+import { sumLines, applyItemDiscounts, discountValueOf, type ItemDiscountRule } from '@/lib/finance-calc'
 import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -27,8 +27,16 @@ interface InvoiceCreateDialogProps {
   activeFees: any[]
   isFeeAssigned: (studentId: string, feeId: string) => boolean
   calculateStudentTotal: (studentId: string) => number
-  onDirectCreate: (student: any, dueDate: string, notes: string, period: string) => void
+  onDirectCreate: (student: any, dueDate: string, notes: string, period: string, discounts?: CreateDiscounts) => void
   onBulkCreate: (selectedGrades: string[], formData: any) => void
+}
+
+/** 开票时用的折扣：每项单独一条 + 整单一条（整单默认沿用学生费用里设定的） */
+export interface CreateDiscounts {
+  /** 按项目名存的单项折扣，留空的不传 */
+  items: Record<string, ItemDiscountRule>
+  /** 整单折扣：enabled=false 表示这次不打整单折扣 */
+  overall: { enabled: boolean; value?: number | string; type?: 'amount' | 'percent' }
 }
 
 export function InvoiceCreateDialog({
@@ -51,6 +59,29 @@ export function InvoiceCreateDialog({
     const n = new Date()
     return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`
   })
+  // ── 折扣：每项一条 + 整单一条 ──
+  // 单项折扣按项目名存；整单折扣默认开启（沿用学生费用里设定的），取消勾选就是这次不打。
+  const [itemDiscounts, setItemDiscounts] = useState<Record<string, { value: string; type: 'amount' | 'percent' }>>({})
+  const [overallEnabled, setOverallEnabled] = useState(true)
+  const [overallValue, setOverallValue] = useState("")
+  const [overallType, setOverallType] = useState<'amount' | 'percent'>('amount')
+
+  const setItemDiscount = (name: string, patch: Partial<{ value: string; type: 'amount' | 'percent' }>) => {
+    setItemDiscounts(prev => {
+      const cur = prev[name] || { value: "", type: 'amount' as const }
+      const next = { ...cur, ...patch }
+      return { ...prev, [name]: next }
+    })
+  }
+
+  // 只把填了数的项目带上；0 或空 = 这一项不打折
+  const activeItemRules = useMemo(() => {
+    const out: Record<string, ItemDiscountRule> = {}
+    for (const [name, d] of Object.entries(itemDiscounts)) {
+      if (Number(d.value) > 0) out[name] = { value: Number(d.value), type: d.type }
+    }
+    return out
+  }, [itemDiscounts])
   
   const availableGrades = [...new Set(students.map((s: any) => s.standard))]
     .sort((a: any, b: any) => gradeRank(a) - gradeRank(b))
@@ -72,9 +103,15 @@ export function InvoiceCreateDialog({
     const items = activeFees
       .filter(fee => isFeeAssigned(studentId, fee.id))
       .map(fee => ({ name: fee.name, amount: fee.amount }))
-    const total = sumLines(items)  // 金额单源
-    return { items, total, studentName: firstStudent.name || firstStudent.student_name }
-  }, [selectedStudents, activeFees, isFeeAssigned, selectedStudentObjects])
+    const lines = applyItemDiscounts(items, activeItemRules)   // 单项折扣展开成负数行
+    const itemDiscTotal = sumLines(lines) - sumLines(items)     // 负数
+    const afterItems = sumLines(lines)
+    const overallDisc = overallEnabled && Number(overallValue) > 0
+      ? discountValueOf(afterItems, overallValue, overallType)
+      : 0
+    const total = sumLines(lines) - overallDisc
+    return { items, lines, total, itemDiscTotal, overallDisc, studentName: firstStudent.name || firstStudent.student_name }
+  }, [selectedStudents, activeFees, isFeeAssigned, selectedStudentObjects, activeItemRules, overallEnabled, overallValue, overallType])
 
   const handleGradeToggle = (grade: string) => {
     setSelectedGrades(prev => 
@@ -91,15 +128,23 @@ export function InvoiceCreateDialog({
 
   const handleCreate = () => {
     if (selectedStudents.length === 0 || !dueDate) return
+    const discounts: CreateDiscounts = {
+      items: activeItemRules,
+      overall: {
+        enabled: overallEnabled,
+        value: Number(overallValue) > 0 ? Number(overallValue) : undefined,
+        type: overallType,
+      },
+    }
     
     if (selectedStudents.length === 1) {
       const student = selectedStudentObjects[0]
       if (student) {
-        onDirectCreate(student, dueDate, notes, period)
+        onDirectCreate(student, dueDate, notes, period, discounts)
       }
     } else {
       const grades = [...new Set(selectedStudentObjects.map((s: any) => s.grade || s.standard))]
-      onBulkCreate(grades, { dueDate, notes: notes || '', period })
+      onBulkCreate(grades, { dueDate, notes: notes || '', period, discounts })
     }
     
     onOpenChange(false)
@@ -107,6 +152,10 @@ export function InvoiceCreateDialog({
     setSelectedGrades([])
     setDueDate(defaultInvoiceDates().dueDate)
     setNotes("")
+    setItemDiscounts({})
+    setOverallValue("")
+    setOverallEnabled(true)
+    setOverallType('amount')
   }
 
   const allFilteredSelected = filteredStudents.length > 0 && 
@@ -233,19 +282,90 @@ export function InvoiceCreateDialog({
                   <TableRow>
                     <TableHead className="w-8">#</TableHead>
                     <TableHead>{t("费用项目")}</TableHead>
-                    <TableHead className="w-28 text-right">{t("金额 (RM)")}</TableHead>
+                    <TableHead className="w-24 text-right">{t("金额 (RM)")}</TableHead>
+                    <TableHead className="w-24">{t("折扣")}</TableHead>
+                    <TableHead className="w-16">{t("类型")}</TableHead>
+                    <TableHead className="w-24 text-right">{t("折后")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {feePreview.items.map((item, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
-                      <TableCell className="text-sm">{item.name}</TableCell>
-                      <TableCell className="text-right font-medium">{item.amount.toFixed(2)}</TableCell>
+                  {feePreview.items.map((item, idx) => {
+                    const d = itemDiscounts[item.name] || { value: "", type: 'amount' as const }
+                    const disc = discountValueOf(item.amount, d.value, d.type)
+                    return (
+                      <TableRow key={idx}>
+                        <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
+                        <TableCell className="text-sm">{item.name}</TableCell>
+                        <TableCell className="text-right font-medium">{item.amount.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Input
+                            inputMode="decimal"
+                            className="h-7 text-sm"
+                            placeholder={t("不打折就留空")}
+                            value={d.value}
+                            onChange={e => setItemDiscount(item.name, { value: e.target.value })}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <select
+                            className="h-7 w-full rounded-md border border-gray-300 bg-white px-1 text-xs text-gray-700"
+                            value={d.type}
+                            onChange={e => setItemDiscount(item.name, { type: e.target.value as 'amount' | 'percent' })}
+                          >
+                            <option value="amount">{t("元")}</option>
+                            <option value="percent">%</option>
+                          </select>
+                        </TableCell>
+                        <TableCell className="text-right text-sm text-gray-700">
+                          {disc > 0 ? (item.amount - disc).toFixed(2) : "—"}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+
+                  {feePreview.itemDiscTotal < 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-right text-sm text-amber-700">{t("分项折扣合计")}</TableCell>
+                      <TableCell className="text-right text-sm text-amber-700">{feePreview.itemDiscTotal.toFixed(2)}</TableCell>
                     </TableRow>
-                  ))}
+                  )}
+
+                  {/* 整单折扣：勾选才打，可沿用学生费用设定，也可这里临时改 */}
+                  <TableRow className="bg-muted/30">
+                    <TableCell colSpan={2}>
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <Checkbox checked={overallEnabled} onCheckedChange={(c) => setOverallEnabled(!!c)} />
+                        <span className="text-sm font-medium">{t("整单折扣")}</span>
+                      </label>
+                    </TableCell>
+                    <TableCell colSpan={2}>
+                      <Input
+                        inputMode="decimal"
+                        className="h-7 text-sm"
+                        disabled={!overallEnabled}
+                        placeholder={overallEnabled ? t("留空=沿用学生费用设定") : t("本次不打整单折扣")}
+                        value={overallValue}
+                        onChange={e => setOverallValue(e.target.value)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <select
+                        className="h-7 w-full rounded-md border border-gray-300 bg-white px-1 text-xs text-gray-700 disabled:opacity-50"
+                        disabled={!overallEnabled || Number(overallValue) <= 0}
+                        value={overallType}
+                        onChange={e => setOverallType(e.target.value as 'amount' | 'percent')}
+                      >
+                        <option value="amount">{t("元")}</option>
+                        <option value="percent">%</option>
+                      </select>
+                    </TableCell>
+                    <TableCell className="text-right text-sm text-amber-700">
+                      {feePreview.overallDisc > 0 ? `-${feePreview.overallDisc.toFixed(2)}` : "—"}
+                    </TableCell>
+                  </TableRow>
+
                   <TableRow className="border-t-2">
-                    <TableCell colSpan={2} className="text-right font-bold text-sm">{t('finance.total')}</TableCell>
+                    <TableCell colSpan={5} className="text-right font-bold text-sm">{t('finance.total')}</TableCell>
                     <TableCell className="text-right font-bold text-green-600">
                       RM {feePreview.total.toFixed(2)}
                     </TableCell>
