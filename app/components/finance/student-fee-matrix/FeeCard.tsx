@@ -1,6 +1,7 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
+import { sumLines, subtotalOf, discountValueOf } from "@/lib/finance-calc"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -113,10 +114,11 @@ export const FeeCard = ({
           quantity: f.type === 'daily' ? qtyOf(f.id) : 1,
           active: true,
         }))
-        const base = items.reduce((s: number, i: any) => s + (i.amount || 0) * (i.quantity || 1), 0)
+        // 金额走全站唯一算法，别在这里自己乘一遍
+        const lines = items.map((i: any) => ({ id: i.id, name: i.name, amount: (i.amount || 0) * (i.quantity || 1) }))
         const adj = getLocalAdjustment(studentId)
         const disc = adj?.discount || 0
-        const total = Math.max(0, adj?.discount_type === 'percent' ? base - base * (disc / 100) : base - disc)
+        const total = Math.max(0, sumLines(lines) - discountValueOf(subtotalOf(lines), disc, adj?.discount_type || 'amount'))
         await fetch(`/api/pocketbase-proxy/api/collections/student_fees/records`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
