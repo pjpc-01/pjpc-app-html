@@ -1,0 +1,108 @@
+/**
+ * 开票的唯一实现。批量开票（app/api/billing/auto-generate）和学生费用卡的「开票」
+ * （StudentFeeMatrix）以前各写一套：账期一个用当月一个用下月、总额一个用卡片金额一个自己
+ * reduce，结果同一件事两个结果，还撞出「同月两张」。现在两边都只调这里。
+ *
+ * 规矩（老板定的）：
+ *   1. 账期 = 学费所属月，批量提前一个月开 → 默认取下个月。
+ *   2. 金额只认明细合计，全站唯一算法在 lib/finance-calc。
+ *   3. 折扣写成负数明细行，不藏进 amount。
+ */
+import { round2, sumLines, subtotalOf, discountValueOf } from './finance-calc'
+
+export type InvoiceLineInput = {
+  id?: string
+  name: string
+  amount: number
+  /** monthly | one-time | annual */
+  type?: string
+}
+
+export type BuildInvoiceLinesInput = {
+  lines: InvoiceLineInput[]
+  /** 走「×6 个月」的费用 id */
+  sixMonthFeeIds?: string[]
+  /** 六月付的折扣率（percent 时按 0~1 的小数，跟 PB 存的一致） */
+  sixMonthPayRate?: number
+  sixMonthPayRateType?: 'amount' | 'percent'
+  /** 学生折扣（金额或百分比） */
+  discount?: number
+  discountType?: 'amount' | 'percent'
+}
+
+export type BuiltInvoice = {
+  items: { name: string; amount: number }[]
+  /** 折扣前原价 */
+  subtotal: number
+  /** 学生折扣金额（正数） */
+  discountAmount: number
+  /** 预付折扣金额（正数） */
+  prepayDiscount: number
+  /** 应收总额 = 明细合计 */
+  total: number
+}
+
+const isOneTime = (t?: string) => t === 'one-time' || t === 'annual'
+
+/** 账期：默认下个月（批量 24–27 号开的是下个月的票，单张开票同理） */
+export function defaultInvoicePeriod(now: Date = new Date()): string {
+  const d = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+/** 明确的账期优先，否则取下个月 */
+export function resolveInvoicePeriod(explicit?: string | null): string {
+  return typeof explicit === 'string' && /^\d{4}-\d{2}$/.test(explicit) ? explicit : defaultInvoicePeriod()
+}
+
+export function buildInvoiceLines(input: BuildInvoiceLinesInput): BuiltInvoice {
+  const { lines, sixMonthFeeIds, sixMonthPayRate, sixMonthPayRateType, discount, discountType } = input
+  const prepaid = new Set(sixMonthFeeIds || [])
+
+  // 1. 原价明细：走六月付的项目 ×6，一次性项目带标注
+  const items: { name: string; amount: number }[] = []
+  for (const l of lines || []) {
+    const base = Number(l.amount) || 0
+    if (l.id && prepaid.has(l.id)) {
+      items.push({ name: `${l.name} (×6个月)`, amount: base * 6 })
+    } else {
+      items.push({ name: isOneTime(l.type) ? `${l.name} (一次性)` : l.name, amount: base })
+    }
+  }
+
+  const subtotal = subtotalOf(items)
+
+  // 2. 学生折扣
+  let discountAmount = 0
+  const disc = Number(discount) || 0
+  if (disc > 0) {
+    discountAmount = discountValueOf(subtotal, disc, discountType || 'amount')
+    if (discountAmount > 0) {
+      items.push({
+        name: (discountType || 'amount') === 'percent' ? `学生折扣 (${disc}%)` : '学生折扣',
+        amount: -discountAmount,
+      })
+    }
+  }
+
+  // 3. 六月付折扣率（作用在扣完学生折扣的金额上）
+  let prepayDiscount = 0
+  const rate = Number(sixMonthPayRate) || 0
+  if (prepaid.size > 0 && rate > 0) {
+    const baseAfterDiscount = round2(subtotal - discountAmount)
+    prepayDiscount = (sixMonthPayRateType || 'percent') === 'amount'
+      ? round2(rate)
+      : round2(baseAfterDiscount * rate)
+    if (prepayDiscount > baseAfterDiscount) prepayDiscount = baseAfterDiscount
+    if (prepayDiscount > 0) {
+      items.push({
+        name: (sixMonthPayRateType || 'percent') === 'amount'
+          ? `预付6个月折扣 (RM${prepayDiscount.toFixed(2)})`
+          : `预付6个月折扣 (${(rate * 100).toFixed(0)}%)`,
+        amount: -prepayDiscount,
+      })
+    }
+  }
+
+  return { items, subtotal, discountAmount, prepayDiscount, total: sumLines(items) }
+}

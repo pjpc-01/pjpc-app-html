@@ -10,7 +10,7 @@ import { SearchAndFilter } from "./SearchAndFilter"
 import { FeeCard } from "./FeeCard"
 import { useLanguage } from "@/contexts/language-context"
 import { toLocalMonthKey } from "@/lib/utils"
-import { sumLines, subtotalOf, discountValueOf } from "@/lib/finance-calc"
+import { buildInvoiceLines, resolveInvoicePeriod } from "@/lib/invoice-build"
 import { gradeRank } from "@/lib/grades"
 
 export const StudentFeeMatrix = () => {
@@ -70,107 +70,71 @@ export const StudentFeeMatrix = () => {
     if (!student) return
     let adj = getLocalAdjustment(studentId)
     const assignedFees = allFees.filter(f => isAssigned(studentId, f.id))
-    let feeQuantities: Record<string, number> = {}
+    const feeQuantities: Record<string, number> = {}
 
-    // Fetch discount + quantities from PB
+    // 折扣与数量以 PB 的 student_fees 为准
     try {
       const r = await fetch(`/api/pocketbase-proxy/api/collections/student_fees/records?filter=(student_id='${studentId}')&perPage=1`)
       if (r.ok) {
         const data = await r.json()
         if (data.items?.length > 0) {
           adj = { ...adj, discount: data.items[0].discount || 0, discount_type: data.items[0].discount_type || 'amount' }
-          const items = typeof data.items[0].fee_items === 'string' ? JSON.parse(data.items[0].fee_items) : (data.items[0].fee_items || [])
-          items.forEach((fi: any) => { if (fi.active) feeQuantities[fi.id] = fi.quantity || 1 })
+          const fi = typeof data.items[0].fee_items === 'string' ? JSON.parse(data.items[0].fee_items) : (data.items[0].fee_items || [])
+          fi.forEach((x: any) => { if (x.active) feeQuantities[x.id] = x.quantity || 1 })
         }
       }
     } catch {}
 
-    let items = assignedFees.map(f => ({ name: f.name, amount: (f.amount || 0) * (feeQuantities[f.id] || 1) }))
+    // 明细与总额一律走开票唯一实现（和批量开票同一套）
+    const built = buildInvoiceLines({
+      lines: assignedFees.map(f => ({
+        id: f.id,
+        name: f.name || '费用',
+        amount: (f.amount || 0) * (feeQuantities[f.id] || 1),
+        type: (f as any).type,
+      })),
+      sixMonthFeeIds: adj.six_month_fee_ids || [],
+      sixMonthPayRate: adj.six_month_pay_rate || 0,
+      sixMonthPayRateType: (adj.six_month_pay_rate_type || 'percent') as 'amount' | 'percent',
+      discount: adj.discount || 0,
+      discountType: (adj.discount_type || 'amount') as 'amount' | 'percent',
+    })
+    const items = built.items
+    const total = built.total
+    const discount = Number(adj.discount || 0)
+    const discountType = (adj.discount_type || 'amount') as 'amount' | 'percent'
 
-    // Apply per-item six-month prepay logic
-    const sixMonthFeeIds = adj.six_month_fee_ids || []
-    let sixMonthPayRate = adj.six_month_pay_rate || 0
-    const sixMonthPayRateType = adj.six_month_pay_rate_type || 'percent'
-    if (sixMonthFeeIds.length > 0) {
-      const sixMonthItems: { name: string; amount: number }[] = []
-      let sixMonthTotal = 0
-
-      for (const fee of assignedFees) {
-        const qty = feeQuantities[fee.id] || 1
-        if (sixMonthFeeIds.includes(fee.id)) {
-          const amount = (fee.amount || 0) * qty * 6
-          sixMonthItems.push({ name: `${fee.name} (×6个月)`, amount })
-          sixMonthTotal += amount
-        } else {
-          const amount = (fee.amount || 0) * qty
-          sixMonthItems.push({ name: fee.name, amount })
-          sixMonthTotal += amount
-        }
-      }
-
-      // Apply six_month_pay discount if rate is set
-      if (sixMonthPayRate > 0) {
-        const prepayDiscount = sixMonthPayRateType === 'amount'
-          ? Math.round(sixMonthPayRate * 100) / 100
-          : Math.round(sixMonthTotal * sixMonthPayRate * 100) / 100
-
-        if (prepayDiscount > 0) {
-          const prepayLabel = sixMonthPayRateType === 'amount'
-            ? `预付折扣 (RM${prepayDiscount.toFixed(2)})`
-            : `预付折扣 (${(sixMonthPayRate * 100).toFixed(0)}%)`
-          sixMonthItems.push({ name: prepayLabel, amount: -prepayDiscount })
-          sixMonthTotal -= prepayDiscount
-        }
-      }
-
-      items = sixMonthItems
-    }
-
-    // Include discount as a line item — calculate the actual RM amount
-    const discount = adj.discount || 0
-    const discountType = adj.discount_type || 'amount'
-    if (discount > 0) {
-      const baseAmount = subtotalOf(items)
-      const actualDiscount = discountValueOf(baseAmount, discount, discountType)
-      const discountLabel = discountType === 'percent'
-        ? `学生折扣 (${discount}%)`
-        : '学生折扣'
-      items.push({ name: discountLabel, amount: -actualDiscount })
-    }
-
-    // 总额只认明细合计（sumLines 是全站唯一算法，别再自己 reduce）
-    const total = sumLines(items)
-
-    // Get late payment rule from invoice_settings
+    // 迟付款须知
     let latePaymentRule = ''
     try {
       const res = await fetch('/api/pocketbase-proxy/api/collections/invoice_settings/records?filter=(isDefault=true)&perPage=1')
       if (res.ok) {
         const data = await res.json()
-        if (data.items?.length > 0) {
-          latePaymentRule = data.items[0].latePaymentRule || ''
-        }
+        if (data.items?.length > 0) latePaymentRule = data.items[0].latePaymentRule || ''
       }
     } catch {}
 
+    const period = resolveInvoicePeriod()
     createInvoiceFromHook({
       studentId, studentName: student.student_name || '', studentGrade: student.standard || '',
       studentNumber: student.student_id || '',
       totalAmount: total, items, status: 'issued',
-      period: toLocalMonthKey(),
+      period,
       issueDate: new Date().toISOString().split('T')[0],
-      dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0],
-      notes: `${new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}学费`,
-      discount: discount || undefined,
-      discountType: discount > 0 ? discountType : undefined,
+      // 到期日跟批量开票一致：账期月 7 号（12 月学费 → 12-07），不再用「今天+15天」
+      dueDate: `${period}-07`,
+      notes: `${Number(period.slice(5, 7))}月学费`,
+      discount: built.discountAmount || undefined,
+      discountType: built.discountAmount > 0 ? 'amount' : undefined,
       latePaymentRule: latePaymentRule || undefined,
     })
     setStudentInvoices(prev => { const m = new Map(prev); m.set(studentId, true); return m })
   }
 
   const hasInvoiceThisMonth = (studentId: string) => {
-    const m = toLocalMonthKey()
-    return invoices.some(i => i.studentId === studentId && i.issueDate.startsWith(m))
+    // 按账期判断「这个月已经开过票」，不要用开票日 —— 开票日 10-25 开的可能是 11 月的账期
+    const p = resolveInvoicePeriod()
+    return invoices.some(i => i.studentId === studentId && (i as any).period === p)
   }
 
   const toggleEditMode = async () => {

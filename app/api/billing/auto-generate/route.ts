@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireRoles } from '@/lib/api-auth'
-import { round2, discountValueOf } from '@/lib/finance-calc'
+import { round2 } from '@/lib/finance-calc'
+import { buildInvoiceLines, resolveInvoicePeriod } from '@/lib/invoice-build'
 
 // 定期账单自动生成 API
 // 为所有有活跃学生费用的学生生成当月账单
@@ -51,11 +52,9 @@ export async function POST(request: NextRequest) {
     // 账期 = 下个月。PJPC 的规矩是提前一个月开下个月的学费（10-25 开 11 月的票），
     // 所以自动生成不能写当月，否则 11 月点一下就把 11 月的票又开一遍、12 月永远没人开。
     // 需要特殊月份时可以 body 传 { period: 'YYYY-MM' }。
+    // 账期统一由 lib/invoice-build 决定：默认下个月，body 传 period 可覆盖
     const body = await request.json().catch(() => ({} as any))
-    const now = new Date()
-    const next = new Date(now.getFullYear(), now.getMonth() + 1, 1)
-    const requested = typeof body?.period === 'string' && /^\d{4}-\d{2}$/.test(body.period) ? body.period : ''
-    const period = requested || `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`
+    const period = resolveInvoicePeriod(typeof body?.period === 'string' ? body.period : undefined)
 
     // 0. 获取全局 invoice_settings（迟付费规则）
     let latePaymentFee = 0
@@ -165,7 +164,7 @@ export async function POST(request: NextRequest) {
         const dueDate = new Date(inv.dueDate)
         const graceDate = new Date(dueDate)
         graceDate.setDate(graceDate.getDate() + latePaymentGraceDays)
-        if (now > graceDate && paidAmount < invoiceAmount) {
+        if (new Date() > graceDate && paidAmount < invoiceAmount) {
           studentCarryForward.set(sid, (studentCarryForward.get(sid) || 0) - latePaymentFee)
           const detail = studentCarryDetail.get(sid) || []
           detail.push(`${inv.period || "往期"} 迟付罚金: -${latePaymentFee.toFixed(2)}`)
@@ -214,111 +213,27 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      // Build invoice items, applying per-student discount and six-month logic
-      const items: { name: string; amount: number }[] = []
-      let recurringBase = 0    // monthly-type fees (multiply by 6 for 六月付)
-      let oneTimeBase = 0      // one-time/annual-type fees (not multiplied)
-
-      for (const fi of feeItemsArr) {
-        if (fi.active === false) continue
-        const feeDef = feeItemMap.get(fi.id)
-        const isRecurring = feeDef?.type === 'monthly' || !feeDef?.type
-        const isOneTime = feeDef?.type === 'one-time' || feeDef?.type === 'annual'
-
-        if (isOneTime) {
-          oneTimeBase += fi.amount || 0
-        } else {
-          recurringBase += fi.amount || 0
-        }
-      }
-
-      // Add line items
-      for (const fi of feeItemsArr) {
-        if (fi.active === false) continue
-        const feeDef = feeItemMap.get(fi.id)
-        const isRecurring = feeDef?.type === 'monthly' || !feeDef?.type
-        const isOneTime = feeDef?.type === 'one-time' || feeDef?.type === 'annual'
-        const labelSuffix = isOneTime ? ' (一次性)' : ''
-        items.push({ name: (fi.name || "费用") + labelSuffix, amount: fi.amount || 0 })
-      }
-
-      let totalBeforeDiscount = recurringBase + oneTimeBase
-
-      // Apply per-student discount
+      // 明细与总额走开票唯一实现（和学费矩阵的「开票」按钮同一套，别再各写一遍）
+      const built = buildInvoiceLines({
+        lines: feeItemsArr
+          .filter((fi: any) => fi.active !== false)
+          .map((fi: any) => ({
+            id: fi.id,
+            name: fi.name || '费用',
+            amount: fi.amount || 0,
+            type: feeItemMap.get(fi.id)?.type,
+          })),
+        sixMonthFeeIds: Array.isArray(assignment.six_month_fee_ids) ? assignment.six_month_fee_ids : [],
+        sixMonthPayRate: assignment.six_month_pay_rate || 0,
+        sixMonthPayRateType: (assignment.six_month_pay_rate_type || 'percent') as 'amount' | 'percent',
+        discount: assignment.discount || 0,
+        discountType: (assignment.discount_type || 'amount') as 'amount' | 'percent',
+      })
+      const items: { name: string; amount: number }[] = built.items
       const studentDiscount = assignment.discount || 0
       const discountType = assignment.discount_type || 'amount'
-      let discountValue = 0
-      if (studentDiscount > 0) {
-        // 金额单源：lib/finance-calc（percent 取整规则跟以前一致）
-        discountValue = discountValueOf(totalBeforeDiscount, studentDiscount, discountType)
-        const discountLabel = discountType === 'percent'
-          ? `学生折扣 (${studentDiscount}%)`
-          : '学生折扣'
-        items.push({ name: discountLabel, amount: -discountValue })
-      }
-
-      let totalAmount = totalBeforeDiscount - discountValue
-
-      // Per-item six-month prepay: individual fee items marked ×6
-      const sixMonthFeeIds = assignment.six_month_fee_ids || []
-      if (Array.isArray(sixMonthFeeIds) && sixMonthFeeIds.length > 0) {
-        const sixMonthRate = assignment.six_month_pay_rate || 0
-        // Rebuild items for six-month view
-        const sixMonthItems: { name: string; amount: number }[] = []
-
-        for (const fi of feeItemsArr) {
-          if (fi.active === false) continue
-          const isPrepaid = sixMonthFeeIds.includes(fi.id)
-
-          if (isPrepaid) {
-            sixMonthItems.push({
-              name: (fi.name || "费用") + ` (×6个月)`,
-              amount: (fi.amount || 0) * 6,
-            })
-          } else {
-            const feeDef = feeItemMap.get(fi.id)
-            const isOneTime = feeDef?.type === 'one-time' || feeDef?.type === 'annual'
-            sixMonthItems.push({
-              name: (fi.name || "费用") + (isOneTime ? ' (一次性)' : ''),
-              amount: fi.amount || 0,
-            })
-          }
-        }
-
-        let sixMonthTotal = sixMonthItems.reduce((sum, item) => sum + item.amount, 0)
-
-        // Apply per-student discount on the 6-month total
-        if (studentDiscount > 0) {
-          const sv = discountType === 'percent'
-            ? Math.round(sixMonthTotal * (studentDiscount / 100) * 100) / 100
-            : studentDiscount
-          sixMonthItems.push({ name: discountType === 'percent' ? `学生折扣 (${studentDiscount}%)` : '学生折扣', amount: -sv })
-          sixMonthTotal -= sv
-        }
-
-        // Apply 六月付折扣率
-      if (sixMonthRate > 0) {
-        const sixMonthRateType = assignment.six_month_pay_rate_type || 'percent'
-        const prepayDiscount = sixMonthRateType === 'amount'
-          ? Math.round(sixMonthRate * 100) / 100  // use value directly as RM
-          : Math.round(sixMonthTotal * sixMonthRate * 100) / 100  // percentage
-        const prepayLabel = sixMonthRateType === 'amount'
-          ? `预付6个月折扣 (RM${prepayDiscount.toFixed(2)})`
-          : `预付6个月折扣 (${(sixMonthRate * 100).toFixed(0)}%)`
-        sixMonthItems.push({ name: prepayLabel, amount: -prepayDiscount })
-        sixMonthTotal -= prepayDiscount
-      }
-
-        // Replace items list with six-month version
-        items.length = 0
-        items.push(...sixMonthItems)
-        totalAmount = sixMonthTotal
-        discountValue = studentDiscount > 0
-          ? (discountType === 'percent'
-              ? Math.round(sixMonthTotal * (studentDiscount / 100) * 100) / 100
-              : studentDiscount)
-          : 0
-      }
+      let discountValue: number = built.discountAmount
+      let totalAmount = built.total
 
       // 上期结转
       const carryForward = studentCarryForward.get(sid) || 0
@@ -368,8 +283,8 @@ export async function POST(request: NextRequest) {
           amount: totalAmount,
           carryForward,
           discount: studentDiscount,
-          sixMonthFeeIds: sixMonthFeeIds,
-          sixMonthPay: Array.isArray(sixMonthFeeIds) && sixMonthFeeIds.length > 0,
+          sixMonthFeeIds: Array.isArray(assignment.six_month_fee_ids) ? assignment.six_month_fee_ids : [],
+          sixMonthPay: Array.isArray(assignment.six_month_fee_ids) && assignment.six_month_fee_ids.length > 0,
           items,
         })
 
