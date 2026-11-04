@@ -2260,6 +2260,8 @@ export const ZH_TO_EN: Record<string, string> = {
   "账户登录": "Account Login",
   "账户类型": "Account Type",
   "账期": "Billing Period",
+  "全部账期": "All periods",
+  "发票数": "Invoices",
   "账期（这张票属于哪个月）": "Billing Period (which month does this ticket belong to)",
   "货币": "Currency",
   "费率": "Rates",
