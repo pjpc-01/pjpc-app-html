@@ -51,6 +51,13 @@ const getInvoiceStatusBadge = (status: string) => {
   return <Badge variant={statusInfo.variant}>{statusInfo.text}</Badge>
 }
 
+/** 发票归属月：账期优先，没填才用开票日 —— 与财务报表口径一致 */
+const invoiceMonthOf = (i: any): string => {
+  const p = String(i?.period || '')
+  if (/^\d{4}-\d{2}/.test(p)) return p.slice(0, 7)
+  return String(i?.issueDate || i?.created || '').slice(0, 7)
+}
+
 export default function InvoiceManagement() {
   const { t } = useLanguage()
   const {
@@ -83,6 +90,11 @@ export default function InvoiceManagement() {
 
   // Center filter (全部/PU1中学/BATU14小学) - 参照积分榜 tab
   const [centerFilter, setCenterFilter] = useState("all")
+  // 账期筛选：一打开只看当月（老板 2026-11-04：全库总额没用，要看当月或指定月份）
+  const [periodFilter, setPeriodFilter] = useState<string>(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  })
   const [summaryYear, setSummaryYear] = useState(() => new Date().getFullYear())
 
   const [isInvoiceDetailDialogOpen, setIsInvoiceDetailDialogOpen] = useState(false)
@@ -257,12 +269,24 @@ Prospek Cemerlang`,
   }, [availableStudents, calculateStudentTotal, activeFees])
 
   // Center-filtered invoices: invoice.studentId → student.center (code: PU1/BATU14)
+  const periodOptions = useMemo(() => {
+    const set = new Set<string>()
+    invoices.forEach((inv: any) => {
+      const ym = invoiceMonthOf(inv)
+      if (/^\d{4}-\d{2}$/.test(ym)) set.add(ym)
+    })
+    return Array.from(set).sort().reverse()
+  }, [invoices])
+
   const centerFilteredInvoices = useMemo(() => {
-    const base = getFilteredInvoices()
-    if (!centerFilter || centerFilter === "all") return base
-    const centerMap = new Map(students.map((s: any) => [s.id, s.center]))
-    return base.filter(inv => centerMap.get(inv.studentId) === centerFilter)
-  }, [getFilteredInvoices, students, centerFilter])
+    let base = getFilteredInvoices()
+    if (centerFilter && centerFilter !== "all") {
+      const centerMap = new Map(students.map((s: any) => [s.id, s.center]))
+      base = base.filter(inv => centerMap.get(inv.studentId) === centerFilter)
+    }
+    if (periodFilter !== 'all') base = base.filter(inv => invoiceMonthOf(inv) === periodFilter)
+    return base
+  }, [getFilteredInvoices, students, centerFilter, periodFilter])
 
   // Event handlers
   const handleDownloadInvoice = async (invoice: any) => {
@@ -770,16 +794,31 @@ Prospek Cemerlang`,
         >
           {t("小学（BATU14）")}
         </Button>
+
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-sm text-gray-500">{t("账期")}</span>
+          <Select value={periodFilter} onValueChange={setPeriodFilter}>
+            <SelectTrigger className="h-8 w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("全部账期")}</SelectItem>
+              {periodOptions.map(ym => (
+                <SelectItem key={ym} value={ym}>{ym}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Statistics - 随中心 tab 一起计算，只用上面这一排 */}
+      {/* Statistics - 随中心 tab + 账期一起计算，只看当前选中的那一期 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-blue-600" />
               <div>
-                <p className="text-sm text-gray-600">{t("总发票数")}</p>
+                <p className="text-sm text-gray-600">{t("发票数")}</p>
                 <p className="text-2xl font-bold">{centerFilteredInvoices.length}</p>
               </div>
             </div>
@@ -807,7 +846,7 @@ Prospek Cemerlang`,
               <div>
                 <p className="text-sm text-gray-600">{t('student.pending_payment')}</p>
                 <p className="text-2xl font-bold">
-                  {centerFilteredInvoices.filter(inv => inv.status === 'issued').length}
+                  {centerFilteredInvoices.filter(inv => inv.status === 'issued' || inv.status === 'partially_paid').length}
                 </p>
               </div>
             </div>
@@ -830,7 +869,7 @@ Prospek Cemerlang`,
       </div>
 
       {/* 金额统计：开票总额 / 已收 / 未收 / 本月未收 - 随中心 tab 一起算 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -867,19 +906,6 @@ Prospek Cemerlang`,
           </CardContent>
         </Card>
 
-        {/* 本月（当前月）该收的 */}
-        <Card className="border-red-200 bg-red-50/40">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-red-600" />
-              <div className="min-w-0">
-                <p className="text-sm text-gray-600">{t("本月未收 (")}{currentMonthSummary.label})</p>
-                <p className="text-2xl font-bold text-red-700">RM {currentMonthSummary.outstanding.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                <p className="text-[11px] text-gray-500 mt-0.5">{t("开票")} {currentMonthSummary.count} {t("张 · RM")} {currentMonthSummary.invoiced.toLocaleString(undefined, { maximumFractionDigits: 2 })} {t("· 已收 RM")} {currentMonthSummary.collected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* 视图切换：列表 / 按学生看板 */}

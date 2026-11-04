@@ -94,15 +94,24 @@ export default function PaymentManagement() {
     }
     return m
   }, [receipts])
+  // 月份：默认当月（老板 2026-11-04：全库总额多余，只看当月/指定月）
+  const [payMonth, setPayMonth] = useState<string>(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  })
+
   const receiptStats = useMemo(() => {
-    const live = (Array.isArray(receipts) ? receipts : []).filter((r: any) => r.deleted !== true)
+    let live = (Array.isArray(receipts) ? receipts : []).filter((r: any) => r.deleted !== true)
+    if (payMonth !== 'all') {
+      live = live.filter((r: any) => String(r.receipt_date || r.created || '').slice(0, 7) === payMonth)
+    }
     return {
       total: live.length,
       issued: live.filter((r: any) => r.status === 'issued').length,
       draft: live.filter((r: any) => r.status === 'draft').length,
       totalAmount: live.reduce((sum: number, r: any) => sum + (Number(r.totalAmount) || 0), 0),
     }
-  }, [receipts])
+  }, [receipts, payMonth])
   const [isReceiptSettingsOpen, setIsReceiptSettingsOpen] = useState(false)
   const [isReceiptBinOpen, setIsReceiptBinOpen] = useState(false)
 
@@ -146,6 +155,16 @@ export default function PaymentManagement() {
     )
   })
   
+  // 账期（月份）：一打开只看当月，需要看旧月份从下拉里选（老板 2026-11-04）
+  const paymentMonths = useMemo(() => {
+    const set = new Set<string>()
+    payments.forEach((p: any) => {
+      const ym = String(p.date || p.created || '').slice(0, 7)
+      if (/^\d{4}-\d{2}$/.test(ym)) set.add(ym)
+    })
+    return Array.from(set).sort().reverse()
+  }, [payments])
+
   // Center filter for payments: payment.invoiceId → invoice.studentId → student.centerId
   const filteredPayments = payments.filter(payment => {
     const invoice = invoices.find(inv => inv.id === payment.invoiceId)
@@ -159,6 +178,8 @@ export default function PaymentManagement() {
       const receiptNo = String(receiptByPayment.get(payment.id)?.receiptNumber || '').toLowerCase()
       if (!studentName.includes(q) && !invoiceNumber.includes(q) && !voucherNo.includes(q) && !receiptNo.includes(q)) return false
     }
+    // 月份过滤：按付款日期（没填才用建立时间）
+    if (payMonth !== 'all' && String(payment.date || payment.created || '').slice(0, 7) !== payMonth) return false
     // 中心 tab 过滤（用 code：PU1/BATU14）
     if (centerTab && centerTab !== "all") {
       const student = students.find(s => s.id === invoice.studentId)
@@ -229,8 +250,11 @@ export default function PaymentManagement() {
       .reduce((sum, p) => sum + p.amount, 0)
   }
 
-  // Stats
-  const totalRefundedAmount = getTotalRefundedAmount()
+  // Stats —— 全部跟着上面的月份/中心/搜索走，不再显示全库总额
+  const filteredPaymentIds = useMemo(() => new Set(filteredPayments.map(p => p.id)), [filteredPayments])
+  const totalRefundedAmount = refunds
+    .filter((r: any) => !r.deleted && filteredPaymentIds.has(r.paymentId))
+    .reduce((s: number, r: any) => s + (Number(r.amount) || 0), 0)
   const totalCollected = filteredPayments
     .filter(p => p.status === 'completed')
     .reduce((sum, p) => sum + p.amount, 0)
@@ -537,7 +561,17 @@ export default function PaymentManagement() {
       </div>
       <ReceiptStatsCards stats={receiptStats} />
 
-      {/* Stats Cards */}
+      {/* Stats Cards —— 只算当前月份 + 当前中心/搜索 */}
+      <div className="flex items-center justify-end gap-2 -mb-2">
+        <span className="text-sm text-slate-500">{t("月份")}</span>
+        <Select value={payMonth} onValueChange={setPayMonth}>
+          <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t("全部月份")}</SelectItem>
+            {paymentMonths.map(ym => <SelectItem key={ym} value={ym}>{ym}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
