@@ -146,17 +146,68 @@ for (const c of credits) {
   }
 }
 
+// 10. 抵扣记录自身必须自洽：amount = usedAmount + remaining，状态与余额一致
+for (const c of credits) {
+  if (c.deleted === true) continue
+  const amount = money(c.amount)
+  const used = money(c.usedAmount || 0)
+  const remaining = money(c.remaining ?? c.amount)
+  const st = String(c.status || '')
+  if (Math.abs(money(used + remaining) - amount) > 0.01) {
+    fails.push({ rule: 10, msg: `抵扣 ${c.id}（${c.studentName || ''}）金额 ${amount} ≠ 已抵 ${used} + 剩余 ${remaining}` })
+  }
+  if (st === 'unused' && remaining <= 0.005) fails.push({ rule: 10, msg: `抵扣 ${c.id}（${c.studentName || ''}）标未抵扣，但余额已经是 ${remaining}` })
+  if (st === 'used' && remaining > 0.005) fails.push({ rule: 10, msg: `抵扣 ${c.id}（${c.studentName || ''}）标已抵完，还剩 ${remaining}` })
+  if ((st === 'void' || st === 'refunded') && remaining > 0.005) fails.push({ rule: 10, msg: `抵扣 ${c.id}（${c.studentName || ''}）已作废/退款，却还留着 ${remaining} 可用` })
+  const logSum = money((Array.isArray(c.usageLog) ? c.usageLog : []).reduce((s, x) => s + Number(x.amount || 0), 0))
+  if (Math.abs(logSum - used) > 0.01) fails.push({ rule: 10, msg: `抵扣 ${c.id}（${c.studentName || ''}）流水合计 ${logSum} ≠ 已抵 ${used}` })
+}
+
+// 11. 抵扣记录的来源发票必须存在（票没了，余额就是无源之水）
+for (const c of credits) {
+  if (c.deleted === true) continue
+  if (c.sourceInvoiceId && !invIds.has(c.sourceInvoiceId)) {
+    const st = String(c.status || '')
+    if (st === 'unused' || st === 'used') {
+      fails.push({ rule: 11, msg: `抵扣 ${c.id}（${c.studentName || ''} RM${money(c.amount)}）来源发票 ${c.sourceInvoiceNumber || c.sourceInvoiceId} 不存在（状态 ${st}）` })
+    }
+  }
+}
+
+// 12. 某张发票被抵过多少，明细里那行「上期多收抵扣」就必须是多少
+const usedByInvoice = new Map()
+for (const c of credits) {
+  if (c.deleted === true) continue
+  for (const u of Array.isArray(c.usageLog) ? c.usageLog : []) {
+    if (!u.invoiceId) continue
+    usedByInvoice.set(u.invoiceId, money((usedByInvoice.get(u.invoiceId) || 0) + Number(u.amount || 0)))
+  }
+}
+for (const [invId, amount] of usedByInvoice) {
+  const inv = invoices.find(i => i.id === invId)
+  if (!inv) {
+    fails.push({ rule: 12, msg: `抵扣流水指向的发票 ${invId} 不存在（抵了 ${amount}）` })
+    continue
+  }
+  const line = (Array.isArray(inv.items) ? inv.items : []).filter(x => String(x?.name || '').includes('上期多收抵扣'))
+  const lineSum = money(line.reduce((s, x) => s + Math.abs(Number(x.amount || 0)), 0))
+  if (Math.abs(lineSum - amount) > 0.01) {
+    fails.push({ rule: 12, msg: `${inv.invoiceNumber} 被抵扣 ${amount}，明细里的抵扣行只有 ${lineSum}` })
+  }
+}
+
 // 7. 汇总
 const receivable = money(invoices.reduce((s, i) => s + Number(i.totalAmount || 0), 0))
 const received = money(payments.reduce((s, p) => s + Number(p.amount || 0), 0))
 
 const byRule = {}
 for (const f of fails) (byRule[f.rule] = byRule[f.rule] || []).push(f.msg)
-const names = { 1: '发票明细 ≠ 总额', 2: '已付款发票 ≠ 付款记录', 3: '学生折扣没进发票', 4: '付款指向不存在的发票', 5: '付款没挂发票', 6: '学生费用合计不对', 8: '多收的钱没有抵扣记录', 9: '抵扣记录指向不存在的发票' }
+const names = { 1: '发票明细 ≠ 总额', 2: '已付款发票 ≠ 付款记录', 3: '学生折扣没进发票', 4: '付款指向不存在的发票', 5: '付款没挂发票', 6: '学生费用合计不对', 8: '多收的钱没有抵扣记录', 9: '抵扣记录指向不存在的发票', 10: '抵扣记录自身不自洽', 11: '抵扣来源发票不存在', 12: '发票抵扣行与流水不符' }
 
 console.log('=== 财务不变量检查 ===')
 console.log(`发票 ${invoices.length} 张 · 付款 ${payments.length} 笔 · 学生费用 ${assignments.length} 条`)
-const creditUnused = money(credits.filter(c => c.deleted !== true && String(c.status) === 'unused').reduce((s, c) => s + Number(c.amount || 0), 0))
+// 待抵扣要看「还剩多少」，不是原始金额：部分抵扣后 amount 还是 100，remaining 才是 70
+const creditUnused = money(credits.filter(c => c.deleted !== true && String(c.status) === 'unused').reduce((s, c) => s + Number(c.remaining ?? c.amount ?? 0), 0))
 console.log(`应收 RM ${receivable} · 实收 RM ${received} · 未收 RM ${money(receivable - received)} · 待抵扣 RM ${creditUnused}`)
 console.log('')
 if (!fails.length) {

@@ -51,6 +51,8 @@ type CreditRow = {
   studentId: string
   center: string
   amount: number
+  remaining: number
+  usedAmount: number
   status: string
   sourceInvoice: string
   sourcePeriod: string
@@ -431,6 +433,7 @@ export default function FinanceCheckPage() {
                           <th className="py-2">{t("学生")}</th>
                           <th>{t("分行")}</th>
                           <th className="text-right">{t("金额")}</th>
+                          <th className="text-right">{t("剩余")}</th>
                           <th>{t("来源发票")}</th>
                           <th>{t("账期")}</th>
                           <th>{t("状态")}</th>
@@ -442,7 +445,8 @@ export default function FinanceCheckPage() {
                           <tr key={c.id} className="border-b last:border-0">
                             <td className="py-2">{c.student}</td>
                             <td>{c.center || "-"}</td>
-                            <td className="text-right font-medium">{money(c.amount)}</td>
+                            <td className="text-right text-gray-600">{money(c.amount)}</td>
+                            <td className={`text-right font-medium ${c.remaining > 0 ? "text-red-600" : "text-gray-400"}`}>{money(c.remaining)}</td>
                             <td className="text-gray-600">{c.sourceInvoice}</td>
                             <td className="text-gray-600">{c.sourcePeriod}</td>
                             <td>

@@ -1,5 +1,6 @@
 import { requireRoles } from '@/lib/api-auth'
 import { NextRequest, NextResponse } from "next/server"
+import { voidCreditsForSource } from "@/lib/credits"
 
 const PB_URL = process.env.NEXT_PUBLIC_POCKETBASE_URL || "http://127.0.0.1:8090"
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || (process.env.POCKETBASE_ADMIN_EMAIL || process.env.ADMIN_EMAIL || "final_admin@test.com")
@@ -125,6 +126,21 @@ export async function POST(request: NextRequest) {
         }
       } catch (err) {
         console.warn(`Error updating invoice ${body.invoiceId}:`, err)
+      }
+    }
+
+    // 退款完成：这张票产生的「多收余额」必须一起封掉，
+    // 否则家长拿了退款、下个月又抵一次，等于同一笔钱给两回
+    if (refundStatus === "completed" && body.invoiceId) {
+      try {
+        const closed = await voidCreditsForSource(
+          String(body.invoiceId),
+          'refunded',
+          `已退款 RM${Number(body.amount).toFixed(2)}，余额作废`
+        )
+        if (closed > 0) console.log(`[credits] 退款连带作废 ${closed} 条抵扣记录`)
+      } catch (e) {
+        console.warn('[credits] 退款作废余额失败:', e)
       }
     }
 
