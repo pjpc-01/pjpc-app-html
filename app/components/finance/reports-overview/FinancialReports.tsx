@@ -1,7 +1,7 @@
 "use client"
 
 import { invoiceMonthKey } from '@/lib/finance-calc'
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -48,6 +48,19 @@ export default function FinancialReports() {
   const { payments } = usePayments()
   const { expenses } = useExpenses()
   const centerScope = useCenterScope()
+  // 待抵扣余额（家长多付的钱）：属于负债，不能当收入，也不能算进未收
+  const [creditRows, setCreditRows] = useState<{ center: string; remaining: number }[]>([])
+  useEffect(() => {
+    let alive = true
+    fetch('/api/finance-check?view=credits', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive || !d?.success) return
+        setCreditRows((d.rows || []).map((x: any) => ({ center: String(x.center || ''), remaining: Number(x.remaining) || 0 })))
+      })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [])
   const [selectedReportType, setSelectedReportType] = useState("monthly")
   // 选中的月份（默认当前月）—— 像翻日历一样看某个月的财务状况
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -124,7 +137,19 @@ export default function FinancialReports() {
     const payableSalary = (financialStats.monthlySeries || [])
       .filter(m => m.month === curYm)
       .reduce((a, m) => a + (m.salary || 0), 0)
-    return { receivable, payableSalary, income, cost, profit: income - cost }
+    // 家长多付、还没抵掉的钱＝欠家长的债，从应收里扣掉，同时记进负债
+    const creditPayable = creditRows
+      .filter((c) => centerFilter === 'all' || !c.center || c.center === centerFilter)
+      .reduce((a, c) => a + (Number(c.remaining) || 0), 0)
+    return {
+      receivable,
+      creditPayable,
+      netReceivable: receivable - creditPayable,
+      payableSalary,
+      income,
+      cost,
+      profit: income - cost,
+    }
   })()
 
   // 图表只用最近 6 个月，避免太挤
@@ -485,9 +510,14 @@ export default function FinancialReports() {
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
                 <p className="text-sm font-medium text-gray-600">{t("未收金额")}</p>
-                <p className={`text-lg font-semibold ${reconciliationStatus.difference >= 0 ? "text-green-600" : "text-red-600"}`}>
-                  RM {fmtMoney(Math.abs(reconciliationStatus.difference))}
-                </p>
+                {/* 用资产负债表同一口径算（未收发票合计），不要再用「发票总额 − 实收」，
+                    那条会把退款重复扣一次，跟下面资产合计对不上 */}
+                <p className="text-lg font-semibold text-amber-600">RM {fmtMoney(balanceSheet.receivable)}</p>
+                {balanceSheet.creditPayable > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {t("减待抵扣")} RM {fmtMoney(balanceSheet.creditPayable)} · {t("净应收")} RM {fmtMoney(balanceSheet.netReceivable)}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -838,12 +868,16 @@ export default function FinancialReports() {
                 <span className="font-medium">RM {fmtMoney(balanceSheet.receivable)}</span>
               </div>
               <div className="flex justify-between text-sm">
+                <span className="text-slate-600">{t("减：客户待抵扣（多付未抵）")}</span>
+                <span className="font-medium text-orange-600">− RM {fmtMoney(balanceSheet.creditPayable)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
                 <span className="text-slate-600">{t("银行 + 现金")}</span>
                 <span className="text-slate-400 text-xs">{t("待导入流水")}</span>
               </div>
               <div className="flex justify-between text-sm pt-2 border-t font-semibold">
                 <span>{t("资产合计（已知）")}</span>
-                <span>RM {fmtMoney(balanceSheet.receivable)}</span>
+                <span>RM {fmtMoney(balanceSheet.netReceivable)}</span>
               </div>
             </div>
             {/* 负债 */}
@@ -854,12 +888,16 @@ export default function FinancialReports() {
                 <span className="font-medium">RM {fmtMoney(balanceSheet.payableSalary)}</span>
               </div>
               <div className="flex justify-between text-sm">
+                <span className="text-slate-600">{t("待抵扣余额（家长多付）")}</span>
+                <span className="font-medium text-orange-600">RM {fmtMoney(balanceSheet.creditPayable)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
                 <span className="text-slate-600">{t("应付供应商")}</span>
                 <span className="text-slate-400 text-xs">{t("暂无记录")}</span>
               </div>
               <div className="flex justify-between text-sm pt-2 border-t font-semibold">
                 <span>{t("负债合计")}</span>
-                <span>RM {fmtMoney(balanceSheet.payableSalary)}</span>
+                <span>RM {fmtMoney(balanceSheet.payableSalary + balanceSheet.creditPayable)}</span>
               </div>
             </div>
             {/* 权益 / 损益 */}

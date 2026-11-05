@@ -198,7 +198,8 @@ for (const [invId, amount] of usedByInvoice) {
 
 // 7. 汇总
 const receivable = money(invoices.reduce((s, i) => s + Number(i.totalAmount || 0), 0))
-const received = money(payments.reduce((s, p) => s + Number(p.amount || 0), 0))
+// 实收只算真正到账的：已退款的付款（status=refunded）不算，否则退款又被当成收入
+const received = money(payments.filter(p => String(p.status) !== 'refunded').reduce((s, p) => s + Number(p.amount || 0), 0))
 
 const byRule = {}
 for (const f of fails) (byRule[f.rule] = byRule[f.rule] || []).push(f.msg)
