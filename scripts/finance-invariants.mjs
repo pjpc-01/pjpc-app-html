@@ -43,6 +43,8 @@ const payByInvoice = new Map()
 for (const p of payments) {
   const key = p.invoiceId || p.invoice
   if (!key) { fails.push({ rule: 5, msg: `付款 ${p.id} 没有指向任何发票，金额 ${p.amount}` }); continue }
+  // 退款的钱不能算进「已收」：refunded 的付款是真扣回来的，算进来会出现 870+930=1800 这种假差异
+  if (String(p.status) === 'refunded') continue
   payByInvoice.set(key, money((payByInvoice.get(key) || 0) + Number(p.amount || 0)))
 }
 
@@ -59,7 +61,8 @@ for (const i of invoices) {
   if (String(i.status) !== 'paid') continue
   const paid = money(payByInvoice.get(i.id) || 0)
   if (Math.abs(paid - money(i.totalAmount)) > 0.01) {
-    fails.push({ rule: 2, msg: `${i.invoiceNumber} 标记已付款 ${money(i.totalAmount)}，付款记录只有 ${paid}` })
+    const diff = money(paid - money(i.totalAmount))
+    fails.push({ rule: 2, msg: `${i.invoiceNumber} 票面 ${money(i.totalAmount)}，实收 ${paid}（${diff > 0 ? '多收 ' + diff : '少收 ' + Math.abs(diff)}）· 账期 ${i.period || '-'}` })
   }
 }
 
