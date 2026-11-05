@@ -2260,6 +2260,12 @@ export const ZH_TO_EN: Record<string, string> = {
   "账户登录": "Account Login",
   "账户类型": "Account Type",
   "账期": "Billing Period",
+  "减待抵扣": "less credit",
+  "净应收": "net receivable",
+  "减：客户待抵扣（多付未抵）": "Less: customer credit (overpayment not yet applied)",
+  "待抵扣余额（家长多付）": "Credit balance payable (parent overpayment)",
+  "已记待抵扣，净应收": "recorded as credit; net receivable",
+
   "待抵扣余额": "Credit balance",
   "待抵扣余额（多收结转）": "Credit balance (overpayment carry-over)",
   "家长多付的钱记在这里，抵下期学费后状态变「已抵用」。未抵扣合计": "Overpayments are recorded here; once applied to next period fees the status becomes Applied. Total unapplied:",
