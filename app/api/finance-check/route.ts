@@ -132,6 +132,33 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // 待抵扣余额（多收结转）：只读书表，给财务核对页的 tab 用
+    if (view === 'credits') {
+      const recs = await allRecords('student_credits', token)
+      const live = recs.filter((c) => c.deleted !== true)
+      const rows = live
+        .map((c) => ({
+          id: c.id,
+          student: c.studentName || '',
+          studentId: c.studentId || '',
+          center: c.center || '',
+          amount: num(c.amount),
+          status: c.status || 'unused',
+          sourceInvoice: c.sourceInvoiceNumber || '',
+          sourcePeriod: c.sourcePeriod || '',
+          usedInvoice: c.usedInvoiceNumber || '',
+          usedAt: String(c.usedAt || '').slice(0, 10),
+          note: c.note || '',
+        }))
+        .sort((a, b) => (a.status === b.status ? b.amount - a.amount : a.status === 'unused' ? -1 : 1))
+      return NextResponse.json({
+        success: true,
+        rows,
+        count: rows.length,
+        unusedTotal: Math.round(rows.filter((r) => r.status === 'unused').reduce((s, r) => s + r.amount, 0) * 100) / 100,
+      })
+    }
+
     // 其余视图都要全库比对
     const [invoices, payments] = await Promise.all([
       allRecords('invoices', token),
