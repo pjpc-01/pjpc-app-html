@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireRoles } from '@/lib/api-auth'
 import { round2 } from '@/lib/finance-calc'
 import { buildInvoiceLines, resolveInvoicePeriod } from '@/lib/invoice-build'
+import { applyCreditsToInvoice } from '@/lib/credits'
 
 // 定期账单自动生成 API
 // 为所有有活跃学生费用的学生生成当月账单
@@ -278,6 +279,18 @@ export async function POST(request: NextRequest) {
 
       if (createRes.ok) {
         const createdInvoice = await createRes.json()
+
+        // 开票后自动抵上期多收（服务端串行，同一学生不会被两张票同时抵掉）
+        try {
+          const creditResult = await applyCreditsToInvoice(createdInvoice.id)
+          if (creditResult.applied > 0) {
+            createdInvoice.totalAmount = creditResult.invoice?.totalAmount ?? createdInvoice.totalAmount
+            createdInvoice.items = creditResult.invoice?.items ?? createdInvoice.items
+            createdInvoice.creditApplied = creditResult.applied
+          }
+        } catch (e) {
+          console.warn(`[credits] ${invoiceData.studentName} 自动抵扣失败（不影响开票）:`, e)
+        }
         created.push({
           id: createdInvoice.id,
           student: sid,

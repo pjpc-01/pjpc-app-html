@@ -115,12 +115,24 @@ export const useInvoices = () => {
     for (let attempt = 0; attempt < 5; attempt++) {
       const invoiceNumber = await generateInvoiceNumber((invoiceData as any).period)
       try {
-        const result = await createRecord('invoices', {
+        const created = await createRecord('invoices', {
           ...invoiceData,
           // PB 的 amount 字段：与 totalAmount 保持一致（自动开单本来就会写，手动开单以前漏写 → 全库 50+ 张 amount=0）
           amount: (invoiceData as any).amount ?? invoiceData.totalAmount,
           invoiceNumber
         })
+        // 开票后自动抵上期多收：服务端串行抢占，抵不掉也不会让开票失败
+        let result = created
+        try {
+          const cr = await fetch('/api/credits/apply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ invoiceId: created.id }),
+          }).then(r => r.json())
+          if (cr?.success && Number(cr.applied) > 0 && cr.invoice) result = cr.invoice
+        } catch (e) {
+          console.warn('[credits] 自动抵扣失败（不影响开票）:', e)
+        }
         setInvoices(prev => [...prev, result])
         return result
       } catch (e: any) {
@@ -163,12 +175,32 @@ export const useInvoices = () => {
   const deleteInvoice = useCallback(async (invoiceId: string) => {
     await updateRecord('invoices', invoiceId, { deleted: true })
     await cascadeInvoiceChildren(invoiceId, true)
+    // 票作废了，它产生的多收余额必须一起封掉，否则「票没了钱还能抵」
+    try {
+      await fetch('/api/credits/void', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourceInvoiceId: invoiceId, reason: 'void' }),
+      })
+    } catch (e) {
+      console.warn('[credits] 作废余额失败:', e)
+    }
     setInvoices(prev => prev.filter(invoice => invoice.id !== invoiceId))
   }, [cascadeInvoiceChildren])
 
   const restoreInvoice = useCallback(async (invoiceId: string) => {
     await updateRecord('invoices', invoiceId, { deleted: false })
     await cascadeInvoiceChildren(invoiceId, false)
+    // 恢复发票 → 把封掉的余额放回来，不然删了又恢复会让家长的钱凭空消失
+    try {
+      await fetch('/api/credits/void', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourceInvoiceId: invoiceId, reason: 'restore' }),
+      })
+    } catch (e) {
+      console.warn('[credits] 恢复余额失败:', e)
+    }
   }, [cascadeInvoiceChildren])
 
   const permanentDeleteInvoice = useCallback(async (invoiceId: string) => {

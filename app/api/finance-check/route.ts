@@ -143,6 +143,8 @@ export async function GET(request: NextRequest) {
           studentId: c.studentId || '',
           center: c.center || '',
           amount: num(c.amount),
+          remaining: num(c.remaining ?? c.amount),
+          usedAmount: num(c.usedAmount || 0),
           status: c.status || 'unused',
           sourceInvoice: c.sourceInvoiceNumber || '',
           sourcePeriod: c.sourcePeriod || '',
@@ -155,7 +157,8 @@ export async function GET(request: NextRequest) {
         success: true,
         rows,
         count: rows.length,
-        unusedTotal: Math.round(rows.filter((r) => r.status === 'unused').reduce((s, r) => s + r.amount, 0) * 100) / 100,
+        // 待抵扣合计看「还剩多少」：部分抵扣后 amount 不变，remaining 才是可用额度
+        unusedTotal: Math.round(rows.filter((r) => r.status === 'unused').reduce((s, r) => s + r.remaining, 0) * 100) / 100,
       })
     }
 
