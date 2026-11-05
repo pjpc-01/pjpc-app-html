@@ -45,6 +45,20 @@ type InvoiceRow = {
   faceVsPaid: number
 }
 
+type CreditRow = {
+  id: string
+  student: string
+  studentId: string
+  center: string
+  amount: number
+  status: string
+  sourceInvoice: string
+  sourcePeriod: string
+  usedInvoice: string
+  usedAt: string
+  note: string
+}
+
 const money = (n: number) => `RM ${(Number(n) || 0).toFixed(2)}`
 
 export default function FinanceCheckPage() {
@@ -60,16 +74,21 @@ export default function FinanceCheckPage() {
   const [query, setQuery] = useState("")
   const [studentRows, setStudentRows] = useState<InvoiceRow[]>([])
   const [studentMsg, setStudentMsg] = useState("")
+  const [credits, setCredits] = useState<CreditRow[]>([])
+  const [creditTotal, setCreditTotal] = useState(0)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const qs = period ? `&period=${encodeURIComponent(period)}` : ""
-      const [s, d, m] = await Promise.all([
+      const [s, d, m, cr] = await Promise.all([
         fetch(`/api/finance-check?view=summary${qs}`, { cache: "no-store" }).then((r) => r.json()),
         fetch(`/api/finance-check?view=duplicates${qs}`, { cache: "no-store" }).then((r) => r.json()),
         fetch(`/api/finance-check?view=mismatch${qs}`, { cache: "no-store" }).then((r) => r.json()),
+        fetch(`/api/finance-check?view=credits`, { cache: "no-store" }).then((r) => r.json()),
       ])
+      setCredits(cr?.rows || [])
+      setCreditTotal(cr?.unusedTotal || 0)
       if (s?.success) setSummary(s)
       setDups(d?.rows || [])
       setDetailDiff(m?.faceVsDetail || [])
@@ -181,6 +200,9 @@ export default function FinanceCheckPage() {
             </TabsTrigger>
             <TabsTrigger value="student">{t("按学生查")}</TabsTrigger>
             <TabsTrigger value="periods">{t("按账期汇总")}</TabsTrigger>
+            <TabsTrigger value="credits">
+              {t("待抵扣余额")} ({credits.filter((c) => c.status === "unused").length})
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="duplicates" className="mt-4">
@@ -386,6 +408,55 @@ export default function FinanceCheckPage() {
                     </tbody>
                   </table>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="credits" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">{t("待抵扣余额（多收结转）")}</CardTitle>
+                <CardDescription>
+                  {t("家长多付的钱记在这里，抵下期学费后状态变「已抵用」。未抵扣合计")} {money(creditTotal)}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {credits.length === 0 ? (
+                  <div className="text-sm text-gray-500 py-6 text-center">{t("没有待抵扣记录")}</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="text-left text-gray-500 border-b">
+                        <tr>
+                          <th className="py-2">{t("学生")}</th>
+                          <th>{t("分行")}</th>
+                          <th className="text-right">{t("金额")}</th>
+                          <th>{t("来源发票")}</th>
+                          <th>{t("账期")}</th>
+                          <th>{t("状态")}</th>
+                          <th>{t("抵用发票")}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {credits.map((c) => (
+                          <tr key={c.id} className="border-b last:border-0">
+                            <td className="py-2">{c.student}</td>
+                            <td>{c.center || "-"}</td>
+                            <td className="text-right font-medium">{money(c.amount)}</td>
+                            <td className="text-gray-600">{c.sourceInvoice}</td>
+                            <td className="text-gray-600">{c.sourcePeriod}</td>
+                            <td>
+                              <Badge variant={c.status === "unused" ? "destructive" : "secondary"}>
+                                {c.status === "unused" ? t("未抵扣") : c.status === "used" ? t("已抵用") : t("已退款")}
+                              </Badge>
+                            </td>
+                            <td className="text-gray-600">{c.usedInvoice || "-"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
