@@ -114,6 +114,20 @@ async function nextReceiptNumber(token: string): Promise<string> {
   return `RCP-${new Date().getFullYear()}-${String(max + 1).padStart(3, '0')}`
 }
 
+const REPORT_FILE = process.env.PRINCIPAL_REPORT_FILE || '/home/sacrafix/.hermes/shared/reports/principal-agent.md'
+
+/** 每做一件事就自动留痕到汇报文件，别指望它自觉 —— 20:00 汇总读的就是这个文件 */
+async function appendReport(action: string, description: string, reason: string) {
+  try {
+    const { appendFile } = await import('fs/promises')
+    const stamp = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Kuala_Lumpur' }).slice(0, 16)
+    const line = `- ${stamp} · 院长助理执行 \`${action}\` · ${description} · 理由：${reason}\n`
+    await appendFile(REPORT_FILE, line, 'utf8')
+  } catch (e) {
+    console.warn('[agent] 汇报文件写入失败（不影响动作）:', e)
+  }
+}
+
 async function audit(token: string, action: string, description: string, metadata: Record<string, any>) {
   try {
     await pb('/api/collections/audit_logs/records', token, {
@@ -147,6 +161,7 @@ export async function runAgentAction(action: string, params: Record<string, any>
           notes: [inv.notes, `【院长助理作废】${reason}（${new Date().toISOString().slice(0, 10)}）`].filter(Boolean).join(' ｜ '),
         }),
       })
+      await appendReport(action, `作废发票 ${inv.invoiceNumber}（票面 ${inv.totalAmount}）`, reason)
       await audit(token, action, `作废发票 ${inv.invoiceNumber}（票面 ${inv.totalAmount}）`, {
         before: { invoiceNumber: inv.invoiceNumber, totalAmount: inv.totalAmount, status: inv.status },
         after: { deleted: true },
@@ -166,6 +181,7 @@ export async function runAgentAction(action: string, params: Record<string, any>
           notes: [inv.notes, `【院长助理改到期日】${inv.dueDate || '空'} → ${dueDate}；${reason}`].filter(Boolean).join(' ｜ '),
         }),
       })
+      await appendReport(action, `改到期日 ${inv.invoiceNumber}：${inv.dueDate || '空'} → ${dueDate}`, reason)
       await audit(token, action, `改到期日 ${inv.invoiceNumber}：${inv.dueDate || '空'} → ${dueDate}`, {
         before: { dueDate: inv.dueDate }, after: { dueDate }, reason,
       })
@@ -193,6 +209,7 @@ export async function runAgentAction(action: string, params: Record<string, any>
         method: 'PATCH',
         body: JSON.stringify({ deleted: true }),
       })
+      await appendReport(action, `更正收据 ${orig.receiptNumber} → ${receiptNumber}（RM${round2(orig.totalAmount)} → RM${amount}）`, reason)
       await audit(token, action, `更正收据 ${orig.receiptNumber} → ${receiptNumber}（RM${round2(orig.totalAmount)} → RM${amount}）`, {
         before: { receiptNumber: orig.receiptNumber, totalAmount: orig.totalAmount },
         after: { receiptNumber, totalAmount: amount },
@@ -215,6 +232,7 @@ export async function runAgentAction(action: string, params: Record<string, any>
         method: 'PATCH',
         body: JSON.stringify({ deleted: true, notes: [rec.notes, `【院长助理删除重复单】保留 ${dup[0].id}；${reason}`].filter(Boolean).join(' ｜ ') }),
       })
+      await appendReport(action, `删除重复薪资单 ${recordId}（${rec.salary_period} RM${round2(rec.net_salary)}），保留 ${dup[0].id}`, reason)
       await audit(token, action, `删除重复薪资单 ${recordId}（${rec.salary_period} RM${round2(rec.net_salary)}），保留 ${dup[0].id}`, {
         before: { recordId, net_salary: rec.net_salary, salary_period: rec.salary_period },
         after: { deleted: true, kept: dup[0].id },
@@ -226,6 +244,7 @@ export async function runAgentAction(action: string, params: Record<string, any>
     case 'apply_credit': {
       const inv = await findInvoice(token, need(params, 'invoiceNumber'))
       const result = await applyCreditsToInvoice(inv.id)
+      await appendReport(action, `抵上期多收到 ${inv.invoiceNumber}：RM${result.applied}`, reason)
       await audit(token, action, `抵上期多收到 ${inv.invoiceNumber}：RM${result.applied}`, {
         before: { totalAmount: inv.totalAmount },
         after: { totalAmount: result.invoice?.totalAmount ?? inv.totalAmount, applied: result.applied },
