@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
-import { assertPointsEnabled, validatePointsDelta } from '@/lib/points-guard'
+import { applyPoints } from '@/lib/points'
 import { getAdminToken } from '@/lib/pb-admin-token'
 
 const PB_URL = 'http://127.0.0.1:8090'
@@ -22,76 +22,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '缺少 student_id 或 amount' }, { status: 400 })
     }
 
-    if (amount === 0) {
+    if (Number(amount) === 0) {
       return NextResponse.json({ success: false, error: '调整金额不能为 0' }, { status: 400 })
     }
 
-    // 上限校验：防误输入/浮点异常写出天文数字
-    const deltaErr = validatePointsDelta(amount)
-    if (deltaErr) {
-      return NextResponse.json({ success: false, error: deltaErr }, { status: 400 })
-    }
-
-    // 1. Get student current points
-    const studentRes = await fetch(
-      `${PB_URL}/api/collections/students/records/${student_id}`,
-      { headers: { Authorization: token } }
-    )
-    if (!studentRes.ok) {
-      return NextResponse.json({ success: false, error: '学生不存在' }, { status: 404 })
-    }
-    const student = await studentRes.json()
-
-    // 积分守卫：积分系统已关闭的学生拒绝加分/扣分
-    const guard = await assertPointsEnabled(student_id)
-    if (!guard.enabled) {
-      return NextResponse.json({ success: false, error: guard.message || '积分系统已关闭' }, { status: 403 })
-    }
-
-    const currentPoints = student.points || 0
-    const newPoints = currentPoints + amount
-
-    // 2. Update student points
-    await fetch(
-      `${PB_URL}/api/collections/students/records/${student_id}`,
-      {
-        method: 'PATCH',
-        headers: { Authorization: token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ points: newPoints }),
-      }
-    )
-
-    // 3. Log the transaction
-    const logData: any = {
-      student: student_id,
-      amount: amount,
-      reason: reason || '',
-      points_before: currentPoints,
-      points_after: newPoints,
-    }
-    if (teacher_id) {
-      logData.teacher = teacher_id
-    }
-
-    await fetch(
-      `${PB_URL}/api/collections/point_logs/records`,
-      {
-        method: 'POST',
-        headers: { Authorization: token, 'Content-Type': 'application/json' },
-        body: JSON.stringify(logData),
-      }
-    )
+    // 唯一写入口：并发安全 + 必写流水 + 写失败抛错
+    // 这个入口原来允许扣成负数（业务未定），所以不设 floorAtZero
+    const result = await applyPoints({
+      studentId: student_id,
+      delta: Number(amount),
+      reason: String(reason || '').trim() || '老师手动调整',
+      teacherId: teacher_id,
+      token,
+    })
 
     return NextResponse.json({
       success: true,
-      student_name: student.name,
-      points_before: currentPoints,
-      points_after: newPoints,
-      amount: amount,
+      student_name: result.studentName,
+      points_before: result.before,
+      points_after: result.after,
+      amount: result.applied,
+      log_id: result.logId,
     })
   } catch (error: any) {
     console.error('Points adjust 失败:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    const status = Number(error?.httpStatus) || 500
+    return NextResponse.json({ success: false, error: error.message }, { status })
   }
 }
 
