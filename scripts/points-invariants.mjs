@@ -45,6 +45,11 @@ async function main() {
 
   const [students, logs] = await Promise.all([all('students'), all('point_logs')])
 
+  // 规则 2、4 只看最近 30 天：历史里那批 2026-07 的 ±1 亿测试流水已经停止产生，
+  // 天天报它只会让告警变成背景噪音（真出问题时反而没人看）。
+  const since = new Date(Date.now() - 30 * 86400_000).toISOString().slice(0, 19).replace('T', ' ')
+  const recent = logs.filter((l) => String(l.created || '') >= since)
+
   const fails = []
   const infos = []
 
@@ -71,7 +76,7 @@ async function main() {
   }
 
   // ── 2. 单条流水自身必须自洽：amount = after - before ──
-  const broken = logs.filter((l) => {
+  const broken = recent.filter((l) => {
     if (l.points_before === null || l.points_before === undefined) return false
     if (l.points_after === null || l.points_after === undefined) return false
     return Math.abs(Number(l.amount || 0) - (Number(l.points_after) - Number(l.points_before))) > 0.01
@@ -92,12 +97,20 @@ async function main() {
   }
 
   // ── 4. 单笔异常大额（|amount| > 1000 基本是误输入）──
-  const huge = logs.filter((l) => Math.abs(Number(l.amount || 0)) > 1000)
+  // 最近 30 天的大额流水：不直接判失败（老师之间互相玩、当天下班前又抵回去的很多），
+  // 真正的红线是「有学生分数被搞成天文数字」，见规则 4b。
+  const huge = recent.filter((l) => Math.abs(Number(l.amount || 0)) > 1000)
   if (huge.length) {
-    fails.push(`【4. 单笔超过 ±1000 的流水】${huge.length} 条（历史上的千万级测试数据也算在这）`)
-    for (const h of huge.slice(0, 5)) {
-      fails.push(`   - ${String(h.created).slice(0, 10)} ${h.amount} reason="${h.reason || ''}"`)
-    }
+    infos.push(`最近 30 天有 ${huge.length} 条超过 ±1000 的流水（最大 ${money(Math.max(...huge.map((h) => Math.abs(Number(h.amount)))))}）`)
+    const worst = huge.slice().sort((a, b) => Math.abs(Number(b.amount)) - Math.abs(Number(a.amount)))[0]
+    if (worst) infos.push(`   最大一条：${String(worst.created).slice(0, 10)} ${worst.amount} reason="${worst.reason || ''}"`)
+  }
+
+  // ── 4b. 分数本身不能是天文数字 ──
+  const absurd = students.filter((s) => Math.abs(Number(s.points || 0)) > 10000)
+  if (absurd.length) {
+    fails.push(`【4b. 学生分数超过 ±10000】${absurd.length} 人（几乎一定是误输入或测试数据）`)
+    for (const a of absurd.slice(0, 5)) fails.push(`   - ${a.name}：${money(a.points)}`)
   }
 
   // ── 5. 废弃 points 集合今天还有没有人写 ──
@@ -115,6 +128,8 @@ async function main() {
   // ── 信息项（不判失败）──
   const negative = students.filter((s) => Number(s.points || 0) < 0)
   if (negative.length) infos.push(`负分学生 ${negative.length} 人（最低 ${money(Math.min(...negative.map((s) => Number(s.points))))}）`)
+  const oldHuge = logs.length - recent.length ? logs.filter((l) => Math.abs(Number(l.amount || 0)) > 1000 && String(l.created || '') < since).length : 0
+  if (oldHuge) infos.push(`30 天前遗留的异常大额流水 ${oldHuge} 条（2026-07 测试数据，已不影响每日判定）`)
   const emptyReason = logs.filter((l) => !String(l.reason || '').trim())
   if (emptyReason.length) infos.push(`没有写原因的流水 ${emptyReason.length} 条`)
   const deadTotal = await fetch(`${PB}/api/collections/points/records?perPage=1`, { headers: H })
