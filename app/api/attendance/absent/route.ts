@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { applyPoints } from '@/lib/points'
 import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
 
@@ -124,32 +125,19 @@ export async function POST(request: NextRequest) {
       // 积分守卫：积分系统已关闭的学生拒绝扣分
       if (s.points_enabled === false) continue
 
-      const currentPoints = s.points || 0
-      const newPoints = currentPoints + pointsAbsent
-
-      // Update student points
-      await fetch(`${PB_URL}/api/collections/students/records/${s.id}`, {
-        method: 'PATCH',
-        headers: { Authorization: token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ points: newPoints }),
-      })
-
-      // Create point_logs
-      await fetch(`${PB_URL}/api/collections/point_logs/records`, {
-        method: 'POST',
-        headers: { Authorization: token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          student: s.id,
-          amount: pointsAbsent,
-          points_before: currentPoints,
-          points_after: newPoints,
+      // 唯一写入口：锁内重读、写分数、回读校验、必写流水；失败不影响其余学生
+      try {
+        const r = await applyPoints({
+          studentId: s.id,
+          delta: pointsAbsent,
           reason: `缺勤扣分 (${today})`,
-          teacher: null,
-          created: new Date().toISOString(),
-        }),
-      })
-
-      processed++
+          dedupeTerms: ['缺勤扣分'],
+          token,
+        })
+        if (!r.skipped) processed++
+      } catch (e: any) {
+        console.error(`[ABSENT] ${s.name || s.id} 扣分失败:`, e?.message || e)
+      }
     }
 
     return NextResponse.json({

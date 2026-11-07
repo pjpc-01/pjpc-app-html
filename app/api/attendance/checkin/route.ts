@@ -3,6 +3,7 @@ import { requireRoles } from '@/lib/api-auth'
 import { formatGrade } from '@/lib/utils'
 import { gradeCanon } from '@/lib/grades'
 import { getAdminToken } from '@/lib/pb-admin-token'
+import { applyPoints } from '@/lib/points'
 
 const PB_URL = 'http://127.0.0.1:8090'
 
@@ -284,43 +285,28 @@ function hhmm(iso: string): string {
   return `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`
 }
 
-/** 写考勤积分：当日「同类型」去重 + 积分守卫。dedupTerms 用 PB 的 ~ 匹配 reason */
+/**
+ * 写考勤积分：走唯一入口 lib/points.ts。
+ * 去重也搬进去了（锁内查当日同类），否则先查后写中间能被并发插队。
+ * 以前这里还会顺手往早已废弃的 `points` 集合写一行（那张表 3,800 行垃圾、学生 id 存成 JSON 数组），已删除。
+ */
 async function applyAttendancePoints(
   token: string, studentId: string, points: number, reason: string, dedupTerms: string[]
 ) {
-  const today = todayLocal()
-  // ⚠️ point_logs 的 created 是 UTC：本地"今天"= UTC [昨天16:00, 今天16:00)
-  const localDayStart = new Date(`${today}T00:00:00+08:00`)
-  const utcFmt = (d: Date) => d.toISOString().slice(0, 19).replace('T', ' ')
-  const termExpr = dedupTerms.map(t => `reason ~ "${t}"`).join(' || ')
-  const ptsFilter = `student="${studentId}" && created >= "${utcFmt(localDayStart)}" && created < "${utcFmt(new Date(localDayStart.getTime() + 86400000))}" && (${termExpr})`
-  const existingPts = await fetch(
-    `${PB_URL}/api/collections/point_logs/records?perPage=1&filter=${encodeURIComponent(ptsFilter)}`,
-    { headers: { Authorization: token } }
-  ).then(r => r.json())
-  if (existingPts.items?.length > 0) return { skipped: true, reason: '今日同类考勤积分已发放' }
-
-  const student = await fetch(
-    `${PB_URL}/api/collections/students/records/${studentId}`,
-    { headers: { Authorization: token } }
-  ).then(r => r.json())
-  if (student.points_enabled === false) return { skipped: true, reason: '积分系统已关闭' }
-
-  const currentPoints = student.points || 0
-  const newPoints = currentPoints + points
-  await fetch(`${PB_URL}/api/collections/students/records/${studentId}`, {
-    method: 'PATCH',
-    headers: { Authorization: token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ points: newPoints }),
-  })
-  await pbCreate(token, 'points', {
-    studentId, points, reason, teacher_id: 'system', created: nowStr(),
-  })
-  await pbCreate(token, 'point_logs', {
-    student: studentId, amount: points, points_before: currentPoints, points_after: newPoints,
-    reason, teacher: null, created: nowStr(),
-  })
-  return { granted: true, points, reason, points_before: currentPoints, points_after: newPoints }
+  try {
+    const r = await applyPoints({
+      studentId,
+      delta: Number(points),
+      reason,
+      teacherId: 'system',
+      dedupeTerms: dedupTerms,
+      token,
+    })
+    if (r.skipped) return { skipped: true, reason: r.skipped }
+    return { granted: true, points: r.applied, reason, points_before: r.before, points_after: r.after }
+  } catch (e: any) {
+    return { skipped: true, reason: e?.message || '写积分失败' }
+  }
 }
 
 /** 找该人最近 24h 内「已签到未签退」的行（跨天签退） */

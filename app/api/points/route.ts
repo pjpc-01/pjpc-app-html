@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
 import { generateIdentifierVariants } from '@/lib/uid-normalizer'
-import { assertPointsEnabled, validatePointsDelta } from '@/lib/points-guard'
+import { applyPoints } from '@/lib/points'
+import { validatePointsDelta } from '@/lib/points-guard'
 import { getAdminToken } from '@/lib/pb-admin-token'
 
 const PB_URL = 'http://127.0.0.1:8090'
@@ -58,30 +59,27 @@ export async function POST(request: NextRequest) {
       if (!student) return NextResponse.json({ error: '卡片未绑定学生' }, { status: 404 })
     }
 
-    // 积分守卫：积分系统已关闭的学生拒绝加分/扣分
-    const guard = await assertPointsEnabled(student.id)
-    if (!guard.enabled) {
-      return NextResponse.json({ error: guard.message || '积分系统已关闭' }, { status: 403 })
-    }
-
-    const currentPoints = student.points || 0
-    const newPoints = Math.max(0, currentPoints + points)  // 不低于0
-
-    await fetch(`${PB_URL}/api/collections/students/records/${student.id}`, {
-      method: 'PATCH',
-      headers: { Authorization: token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ points: newPoints }),
+    // 唯一写入口：锁内重读、写分数、回读校验、必写流水（以前这里只改分数不写流水，
+    // 导致总分和流水长期对不上）
+    const result = await applyPoints({
+      studentId: student.id,
+      delta: Number(points),
+      reason: String(reason || '').trim() || (Number(points) > 0 ? '老师加分' : '老师扣分'),
+      floorAtZero: true, // 保留这个入口原来的「不低于 0」语义
+      token,
     })
 
     return NextResponse.json({
       success: true,
+      skipped: result.skipped || undefined,
       student: {
         id: student.id,
         name: student.name,
-        points_before: currentPoints,
-        points_added: points,
-        points_total: newPoints,
+        points_before: result.before,
+        points_added: result.applied,
+        points_total: result.after,
       },
+      log_id: result.logId,
       reason,
     })
   } catch (error: any) {

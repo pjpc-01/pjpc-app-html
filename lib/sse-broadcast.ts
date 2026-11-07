@@ -32,10 +32,9 @@ export async function checkForUpdates() {
       sort: '-created'
     })
     
-    // 检查最新的学生积分
-    const latestPoints = await pb.collection('points').getList(1, 1, {
-      sort: '-updated'
-    })
+    // 注意：原来这里读 `points` 集合判断「积分有更新」。那张表是废弃的旧表
+    // （studentId 存成 ["xxx"] 数组字符串、3,800 行全对不上学生），现在没有任何代码写它，
+    // 继续读只会让看板收不到积分变化。改用 point_logs 的最新一条作为积分更新信号。
     
     // 检查最新的公告（公告数据源已统一到 activities，PB 无 announcements 集合）
     // ⚠️ activities 集合没有 created/updated 字段，只能按 date 排序（用 -created 会 400）
@@ -48,7 +47,7 @@ export async function checkForUpdates() {
       timestamp: Date.now(),
       message: '数据已更新',
       latestTransaction: latestTransactions.items[0]?.id || null,
-      latestPoints: latestPoints.items[0]?.id || null,
+      latestPoints: latestTransactions.items[0]?.id || null,
       latestAnnouncement: latestAnnouncements.items[0]?.id || null,
       updateTypes: ['points', 'transactions', 'announcements']
     }
