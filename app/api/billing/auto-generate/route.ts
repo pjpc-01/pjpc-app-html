@@ -222,6 +222,9 @@ export async function POST(request: NextRequest) {
             id: fi.id,
             name: fi.name || '费用',
             amount: fi.amount || 0,
+            // 日计项目带数量（Meal 3 份、迟接 12 次）。以前这里漏了 quantity，
+            // 批量开票出来的票面永远按 1 份算
+            quantity: Number(fi.quantity) || 1,
             type: feeItemMap.get(fi.id)?.type,
           })),
         sixMonthFeeIds: Array.isArray(assignment.six_month_fee_ids) ? assignment.six_month_fee_ids : [],

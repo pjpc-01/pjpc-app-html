@@ -90,7 +90,8 @@ export const StudentFeeMatrix = () => {
       lines: assignedFees.map(f => ({
         id: f.id,
         name: f.name || '费用',
-        amount: (f.amount || 0) * (feeQuantities[f.id] || 1),
+        amount: f.amount || 0,
+        quantity: feeQuantities[f.id] || 1,
         type: (f as any).type,
       })),
       sixMonthFeeIds: adj.six_month_fee_ids || [],
