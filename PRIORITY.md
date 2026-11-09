@@ -182,6 +182,25 @@
     ③ 2 门课程标题尾随空格 → 已 trim（`'Form 2 BC '`→`Form 2 BC`、`'STANDARD 3 BC '`→`STANDARD 3 BC`）
 - ✅ 已解决：凭证编号体系、资产负债表简版、26 张发票补账期、票号重复已重编 + 唯一索引
 
+### 🆕 2026-11-09 每周体检新发现（待处理）
+
+**只读全站体检（dev-check + 45 页真浏览器 + Back/筛选 + 智能会计师 + 死代码 + 用法扫描）**
+
+- ✅ **本轮全绿**：45 页 0 控制台错 / 0 失败请求 / 0 stuckLoading / 0 横向溢出；Back 唯一报警 `/finance/expenses`（去了 about:blank）已核实为脚本点到 `target=_blank` 的凭证图片，页面自身正常，假阳性。
+- 🔴 **Wong Zi Hong（`mztnm8i8qfuwc3o`）`centerId` 仍空**（上周 BLUEPRINT 标「已补齐」，库里实际没写）→ 分行报表 / 贡献榜会漏他。
+  - 成因：`StudentForm` 只在「重新选分行」时才写 `centerId`；老学生 `center` 已经是 PU1，编辑时不会再选一次 → 保存仍送空。
+  - 建议：保存时用 `center` code 反查 `centers` 填 `centerId`（与序言「center code≠center ID」同一坑），并把空 centerId 的 active 学生列入必检。
+- 🟡 **`teacher_salary_records` 50 条 `centerId` 全空**（上周 42 条，100% 空）→ 分行损益仍无法可信拆分；生成薪资时按老师所属中心回填。
+- 🟡 **月度结账 / 贷款还款两个模块有入口零记录**
+  - `/finance/monthly-closing`：API 200、预览能出数，但 `monthly_closings` 0 条（10-20/21 只有测试记录建了又删）→ 从没关过账，历史报表随时可改。
+  - `debts` 6 笔贷款（CIMB / HLB / UOB / BSN / BSN Mikro / Fundaztic）有档，`debt_payments` 0 条 → 每月还贷支出没进账。
+  - 建议：先决定「补录已有还款」还是「从导航撤掉」，别留半成品入口。
+- 🟡 **多收抵扣 6 笔 RM327.50 全部 `unused`，全库 0 张发票有抵扣行**；11-05 19:54、19:56 `/api/credits/apply` 连报两次 500（PB 400：`student_credits` 查询、发票 `totalAmount` 不能为空）→ 自动抵扣在真票上没跑通，开票前先修。
+- 🟡 **死文件剩 2 个**：`components/ui/use-toast.ts`、`components/ui/tooltip.tsx`（图表里的 Tooltip 是 recharts 自带的）→ 直接删。
+- ℹ️ **重复发票还剩 4 组 / 未收虚高 RM1,500**（076/181 已清）：048/172、085/171、149/179、151/177 → 按上周建议作废后开的那张；月批生成前先查「同学生+同账期」。
+- ℹ️ **6 个零数据页面仍全 0**（接送 / 兑换物品 / 建议箱 / 报销单 / 教师绩效 / 作业提交）→ 与上周一致，仍待决定撤导航或推给老师。
+- ℹ️ **账务**：开票 199,720.75 → 201,462.25；未收 62,828.75 → 43,970.50（11-02 起 payments RM20,600.75，正常回款）；支出凭证附件齐、凭证号 116/118；「缺凭证」口径问题已消失。
+
 ### 🆕 2026-11-02 每周体检新发现（待处理）
 
 **只读全站体检（dev-check + 45 页真浏览器 + Back/筛选 + 智能会计师 + 死代码 + 用法扫描）**
