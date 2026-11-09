@@ -13,9 +13,23 @@ import { round2, sumLines, subtotalOf, discountValueOf } from './finance-calc'
 export type InvoiceLineInput = {
   id?: string
   name: string
+  /** 单价（日计项目如 Meal 8、Late Pick Up 5；数量另给 quantity） */
   amount: number
+  /** 数量：日计项目按天数/次数。不传 = 1。以前这里没有数量字段，
+   *  「餐点 3 份 × 8」进到发票只剩 8，票面凭空少 16 —— 院长填 989 出 918 就是这条 */
+  quantity?: number
   /** monthly | one-time | annual */
   type?: string
+}
+
+export type InvoiceItem = {
+  name: string
+  /** 这一行的合计（单价 × 数量），票面和小计都按这个加 */
+  amount: number
+  /** 单价，只有数量 > 1 时才有意义 */
+  unitPrice?: number
+  /** 数量，只有 > 1 时才写进明细，避免老票面看得乱 */
+  quantity?: number
 }
 
 export type BuildInvoiceLinesInput = {
@@ -31,7 +45,7 @@ export type BuildInvoiceLinesInput = {
 }
 
 export type BuiltInvoice = {
-  items: { name: string; amount: number }[]
+  items: InvoiceItem[]
   /** 折扣前原价 */
   subtotal: number
   /** 学生折扣金额（正数） */
@@ -59,14 +73,19 @@ export function buildInvoiceLines(input: BuildInvoiceLinesInput): BuiltInvoice {
   const { lines, sixMonthFeeIds, sixMonthPayRate, sixMonthPayRateType, discount, discountType } = input
   const prepaid = new Set(sixMonthFeeIds || [])
 
-  // 1. 原价明细：走六月付的项目 ×6，一次性项目带标注
-  const items: { name: string; amount: number }[] = []
+  // 1. 原价明细：单价 × 数量；走六月付的项目再 ×6，一次性项目带标注
+  const items: InvoiceItem[] = []
   for (const l of lines || []) {
-    const base = Number(l.amount) || 0
+    const unit = Number(l.amount) || 0
+    const qty = Math.max(1, Number(l.quantity) || 1)
+    const lineTotal = round2(unit * qty)
     if (l.id && prepaid.has(l.id)) {
-      items.push({ name: `${l.name} (×6个月)`, amount: base * 6 })
+      items.push({ name: `${l.name} (×6个月)`, amount: round2(lineTotal * 6) })
+    } else if (qty > 1) {
+      // 数量 > 1 必须写在明细上，否则看不出这个数是乘出来的
+      items.push({ name: `${l.name} (×${qty})`, amount: lineTotal, unitPrice: unit, quantity: qty })
     } else {
-      items.push({ name: isOneTime(l.type) ? `${l.name} (一次性)` : l.name, amount: base })
+      items.push({ name: isOneTime(l.type) ? `${l.name} (一次性)` : l.name, amount: lineTotal })
     }
   }
 
