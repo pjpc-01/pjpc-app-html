@@ -6,14 +6,18 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Loader2, RefreshCw, Search, UserCheck, CalendarDays } from "lucide-react"
+import { Loader2, RefreshCw, Search, UserCheck, CalendarDays, Nfc } from "lucide-react"
 import { useStudents } from "@/hooks/useStudents"
+import { useLanguage } from "@/contexts/language-context"
 import { gradeLabel, gradeRank } from "@/lib/grades"
-import { useLanguage } from "@/contexts/language-context";
 
 /**
- * 手动点名 —— 按纸质点名表的格式（一行一个学生，横着一整月的格子）显示出席情况。
- * 右上角「点名」按一下，弹窗勾今天到了哪几个，直接写考勤（等同签到，积分照规则发）。
+ * 手动点名 —— 跟刷卡打卡是两套记录，互不改写。
+ *
+ *  · 打卡 = 学生自己刷 NFC（student_attendance），刷不刷看学生愿不愿意
+ *  · 点名 = 老师实际看到谁来了（roll_call），没来的按缺勤扣分
+ *
+ * 页面按纸质点名表排：一人一行，横着一整月，绿=点名出席 红=点名缺勤 蓝=请假。
  */
 
 const CENTERS = ["全部", "PU1", "BATU14"]
@@ -23,85 +27,90 @@ const localDay = (d = new Date()) =>
 
 const pad2 = (n: number) => String(n).padStart(2, "0")
 
-interface AttRecord {
+interface RollRow {
   id: string
-  person_id: string
-  person_name: string
+  student_id: string
+  student_name: string
   date: string
   status: string
-  check_in: string | null
 }
 
 export default function ManualAttendanceView() {
-  const { t } = useLanguage();
+  const { t } = useLanguage()
   const { students, loading: studentsLoading } = useStudents()
-  const [month, setMonth] = useState(() => localDay().slice(0, 7)) // YYYY-MM
+  const [month, setMonth] = useState(() => localDay().slice(0, 7))
   const [center, setCenter] = useState("全部")
   const [keyword, setKeyword] = useState("")
-  const [records, setRecords] = useState<AttRecord[]>([])
+  const [rows, setRows] = useState<RollRow[]>([])
+  const [nfcToday, setNfcToday] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
 
-  // 点名弹窗
   const [open, setOpen] = useState(false)
   const [picked, setPicked] = useState<Set<string>>(new Set())
+  const [markAbsentRest, setMarkAbsentRest] = useState(true)
   const [q, setQ] = useState("")
   const [saving, setSaving] = useState(false)
-  const [result, setResult] = useState<string>("")
+  const [result, setResult] = useState("")
 
   const today = localDay()
   const [y, m] = month.split("-").map(Number)
   const daysInMonth = new Date(y, m, 0).getDate()
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
 
-  // ── 当月考勤 ────────────────────────────────
+  // ── 当月点名记录 ────────────────────────────
   const loadMonth = useCallback(async () => {
     setLoading(true)
     try {
-      const lo = `${month}-01`
-      const hi = `${month}-${pad2(daysInMonth)}`
       const res = await fetch(
-        `/api/attendance/logs?type=student&startDate=${lo}&endDate=${hi}&pageSize=5000`,
+        `/api/attendance/roll-call?startDate=${month}-01&endDate=${month}-${pad2(daysInMonth)}`,
         { cache: "no-store" },
       )
       const json = await res.json()
-      setRecords(Array.isArray(json?.records) ? json.records : Array.isArray(json?.data) ? json.data : [])
+      setRows(Array.isArray(json?.records) ? json.records : [])
     } catch {
-      setRecords([])
+      setRows([])
     } finally {
       setLoading(false)
     }
   }, [month, daysInMonth])
 
-  useEffect(() => { loadMonth() }, [loadMonth])
+  // 今天谁刷了卡 —— 只做对照用，不参与点名判断
+  const loadNfcToday = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/attendance/logs?type=student&date=${today}&pageSize=2000`, { cache: "no-store" })
+      const json = await res.json()
+      const s = new Set<string>()
+      for (const r of json?.records || []) if (r.person_id) s.add(r.person_id)
+      setNfcToday(s)
+    } catch {
+      setNfcToday(new Set())
+    }
+  }, [today])
 
-  // studentId → 当月每一天的出席
+  useEffect(() => { loadMonth() }, [loadMonth])
+  useEffect(() => { loadNfcToday() }, [loadNfcToday])
+
   const grid = useMemo(() => {
     const g: Record<string, Record<number, string>> = {}
-    for (const r of records) {
+    for (const r of rows) {
       const d = new Date(r.date)
-      if (Number.isNaN(d.getTime())) continue
-      const day = d.getDate()
-      const sid = r.person_id
-      if (!sid) continue
-      g[sid] = g[sid] || {}
-      // 有记录就算出席；status 缺省也按出席（老数据全是 present）
-      g[sid][day] = r.status || "present"
+      if (Number.isNaN(d.getTime()) || !r.student_id) continue
+      g[r.student_id] = g[r.student_id] || {}
+      g[r.student_id][d.getDate()] = r.status || "present"
     }
     return g
-  }, [records])
+  }, [rows])
 
-  const todayMarked = useMemo(() => {
+  const todayDone = useMemo(() => {
     const s = new Set<string>()
-    for (const r of records) {
+    for (const r of rows) {
       const d = new Date(r.date)
       if (Number.isNaN(d.getTime())) continue
-      if (localDay(d) !== today) continue
-      s.add(r.person_id)
+      if (localDay(d) === today) s.add(r.student_id)
     }
     return s
-  }, [records, today])
+  }, [rows, today])
 
-  // ── 名单：分组 + 过滤 ──────────────────────
   const roster = useMemo(() => {
     const kw = keyword.trim().toLowerCase()
     const list = students.filter((s: any) => {
@@ -115,7 +124,7 @@ export default function ManualAttendanceView() {
     })
     const groups: Record<string, any[]> = {}
     for (const s of list) {
-      const g = gradeLabel(s.grade, s.is_peralihan) || "未分年级"
+      const g = gradeLabel(s.grade, s.is_peralihan) || t("未分年级")
       ;(groups[g] = groups[g] || []).push(s)
     }
     return Object.entries(groups)
@@ -124,16 +133,19 @@ export default function ManualAttendanceView() {
         grade: g,
         items: items.sort((a: any, b: any) => String(a.name || "").localeCompare(String(b.name || ""))),
       }))
-  }, [students, center, keyword])
+  }, [students, center, keyword, t])
 
   const totalStudents = roster.reduce((n, g) => n + g.items.length, 0)
 
-  // 弹窗里的名单：跟主表一样的过滤，但搜索另用一个框
+  // 点名范围 = 当前中心的所有在职学生。不受搜索框影响，否则被搜掉的人会被误记缺勤。
+  const scope = useMemo(
+    () => students.filter((s: any) => (s.status || "active") !== "inactive" && (center === "全部" || (s.center || "") === center)),
+    [students, center],
+  )
+
   const pickList = useMemo(() => {
     const kw = q.trim().toLowerCase()
-    return students
-      .filter((s: any) => (s.status || "active") !== "inactive")
-      .filter((s: any) => center === "全部" || (s.center || "") === center)
+    return scope
       .filter((s: any) => {
         if (!kw) return true
         const hay = `${s.name || ""} ${s.student_id || ""} ${gradeLabel(s.grade, s.is_peralihan)}`.toLowerCase()
@@ -143,7 +155,7 @@ export default function ManualAttendanceView() {
         const d = gradeRank(gradeLabel(a.grade, a.is_peralihan)) - gradeRank(gradeLabel(b.grade, b.is_peralihan))
         return d !== 0 ? d : String(a.name || "").localeCompare(String(b.name || ""))
       })
-  }, [students, center, q])
+  }, [scope, q])
 
   const openDialog = () => {
     setPicked(new Set())
@@ -161,43 +173,40 @@ export default function ManualAttendanceView() {
   }
 
   const submit = async () => {
-    if (!picked.size) return
+    const present = pickList.filter((s: any) => picked.has(s.id)).map((s: any) => s.id)
+    const absent = markAbsentRest ? pickList.filter((s: any) => !picked.has(s.id)).map((s: any) => s.id) : []
+    if (!present.length && !absent.length) return
     setSaving(true)
-    let ok = 0
-    let skipped = 0
-    let failed = 0
-    for (const s of pickList.filter((x: any) => picked.has(x.id))) {
-      try {
-        const res = await fetch("/api/attendance/checkin", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            person_id: s.id,
-            person_type: "student",
-            person_name: s.name,
-            center: s.center || (center === "全部" ? "BATU14" : center),
-            method: "manual",
-            notes: "手动点名",
-          }),
-        })
-        const json = await res.json()
-        if (json?.success) ok++
-        else skipped++
-      } catch {
-        failed++
+    try {
+      const res = await fetch("/api/attendance/roll-call", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: today, center: center === "全部" ? "" : center, present, absent }),
+      })
+      const json = await res.json()
+      if (json?.success) {
+        setResult(
+          `${t("点名完成：出席")} ${json.present} ${t("人，缺勤")} ${json.absent} ${t("人")}` +
+            (json.deducted ? t("，扣分") + ` ${json.deducted} ` + t("人") : "") +
+            (json.deduct_skipped ? t("，已扣过跳过") + ` ${json.deduct_skipped} ` + t("人") : "") +
+            (json.errors?.length ? t("，失败") + ` ${json.errors.length} ` + t("人") : ""),
+        )
+        setPicked(new Set())
+        await loadMonth()
+      } else {
+        setResult(`${t("点名失败：")}${json?.error || t("未知错误")}`)
       }
+    } catch (e: any) {
+      setResult(`${t("点名失败：")}${e.message}`)
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
-    setResult(`点名完成：记录 ${ok} 人${skipped ? `，已有记录跳过 ${skipped} 人` : ""}${failed ? `，失败 ${failed} 人` : ""}`)
-    setPicked(new Set())
-    await loadMonth()
   }
 
   const todayLabel = `${m} 月 ${Number(today.slice(8, 10))} 日`
 
   return (
     <div className="space-y-4">
-      {/* ── 工具条 ───────────────────────── */}
       <Card>
         <CardContent className="flex flex-wrap items-center gap-3 p-4">
           <div className="flex items-center gap-2">
@@ -217,7 +226,7 @@ export default function ManualAttendanceView() {
                 onClick={() => setCenter(c)}
                 className={`rounded px-2.5 py-1 text-xs ${center === c ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"}`}
               >
-                {c}
+                {t(c)}
               </button>
             ))}
           </div>
@@ -232,14 +241,14 @@ export default function ManualAttendanceView() {
             />
           </div>
 
-          <Button variant="outline" size="sm" onClick={loadMonth} disabled={loading}>
+          <Button variant="outline" size="sm" onClick={() => { loadMonth(); loadNfcToday() }} disabled={loading}>
             {loading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-1 h-4 w-4" />}
             {t("刷新")}
           </Button>
 
           <div className="ml-auto flex items-center gap-3">
             <span className="text-xs text-slate-500">
-              {t("共")} {totalStudents} {t("人 · 本月已记录")} {records.length} {t("条")}
+              {t("共")} {totalStudents} {t("人")} · {t("本月已点名")} {rows.length} {t("条")}
             </span>
             <Button onClick={openDialog} className="gap-1">
               <UserCheck className="h-4 w-4" />
@@ -249,7 +258,6 @@ export default function ManualAttendanceView() {
         </CardContent>
       </Card>
 
-      {/* ── 点名表 ───────────────────────── */}
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="border-collapse text-xs">
@@ -280,7 +288,7 @@ export default function ManualAttendanceView() {
                 <tr>
                   <td colSpan={daysInMonth + 3} className="py-16 text-center text-slate-400">
                     <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />
-                    {t("正在读取考勤…")}
+                    {t("正在读取点名记录…")}
                   </td>
                 </tr>
               ) : totalStudents === 0 ? (
@@ -299,7 +307,7 @@ export default function ManualAttendanceView() {
                     </tr>
                     {group.items.map((s: any, idx: number) => {
                       const row = grid[s.id] || {}
-                      const count = Object.keys(row).length
+                      const count = Object.values(row).filter((v) => v === "present").length
                       return (
                         <tr key={s.id} className="hover:bg-slate-50">
                           <td className="sticky left-0 z-10 border-b border-r bg-white px-2 py-1 text-slate-400">{idx + 1}</td>
@@ -311,16 +319,12 @@ export default function ManualAttendanceView() {
                             const st = row[d]
                             const isToday = `${month}-${pad2(d)}` === today
                             return (
-                              <td
-                                key={d}
-                                className={`border-b px-0 py-1 text-center ${isToday ? "bg-amber-50" : ""}`}
-                                title={st ? `${s.name} ${month}-${pad2(d)} 出席` : ""}
-                              >
+                              <td key={d} className={`border-b px-0 py-1 text-center ${isToday ? "bg-amber-50" : ""}`}>
                                 {st === "present" ? (
                                   <span className="mx-auto block h-3.5 w-3.5 rounded-sm bg-emerald-500" />
                                 ) : st === "absent" ? (
                                   <span className="mx-auto block h-3.5 w-3.5 rounded-sm bg-rose-400" />
-                                ) : st ? (
+                                ) : st === "leave" ? (
                                   <span className="mx-auto block h-3.5 w-3.5 rounded-sm bg-sky-400" />
                                 ) : null}
                               </td>
@@ -338,18 +342,18 @@ export default function ManualAttendanceView() {
         </div>
       </Card>
 
-      <div className="flex items-center gap-4 px-1 text-[11px] text-slate-500">
-        <span className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded-sm bg-emerald-500" />{t("出席")}</span>
-        <span className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded-sm bg-rose-400" />{t("缺勤")}</span>
+      <div className="flex flex-wrap items-center gap-4 px-1 text-[11px] text-slate-500">
+        <span className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded-sm bg-emerald-500" />{t("点名出席")}</span>
+        <span className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded-sm bg-rose-400" />{t("点名缺勤")}</span>
         <span className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded-sm bg-sky-400" />{t("请假 / 其他")}</span>
         <span>{t("橙色的那一列 = 今天")}</span>
+        <span className="text-slate-400">{t("点名和刷卡打卡是两套记录，互不改写")}</span>
       </div>
 
-      {/* ── 点名弹窗 ─────────────────────── */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{t("点名 ·")} {todayLabel} {t("早上")}</DialogTitle>
+            <DialogTitle>{t("点名 ·")} {todayLabel}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-3">
@@ -361,45 +365,44 @@ export default function ManualAttendanceView() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  setPicked(new Set(pickList.filter((s: any) => !todayMarked.has(s.id)).map((s: any) => s.id)))
-                }
+                onClick={() => setPicked(new Set(pickList.filter((s: any) => nfcToday.has(s.id)).map((s: any) => s.id)))}
+                title={t("把今天已经刷卡的人先勾上，再补勾没刷卡的")}
               >
-                {t("全选未点名")}
+                {t("勾上已刷卡的人")}
               </Button>
               <Button variant="outline" size="sm" onClick={() => setPicked(new Set())}>{t("清空")}</Button>
             </div>
 
-            <div className="max-h-[52vh] overflow-y-auto rounded-md border">
+            <div className="max-h-[50vh] overflow-y-auto rounded-md border">
               {pickList.length === 0 ? (
                 <div className="py-10 text-center text-sm text-slate-400">{t("没有学生")}</div>
               ) : (
                 pickList.map((s: any) => {
-                  const done = todayMarked.has(s.id)
+                  const done = todayDone.has(s.id)
                   return (
-                    <label
-                      key={s.id}
-                      className={`flex cursor-pointer items-center gap-3 border-b px-3 py-2 last:border-b-0 ${
-                        done ? "bg-slate-50" : "hover:bg-slate-50"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4"
-                        disabled={done}
-                        checked={done || picked.has(s.id)}
-                        onChange={() => toggle(s.id)}
-                      />
+                    <label key={s.id} className={`flex cursor-pointer items-center gap-3 border-b px-3 py-2 last:border-b-0 ${done ? "bg-slate-50" : "hover:bg-slate-50"}`}>
+                      <input type="checkbox" className="h-4 w-4" checked={picked.has(s.id)} onChange={() => toggle(s.id)} />
                       <span className="flex-1 truncate text-sm text-slate-800">{s.name}</span>
                       <span className="text-[11px] text-slate-400">{s.student_id}</span>
                       <span className="w-20 text-[11px] text-slate-500">{gradeLabel(s.grade, s.is_peralihan)}</span>
                       <span className="w-14 text-[11px] text-slate-400">{s.center || ""}</span>
-                      {done ? <Badge variant="secondary" className="text-[10px]">{t("已点名")}</Badge> : null}
+                      {nfcToday.has(s.id) ? (
+                        <Badge variant="secondary" className="gap-1 text-[10px]">
+                          <Nfc className="h-3 w-3" />
+                          {t("已刷卡")}
+                        </Badge>
+                      ) : null}
+                      {done ? <Badge variant="outline" className="text-[10px]">{t("已点名")}</Badge> : null}
                     </label>
                   )
                 })
               )}
             </div>
+
+            <label className="flex items-center gap-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              <input type="checkbox" className="h-4 w-4" checked={markAbsentRest} onChange={(e) => setMarkAbsentRest(e.target.checked)} />
+              {t("没勾的人记为缺勤，并按规则扣分")}{t("（")}{t("本次范围")} {pickList.length} {t("人")}{t("）")}
+            </label>
 
             {result ? (
               <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{result}</div>
@@ -408,10 +411,10 @@ export default function ManualAttendanceView() {
 
           <DialogFooter className="items-center gap-2">
             <span className="mr-auto text-xs text-slate-500">
-              {t("已勾")} {picked.size} {t("人")}{picked.size ? "" : "（勾名字 = 今天有来）"}
+              {t("已勾")} {picked.size} {t("人")} · {t("缺勤")} {markAbsentRest ? pickList.length - picked.size : 0} {t("人")}
             </span>
             <Button variant="outline" onClick={() => setOpen(false)}>{t("关掉")}</Button>
-            <Button onClick={submit} disabled={!picked.size || saving}>
+            <Button onClick={submit} disabled={saving || (!picked.size && !markAbsentRest)}>
               {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
               {t("确认点名")}
             </Button>
