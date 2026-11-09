@@ -109,7 +109,8 @@ for (const p of payments) {
 for (const a of assignments) {
   const items = Array.isArray(a.fee_items) ? a.fee_items : []
   if (!items.length) continue
-  const gross = money(items.reduce((s, x) => s + Number(x.amount || 0), 0))
+  // 明细合计必须按 单价 × 数量：Meal 8 × 3 份、迟接 5 × 12 次、Full Daycare 10 × 2
+  const gross = money(items.reduce((s, x) => s + Number(x.amount || 0) * (Number(x.quantity) || 1), 0))
   const disc = Number(a.discount || 0)
   const d = String(a.discount_type || 'amount') === 'percent' ? money(gross * disc / 100) : money(disc)
   const want = money(gross - d)
