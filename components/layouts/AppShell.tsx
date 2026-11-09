@@ -101,6 +101,7 @@ const NAV_LABEL_MAP: Record<string, string> = {
   "库存管理": "nav.inventory",
   "系统": "nav.system",
   "考勤中心": "nav.attendance",
+  "手动点名": "nav.attendance_manual",
   "卡片管理": "nav.card_management",
   "积分操作": "nav.points",
   "积分规则": "nav.points_rules",
@@ -228,6 +229,7 @@ const FIN_FULL_CHILDREN: NavItem[] = [
 
 const SYS_ATTENDANCE_GATE_GROUP: NavItem[] = [
   { label: "考勤中心", href: "/attendance", icon: ClipboardCheck },
+  { label: "手动点名", href: "/attendance/manual", icon: UserCheck },
   { label: "卡片管理", href: "/card-management", icon: CreditCard },
 ]
 
@@ -628,7 +630,8 @@ export default function AppShell({
     "/finance/debts": "finance.debts",
     "/finance/reports": "finance.reports", "/inventory": "finance.inventory",
     "/finance/check": "finance.check",
-    "/attendance": "system.attendance", "/card-management": "system.cards",
+    "/attendance": "system.attendance", "/attendance/manual": "system.attendance",
+    "/card-management": "system.cards",
     "/points": "system.points", "/points/rules": "system.points_rules",
     "/points/leaderboard": "system.points_leaderboard",
     "/user-management": "system.users", "/center-management": "system.centers",
@@ -887,6 +890,7 @@ export default function AppShell({
     "/finance/monthly-closing": { label: t("月度结账"), parent: t("财务") },
     "/inventory": { label: t("库存管理"), parent: t("财务") },
     "/attendance": { label: t("考勤中心"), parent: t("系统") },
+    "/attendance/manual": { label: t("手动点名"), parent: t("考勤中心") },
     "/card-management": { label: t("卡片管理"), parent: t("系统") },
     "/points": { label: t("积分操作"), parent: t("系统") },
     "/contribution-management": { label: t("贡献兑换"), parent: t("积分") },
