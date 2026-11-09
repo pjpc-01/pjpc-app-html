@@ -412,15 +412,6 @@ export function useStudentFees() {
     // does not abort the rest of the batch.
     for (const [studentId, feeIds] of localFeeAssignments) {
       try {
-        // Calculate total amount from assigned fees (after discount)
-        const baseAmount = allFees
-          .filter((fee: any) => feeIds.has(fee.id))
-          .reduce((total: number, fee: any) => total + (fee.amount || 0), 0);
-        const adj = localAdjustments.get(studentId);
-        const discount = adj?.discount || 0;
-        const discountType = adj?.discount_type || 'amount';
-        const totalAmount = Math.max(0, baseAmount - (discountType === 'percent' ? baseAmount * (discount / 100) : discount));
-
         // Create fee items array — preserve existing quantities from PB
         // 优先用刚落库的最新记录(保住刚调好的天数)，退回内存快照
         const existingRecord = freshByStudent.get(studentId) || feeByStudentId.get(studentId);
@@ -429,6 +420,16 @@ export function useStudentFees() {
         const existingItems: any[] = typeof rawExisting === 'string' ? safeParse(rawExisting) : (rawExisting || [])
         const existingQty: Record<string, number> = {}
         existingItems.forEach((fi: any) => { if (fi.quantity) existingQty[fi.id] = fi.quantity })
+
+        // 合计必须按 单价 × 数量（Meal 3 份、迟接 12 次），否则存下来的
+        // totalAmount 会比明细少（沈仁平 989 存成 918 就是这么来的）
+        const baseAmount = allFees
+          .filter((fee: any) => feeIds.has(fee.id))
+          .reduce((total: number, fee: any) => total + (fee.amount || 0) * (existingQty[fee.id] || 1), 0);
+        const adj = localAdjustments.get(studentId);
+        const discount = adj?.discount || 0;
+        const discountType = adj?.discount_type || 'amount';
+        const totalAmount = Math.max(0, baseAmount - (discountType === 'percent' ? baseAmount * (discount / 100) : discount));
         const feeItems = allFees
           .filter((fee: any) => feeIds.has(fee.id))
           .map((fee: any) => ({
