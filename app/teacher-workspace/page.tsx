@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useCurrentTeacher } from "@/hooks/useCurrentTeacher"
-import TeacherDashboard from "@/components/teacher/TeacherDashboard"
+import TeacherQuickActions from "@/components/teacher/TeacherQuickActions"
 import StudentProfileView from "@/components/teacher/StudentProfileView"
 import TeacherStats from "@/components/teacher/TeacherStats"
 import ClassSchedule from "@/components/teacher/ClassSchedule"
@@ -525,10 +525,10 @@ export default function TeacherWorkspace() {
         <div className="space-y-6">{menuContent}</div>
       ) : (
         <div className="space-y-6">
-          {/* 最上面：和管理员那张一样的排班日历，只显示自己的排班 + 公共假期，只读 */}
+          {/* 工作台只留三块：排班日历（同管理员那张，只看自己+公假）、概览、快速操作 */}
           <CalendarScheduleView teacherId={teacher.id} readOnly />
           <TodayPanel teacherId={teacher.id} />
-          <TeacherDashboard teacherId={teacher.id} />
+          <TeacherQuickActions />
         </div>
       )}
     </PageLayout>
