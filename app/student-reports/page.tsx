@@ -268,8 +268,19 @@ export default function StudentReportsPage() {
   // 列表页年级选项 —— 走 @/lib/grades（原来写死一份，漏了 Form 6，且「预备班」措辞与别处不一致）
   const listGradeOptions = GRADE_CANON_ALL
 
-  // 过滤报告列表（按年级）
+  // 学生状态表（expand 拿不到时兜底）
+  const studentStatusMap: Record<string, string> = (() => {
+    const m: Record<string, string> = {}
+    for (const s of students || []) m[(s as any).id] = (s as any).status || 'active'
+    return m
+  })()
+
+  // 过滤报告列表（先按学生状态，再按年级）
+  // ⚠️ 已停学 / 已删除的学生不该还挂在报告列表里 —— 报告记录本身不会因为学生状态变化而消失，
+  //    所以必须在这里按学生当前状态过滤，否则停学的人会一直留在名单上。
   const filteredReports = reports.filter((r: any) => {
+    const stuStatus = r.expand?.studentId?.status ?? studentStatusMap[r.studentId]
+    if (stuStatus && stuStatus !== 'active') return false
     if (!listGrade) return true
     const g = formatGrade(r.expand?.studentId?.grade, r.expand?.studentId?.is_peralihan) || studentGradeMap[r.studentId] || ''
     return g === listGrade
