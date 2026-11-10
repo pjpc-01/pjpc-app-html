@@ -6,12 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useLanguage } from "@/contexts/language-context"
-import { Clock, CalendarCheck, CheckCircle2, AlertCircle, Megaphone, Users, FileCheck2, RefreshCw } from "lucide-react"
+import { Clock, CalendarCheck, CheckCircle2, AlertCircle, Users, FileCheck2, RefreshCw } from "lucide-react"
 
 /**
- * 教师工作台「今日待办」。
+ * 教师工作台「概览」（原「今日待办」）。
  *
- * 三件事：今天几节课 / 待批作业 / 今天谁没来，另外一键点名和公告。
+ * 三件事：今天几节课 / 待批作业 / 今天谁没来，另外一键点名。
+ * （原来的「公告」卡片已从工作台移除 —— 工作台只留排班日历 + 概览 + 快速操作）
  * 数据来自 /api/teacher/today（服务端按登录老师的 teacher_id 取）。
  */
 export default function TodayPanel({ teacherId }: { teacherId?: string }) {
@@ -116,7 +117,7 @@ export default function TodayPanel({ teacherId }: { teacherId?: string }) {
       {/* 今日待办三行 */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base"><Clock className="h-4 w-4" />{t("今日待办")}</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base"><Clock className="h-4 w-4" />{t("概览")}</CardTitle>
           <CardDescription>{today.weekday_zh} · {today.date}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -214,27 +215,6 @@ export default function TodayPanel({ teacherId }: { teacherId?: string }) {
         </Card>
       )}
 
-      {/* 公告 */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base"><Megaphone className="h-4 w-4" />{t("公告")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {notices.length === 0 ? <p className="text-sm text-gray-500 py-2">{t("暂时没有公告")}</p> : (
-            <ul className="divide-y">
-              {notices.map((n: any) => (
-                <li key={n.id} className="py-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">{n.title}</p>
-                    <span className="text-xs text-gray-400">{String(n.date || "").slice(0, 10)}</span>
-                  </div>
-                  {n.description && <p className="text-xs text-gray-600 mt-0.5 whitespace-pre-wrap">{n.description}</p>}
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
     </div>
   )
 }
