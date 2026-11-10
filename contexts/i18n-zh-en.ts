@@ -3790,4 +3790,6 @@ export const ZH_TO_EN: Record<string, string> = {
   "已刷卡": "Scanned",
   "没勾的人记为缺勤，并按规则扣分": "Unchecked students are marked absent and lose points per the rules",
   "本次范围": "In scope",
+  "今天已点过名": "already marked today",
+  "人不重复算": "not counted twice",
 }

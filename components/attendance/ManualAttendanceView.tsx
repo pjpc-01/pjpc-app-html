@@ -47,7 +47,7 @@ export default function ManualAttendanceView() {
 
   const [open, setOpen] = useState(false)
   const [picked, setPicked] = useState<Set<string>>(new Set())
-  const [markAbsentRest, setMarkAbsentRest] = useState(true)
+  const [markAbsentRest, setMarkAbsentRest] = useState(false)
   const [q, setQ] = useState("")
   const [saving, setSaving] = useState(false)
   const [result, setResult] = useState("")
@@ -101,14 +101,18 @@ export default function ManualAttendanceView() {
     return g
   }, [rows])
 
-  const todayDone = useMemo(() => {
-    const s = new Set<string>()
+  // 今天已经点过名的人（出席/缺勤分开），重新点名时不许把他们翻面
+  const { todayDone, todayPresent } = useMemo(() => {
+    const done = new Set<string>()
+    const present = new Set<string>()
     for (const r of rows) {
       const d = new Date(r.date)
       if (Number.isNaN(d.getTime())) continue
-      if (localDay(d) === today) s.add(r.student_id)
+      if (localDay(d) !== today) continue
+      done.add(r.student_id)
+      if ((r.status || "present") === "present") present.add(r.student_id)
     }
-    return s
+    return { todayDone: done, todayPresent: present }
   }, [rows, today])
 
   const roster = useMemo(() => {
@@ -158,7 +162,8 @@ export default function ManualAttendanceView() {
   }, [scope, q])
 
   const openDialog = () => {
-    setPicked(new Set())
+    // 今天已经点过「出席」的人先勾好，否则第二次点名会把他们算成缺勤
+    setPicked(new Set(todayPresent))
     setQ("")
     setResult("")
     setOpen(true)
@@ -172,10 +177,21 @@ export default function ManualAttendanceView() {
     })
   }
 
+  // 缺勤范围固定按「本中心全部在职学生」算，不受搜索框影响 ——
+  // 以前用搜索结果算，搜了 Wong 再点名，其他人就被漏掉，且范围随搜索变，容易误操作
+  const absentScope = useMemo(
+    () => scope.filter((s: any) => !picked.has(s.id) && !todayDone.has(s.id)),
+    [scope, picked, todayDone],
+  )
+
   const submit = async () => {
-    const present = pickList.filter((s: any) => picked.has(s.id)).map((s: any) => s.id)
-    const absent = markAbsentRest ? pickList.filter((s: any) => !picked.has(s.id)).map((s: any) => s.id) : []
+    const present = scope.filter((s: any) => picked.has(s.id)).map((s: any) => s.id)
+    const absent = markAbsentRest ? absentScope.map((s: any) => s.id) : []
     if (!present.length && !absent.length) return
+    if (absent.length) {
+      const ok = window.confirm(`这次会把 ${absent.length} 人记为缺勤并按规则扣分，确定吗？`)
+      if (!ok) return
+    }
     setSaving(true)
     try {
       const res = await fetch("/api/attendance/roll-call", {
@@ -401,7 +417,9 @@ export default function ManualAttendanceView() {
 
             <label className="flex items-center gap-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">
               <input type="checkbox" className="h-4 w-4" checked={markAbsentRest} onChange={(e) => setMarkAbsentRest(e.target.checked)} />
-              {t("没勾的人记为缺勤，并按规则扣分")}{t("（")}{t("本次范围")} {pickList.length} {t("人")}{t("）")}
+              {t("没勾的人记为缺勤，并按规则扣分")}
+              {t("（")}{t("本次范围")} {scope.length} {t("人")}
+              {todayDone.size ? `，${t("今天已点过名")} ${todayDone.size} ${t("人不重复算")}` : ""}{t("）")}
             </label>
 
             {result ? (
@@ -411,10 +429,10 @@ export default function ManualAttendanceView() {
 
           <DialogFooter className="items-center gap-2">
             <span className="mr-auto text-xs text-slate-500">
-              {t("已勾")} {picked.size} {t("人")} · {t("缺勤")} {markAbsentRest ? pickList.length - picked.size : 0} {t("人")}
+              {t("已勾")} {picked.size} {t("人")} · {t("缺勤")} {markAbsentRest ? absentScope.length : 0} {t("人")}
             </span>
             <Button variant="outline" onClick={() => setOpen(false)}>{t("关掉")}</Button>
-            <Button onClick={submit} disabled={saving || (!picked.size && !markAbsentRest)}>
+            <Button onClick={submit} disabled={saving || picked.size === 0}>
               {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
               {t("确认点名")}
             </Button>
