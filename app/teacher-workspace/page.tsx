@@ -11,6 +11,7 @@ import TeacherStats from "@/components/teacher/TeacherStats"
 import ClassSchedule from "@/components/teacher/ClassSchedule"
 import TeacherProfile from "@/components/teacher/TeacherProfile"
 import TodayPanel from "@/components/teacher/TodayPanel"
+import CalendarScheduleView from "@/app/components/attendance/CalendarScheduleView"
 import TeacherLeavePanel from "@/components/teacher/TeacherLeavePanel"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -524,6 +525,8 @@ export default function TeacherWorkspace() {
         <div className="space-y-6">{menuContent}</div>
       ) : (
         <div className="space-y-6">
+          {/* 最上面：和管理员那张一样的排班日历，只显示自己的排班 + 公共假期，只读 */}
+          <CalendarScheduleView teacherId={teacher.id} readOnly />
           <TodayPanel teacherId={teacher.id} />
           <TeacherDashboard teacherId={teacher.id} />
         </div>

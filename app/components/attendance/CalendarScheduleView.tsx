@@ -97,9 +97,15 @@ const LEAVE_TYPE_ZH: Record<string, string> = {
 export default function CalendarScheduleView({
   month,
   onMonthChange,
+  teacherId,
+  readOnly = false,
 }: {
   month?: Date
   onMonthChange?: (m: Date) => void
+  /** 只显示这位老师的排班（教师工作台用） */
+  teacherId?: string
+  /** 只读：不给添加/编辑/删除、不给公假管理 */
+  readOnly?: boolean
 }) {
   const { t } = useLanguage()
   const [currentMonth, setCurrentMonth] = useState(month || new Date())
@@ -133,10 +139,12 @@ export default function CalendarScheduleView({
         setCourses(items)
       } catch {}
       try {
-        const tres = await fetch('/api/teachers?limit=200')
-        const tdata = await tres.json()
-        const tlist = tdata?.data || tdata?.items || []
-        setTeachers(tlist)
+        if (!readOnly) {
+          const tres = await fetch('/api/teachers?limit=200')
+          const tdata = await tres.json()
+          const tlist = tdata?.data || tdata?.items || []
+          setTeachers(tlist)
+        }
       } catch {}
     })()
   }, [])
@@ -149,8 +157,11 @@ export default function CalendarScheduleView({
       const filterStart = format(monthStart, "yyyy-MM-dd")
       const filterEnd = format(monthEnd, "yyyy-MM-dd")
 
+      // 教师工作台只取自己的排班
+      const tf = teacherId ? ` && teacher_id='${teacherId}'` : ""
+      const filter = encodeURIComponent(`date>="${filterStart}" && date<="${filterEnd}"${tf}`)
       const res = await fetch(
-        `/api/pocketbase-proxy/api/collections/schedules/records?filter=(date>%3D'${filterStart}'%26%26date<%3D'${filterEnd}')&sort=date,start_time&perPage=200`
+        `/api/pocketbase-proxy/api/collections/schedules/records?filter=${filter}&sort=date,start_time&perPage=500`
       )
       const data = await res.json()
 
@@ -203,7 +214,8 @@ export default function CalendarScheduleView({
       const inRange = items.filter((l) => {
         const s = (l.start_date || '').split(' ')[0]
         const e = (l.end_date || '').split(' ')[0]
-        return s && e && s <= me && e >= ms
+        if (!(s && e && s <= me && e >= ms)) return false
+        return teacherId ? l.teacher_id === teacherId : true
       })
       setLeaves(inRange)
     } catch (err) {
@@ -453,9 +465,11 @@ export default function CalendarScheduleView({
               {format(currentMonth, "yyyy 年 M 月", { locale: zhCN })}
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setHolidayOpen(true)} className="gap-1">
-                <CalendarX2 className="h-3.5 w-3.5" />{t("公假管理")}
-              </Button>
+              {!readOnly && (
+                <Button variant="outline" size="sm" onClick={() => setHolidayOpen(true)} className="gap-1">
+                  <CalendarX2 className="h-3.5 w-3.5" />{t("公假管理")}
+                </Button>
+              )}
               <Button variant="outline" size="sm" onClick={() => {
                 const nm = addMonths(currentMonth, 1)
                 setCurrentMonth(nm)
@@ -572,9 +586,11 @@ export default function CalendarScheduleView({
                 {format(selectedDate, "M 月 d 日 EEEE", { locale: zhCN })}
                 {isToday(selectedDate) && <Badge className="ml-2">{t('attendance.today')}</Badge>}
               </CardTitle>
-              <Button size="sm" onClick={() => setAddOpen(true)} className="gap-1 h-8">
-                <Plus className="h-3.5 w-3.5" />{t("添加排班")}
-              </Button>
+              {!readOnly && (
+                <Button size="sm" onClick={() => setAddOpen(true)} className="gap-1 h-8">
+                  <Plus className="h-3.5 w-3.5" />{t("添加排班")}
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardContent>
@@ -624,25 +640,29 @@ export default function CalendarScheduleView({
                         </div>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-blue-600 hover:bg-blue-50"
-                      onClick={() => openEdit(evt)}
-                      title={t("编辑排班")}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50"
-                      onClick={() => handleDelete(evt)}
-                      disabled={deletingId === evt.id}
-                      title={t("删除排班")}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {!readOnly && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-blue-600 hover:bg-blue-50"
+                          onClick={() => openEdit(evt)}
+                          title={t("编辑排班")}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                          onClick={() => handleDelete(evt)}
+                          disabled={deletingId === evt.id}
+                          title={t("删除排班")}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
@@ -653,7 +673,7 @@ export default function CalendarScheduleView({
       )}
 
       {/* Add / Edit schedule dialog */}
-      <Dialog open={addOpen || !!editingEvent} onOpenChange={(o) => {
+      {!readOnly && (<Dialog open={addOpen || !!editingEvent} onOpenChange={(o) => {
         setAddOpen(o)
         if (!o) setEditingEvent(null)
       }}>
@@ -708,10 +728,10 @@ export default function CalendarScheduleView({
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog>)}
 
       {/* Holiday management dialog */}
-      <Dialog open={holidayOpen} onOpenChange={setHolidayOpen}>
+      {!readOnly && (<Dialog open={holidayOpen} onOpenChange={setHolidayOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -773,7 +793,7 @@ export default function CalendarScheduleView({
             </div>
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog>)}
     </div>
   )
 }
