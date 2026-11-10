@@ -44,6 +44,7 @@ export default function ManualAttendanceView() {
   const [rows, setRows] = useState<RollRow[]>([])
   const [nfcToday, setNfcToday] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
+  const [expanded, setExpanded] = useState<string | null>(null) // 手机上展开某人的整月格子
 
   const [open, setOpen] = useState(false)
   const [picked, setPicked] = useState<Set<string>>(new Set())
@@ -53,6 +54,7 @@ export default function ManualAttendanceView() {
   const [result, setResult] = useState("")
 
   const today = localDay()
+  const todayDay = Number(today.slice(8, 10))
   const [y, m] = month.split("-").map(Number)
   const daysInMonth = new Date(y, m, 0).getDate()
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
@@ -224,7 +226,7 @@ export default function ManualAttendanceView() {
   return (
     <div className="space-y-4">
       <Card>
-        <CardContent className="flex flex-wrap items-center gap-3 p-4">
+        <CardContent className="flex flex-wrap items-center gap-2 p-3 md:gap-3 md:p-4">
           <div className="flex items-center gap-2">
             <CalendarDays className="h-4 w-4 text-slate-500" />
             <input
@@ -262,11 +264,11 @@ export default function ManualAttendanceView() {
             {t("刷新")}
           </Button>
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="flex w-full items-center gap-3 md:ml-auto md:w-auto">
             <span className="text-xs text-slate-500">
               {t("共")} {totalStudents} {t("人")} · {t("本月已点名")} {rows.length} {t("条")}
             </span>
-            <Button onClick={openDialog} className="gap-1">
+            <Button onClick={openDialog} className="ml-auto h-10 gap-1 px-4 md:ml-0 md:h-9">
               <UserCheck className="h-4 w-4" />
               {t("点名")}
             </Button>
@@ -274,7 +276,7 @@ export default function ManualAttendanceView() {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden">
+      <Card className="hidden overflow-hidden md:block">
         <div className="overflow-x-auto">
           <table className="border-collapse text-xs">
             <thead>
@@ -358,7 +360,76 @@ export default function ManualAttendanceView() {
         </div>
       </Card>
 
-      <div className="flex flex-wrap items-center gap-4 px-1 text-[11px] text-slate-500">
+      {/* ── 手机：一人一张卡，点一下展开整月格子 ── */}
+      <div className="space-y-3 md:hidden">
+        {loading || studentsLoading ? (
+          <div className="py-16 text-center text-slate-400">
+            <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />
+            {t("正在读取点名记录…")}
+          </div>
+        ) : totalStudents === 0 ? (
+          <div className="py-16 text-center text-slate-400">{t("没有符合条件的学生")}</div>
+        ) : (
+          roster.map((group) => (
+            <div key={group.grade}>
+              <div className="px-1 pb-1 text-[11px] font-semibold text-slate-500">
+                {t(group.grade)} · {group.items.length} {t("人")}
+              </div>
+              <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+                {group.items.map((s: any) => {
+                  const row = grid[s.id] || {}
+                  const st = row[todayDay]
+                  const count = Object.values(row).filter((v) => v === "present").length
+                  const isOpen = expanded === s.id
+                  const dot = st === "present" ? "bg-emerald-500" : st === "absent" ? "bg-rose-400" : st === "leave" ? "bg-sky-400" : "bg-slate-200"
+                  return (
+                    <div key={s.id} className="border-b border-slate-100 last:border-b-0">
+                      <button
+                        onClick={() => setExpanded(isOpen ? null : s.id)}
+                        className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left hover:bg-slate-50"
+                      >
+                        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${dot}`} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium text-slate-800" title={s.name}>{s.name}</span>
+                          <span className="block truncate text-[11px] text-slate-400">
+                            {s.student_id ? s.student_id + " · " : ""}{s.center || ""} · {t("出勤")} {count}
+                          </span>
+                        </span>
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                          st === "present" ? "bg-emerald-50 text-emerald-700"
+                            : st === "absent" ? "bg-rose-50 text-rose-600"
+                            : st === "leave" ? "bg-sky-50 text-sky-700"
+                            : "bg-slate-100 text-slate-600"
+                        }`}>
+                          {st === "present" ? t("出席") : st === "absent" ? t("缺勤") : st === "leave" ? t("请假 / 其他") : t("未点名")}
+                        </span>
+                      </button>
+                      {isOpen ? (
+                        <div className="grid gap-1 border-t border-slate-100 bg-slate-50/70 p-2" style={{ gridTemplateColumns: "repeat(8, minmax(0, 1fr))" }}>
+                          {days.map((d) => {
+                            const v = row[d]
+                            const isToday = d === todayDay
+                            return (
+                              <div key={d} className={`flex flex-col items-center rounded ${isToday ? "bg-amber-100" : ""}`}>
+                                <span className="text-[9px] text-slate-400">{d}</span>
+                                <span className={`mt-0.5 h-3.5 w-3.5 rounded-sm ${
+                                  v === "present" ? "bg-emerald-500" : v === "absent" ? "bg-rose-400" : v === "leave" ? "bg-sky-400" : "bg-slate-200"
+                                }`} />
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ) : null}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 px-1 text-[11px] text-slate-500">
         <span className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded-sm bg-emerald-500" />{t("点名出席")}</span>
         <span className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded-sm bg-rose-400" />{t("点名缺勤")}</span>
         <span className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded-sm bg-sky-400" />{t("请假 / 其他")}</span>
@@ -367,14 +438,14 @@ export default function ManualAttendanceView() {
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="flex w-full max-w-2xl flex-col" style={{ maxHeight: "92vh" }}>
           <DialogHeader>
             <DialogTitle>{t("点名 ·")} {todayLabel}</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
+          <div className="flex min-h-0 flex-1 flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative min-w-0 flex-1">
                 <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("搜名字 / 学号")} className="h-9 pl-8" />
               </div>
@@ -389,7 +460,7 @@ export default function ManualAttendanceView() {
               <Button variant="outline" size="sm" onClick={() => setPicked(new Set())}>{t("清空")}</Button>
             </div>
 
-            <div className="max-h-[50vh] overflow-y-auto rounded-md border">
+            <div className="min-h-0 flex-1 overflow-y-auto rounded-md border">
               {pickList.length === 0 ? (
                 <div className="py-10 text-center text-sm text-slate-400">{t("没有学生")}</div>
               ) : (

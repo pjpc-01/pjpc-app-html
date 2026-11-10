@@ -3792,4 +3792,6 @@ export const ZH_TO_EN: Record<string, string> = {
   "本次范围": "In scope",
   "今天已点过名": "already marked today",
   "人不重复算": "not counted twice",
+  "未点名": "Not marked",
+  "一格一天，看整月出席": "One cell per day — the whole month at a glance",
 }

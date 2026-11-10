@@ -9,7 +9,7 @@ export default function ManualAttendancePage() {
   return (
     <PageLayout
       title={t("手动点名")}
-      description={t("按班级名册点名，一格一天，看得出一整个月的出席")}
+      description={t("一格一天，看整月出席")}
       backUrl="/attendance"
       userRole="admin"
       background="from-slate-50 to-blue-50"
