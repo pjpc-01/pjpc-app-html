@@ -98,9 +98,18 @@ export const FeeCard = ({
       if (d.items?.[0]) {
         let items = typeof d.items[0].fee_items === 'string' ? JSON.parse(d.items[0].fee_items) : d.items[0].fee_items
         items = items.map((fi: any) => fi.id === feeId ? { ...fi, quantity: newQty } : fi)
-        await fetch(`/api/pocketbase-proxy/api/collections/student_fees/records/${d.items[0].id}`, {
+        // 改天数必须同步 totalAmount：以前只写 fee_items，快照留在旧金额，
+        // 财务体检（Σ 单价×份数 = totalAmount）第二天就报「合计不对」。
+        const rec = d.items[0]
+        const activeLines = items
+          .filter((fi: any) => fi.active !== false)
+          .map((fi: any) => ({ name: fi.name, amount: (Number(fi.amount) || 0) * (Number(fi.quantity) || 1) }))
+        const dbDisc = Number(rec.discount || 0)
+        const dbDiscType = (rec.discount_type || 'amount') as 'amount' | 'percent'
+        const newTotal = Math.max(0, sumLines(activeLines) - discountValueOf(subtotalOf(activeLines), dbDisc, dbDiscType))
+        await fetch(`/api/pocketbase-proxy/api/collections/student_fees/records/${rec.id}`, {
           method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fee_items: JSON.stringify(items) }),
+          body: JSON.stringify({ fee_items: JSON.stringify(items), totalAmount: newTotal }),
         })
       } else {
         // ⚠️ 原来这里什么都不做（学生还没有费用记录时，改天数静默失效，
