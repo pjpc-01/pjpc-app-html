@@ -20,6 +20,14 @@ import { gradeLabel, gradeRank } from "@/lib/grades"
  * 页面按纸质点名表排：一人一行，横着一整月，绿=点名出席 红=点名缺勤 蓝=请假。
  */
 
+/**
+ * 只上单一课程、不属于安亲班日常点名的学号前缀。
+ * MMA = 打拳班（Kids Boxing/MMA class），他们只来上课，不参与每天的点名。
+ */
+const COURSE_ONLY_PREFIXES = ["MMA"]
+const isCourseOnly = (s: any) =>
+  COURSE_ONLY_PREFIXES.some((p) => String(s?.student_id || "").toUpperCase().startsWith(p))
+
 /** 分行只按学生资料里实际出现的 center 取，写死会让新分行看不到 */
 const PU1_FIRST = (a: string, b: string) => (a === "PU1" ? -1 : b === "PU1" ? 1 : a.localeCompare(b))
 
@@ -137,6 +145,8 @@ export default function ManualAttendanceView() {
     const list = students.filter((s: any) => {
       // 只点名在读学生：已停课(withdrawn) / 已毕业(graduated) / 已删(deleted) 都不该出现
       if ((s.status || "active") !== "active") return false
+      // 打拳班这类只上单一课程的学生不进点名名册
+      if (isCourseOnly(s)) return false
       if (center && (s.center || "") !== center) return false
       if (kw) {
         const hay = `${s.name || ""} ${s.student_id || ""} ${gradeLabel(s.grade, s.is_peralihan)}`.toLowerCase()
@@ -161,7 +171,8 @@ export default function ManualAttendanceView() {
 
   // 点名范围 = 当前中心的所有在职学生。不受搜索框影响，否则被搜掉的人会被误记缺勤。
   const scope = useMemo(
-    () => students.filter((s: any) => (s.status || "active") === "active" && (!center || (s.center || "") === center)),
+    () => students.filter((s: any) =>
+      (s.status || "active") === "active" && !isCourseOnly(s) && (!center || (s.center || "") === center)),
     [students, center],
   )
 
