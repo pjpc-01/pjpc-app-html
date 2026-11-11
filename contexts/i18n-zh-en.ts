@@ -3794,4 +3794,5 @@ export const ZH_TO_EN: Record<string, string> = {
   "人不重复算": "not counted twice",
   "未点名": "Not marked",
   "一格一天，看整月出席": "One cell per day — the whole month at a glance",
+  "提的是改进意见，不会影响成绩和积分": "This is a suggestion — it won't affect your grades or points",
 }
