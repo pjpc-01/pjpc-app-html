@@ -1,4 +1,4 @@
-import { suToken } from './probes/_auth.mjs'
+import { suToken } from './lib/pb-auth.mjs'
 import { round2, sumLines, subtotalOf, discountTotalOf, invoiceTotals, isDiscountLine } from '../lib/finance-calc.ts'
 
 const PB = 'http://127.0.0.1:8090'
