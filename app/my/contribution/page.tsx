@@ -40,6 +40,11 @@ export default function MyContributionPage() {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState("")
 
+  // 单个物品的贡献榜（弹窗）
+  const [boardItem, setBoardItem] = useState<Any_ | null>(null)
+  const [board, setBoard] = useState<Any_ | null>(null)
+  const [boardLoading, setBoardLoading] = useState(false)
+
   // 我要提议物品
   const [propType, setPropType] = useState<"upgrade" | "reward">("upgrade")
   const [propName, setPropName] = useState("")
@@ -90,6 +95,21 @@ export default function MyContributionPage() {
       setMsg(String(e?.message || e))
     } finally {
       setBusy(false)
+    }
+  }
+
+  // 每个物品自己的贡献榜：谁给这个东西投了多少分
+  const openBoard = async (x: Any_) => {
+    setBoardItem(x); setBoard(null); setBoardLoading(true)
+    try {
+      const r = await fetch(`/api/contribution/item-ranking?itemId=${encodeURIComponent(x.id)}`)
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d?.success) throw new Error(d?.error || `加载失败（HTTP ${r.status}）`)
+      setBoard(d)
+    } catch (e: any) {
+      setBoard({ error: String(e?.message || e) })
+    } finally {
+      setBoardLoading(false)
     }
   }
 
@@ -210,11 +230,17 @@ export default function MyContributionPage() {
                       <div className="h-full bg-orange-500" style={{ width: `${x.progress}%` }} />
                     </div>
                   </div>
-                  <button
-                    className="mt-auto w-full rounded-md bg-orange-500 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50"
-                    disabled={busy}
-                    onClick={() => { setDonateItem(x); setAmount(""); setMsg("") }}
-                  >{t("贡献积分")}</button>
+                  <div className="mt-auto flex gap-2">
+                    <button
+                      className="flex-1 rounded-md bg-orange-500 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50"
+                      disabled={busy}
+                      onClick={() => { setDonateItem(x); setAmount(""); setMsg("") }}
+                    >{t("贡献积分")}</button>
+                    <button
+                      className="rounded-md border px-2.5 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      onClick={() => openBoard(x)}
+                    >{t("贡献榜")}</button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -224,7 +250,13 @@ export default function MyContributionPage() {
                 <div className="flex flex-1 flex-col gap-2 p-3">
                   <p className="line-clamp-2 min-h-[2.5rem] text-sm font-medium">{x.name}</p>
                   <p className="text-xs text-gray-500">{t("已经筹集够了")}</p>
-                  <div className="mt-auto w-full rounded-md bg-gray-100 py-2 text-center text-sm text-gray-500">{t("已完成")}</div>
+                  <div className="mt-auto flex gap-2">
+                    <div className="flex-1 rounded-md bg-gray-100 py-2 text-center text-sm text-gray-500">{t("已完成")}</div>
+                    <button
+                      className="rounded-md border px-2.5 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      onClick={() => openBoard(x)}
+                    >{t("贡献榜")}</button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -449,6 +481,49 @@ export default function MyContributionPage() {
           </div>
         </div>
       </section>
+
+      {/* 单个物品的贡献榜 */}
+      {boardItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setBoardItem(null)}>
+          <div className="flex max-h-[85vh] w-full max-w-md flex-col rounded-xl bg-white p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-base font-semibold">{t("贡献榜")} · {boardItem.name}</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  {t("已筹")} {board?.raised ?? boardItem.current_points} / {boardItem.target_points}
+                  {board?.donors ? ` · ${board.donors} ${t("人")}` : ""}
+                </p>
+              </div>
+              <button className="rounded border px-2 py-1 text-xs text-gray-600 hover:bg-gray-50" onClick={() => setBoardItem(null)}>{t("关闭")}</button>
+            </div>
+
+            <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
+              {boardLoading ? (
+                <p className="py-6 text-center text-sm text-gray-500">{t("加载中…")}</p>
+              ) : board?.error ? (
+                <p className="py-6 text-center text-sm text-red-600">{board.error}</p>
+              ) : (board?.rows || []).length === 0 ? (
+                <p className="py-6 text-center text-sm text-gray-500">{t("还没有人给这个物品投分")}</p>
+              ) : (
+                <ul className="divide-y">
+                  {(board?.rows || []).slice(0, 20).map((r: any) => {
+                    const mine = !!(data?.student?.id && r.studentId === data.student.id)
+                    return (
+                      <li key={r.studentId} className={`flex items-center gap-2 px-1 py-2 text-sm ${mine ? "rounded bg-orange-50" : ""}`}>
+                        <span className="w-6 text-center text-xs text-gray-500">{r.rank}</span>
+                        <span className="min-w-0 flex-1 truncate">{r.studentName}{mine ? `（${t("我")}）` : ""}</span>
+                        <span className="text-xs text-gray-400">{r.times} {t("次")}</span>
+                        <span className="w-12 text-right font-medium text-orange-600">{r.points}</span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </div>
+            <p className="mt-3 text-[11px] text-gray-400">{t("只算投进这个物品的分，已退回的不算")}</p>
+          </div>
+        </div>
+      )}
 
       {/* 投入弹窗 */}
       {donateItem && (
