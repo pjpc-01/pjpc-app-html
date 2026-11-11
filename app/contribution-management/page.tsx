@@ -686,24 +686,15 @@ export default function ContributionManagementPage() {
                       const rows: any[] = rk?.rows || []
                       return (
                       <div key={x.id} className="flex flex-col overflow-hidden rounded-xl border bg-white">
-                        {/* 照片：点照片就换照片，右上角 × 删照片（像 social media） */}
-                        <div className="group relative aspect-square w-full bg-gray-100">
+                        {/* 照片：点进去看详情，改照片/删照片都在详情里做 */}
+                        <button
+                          className="relative block aspect-square w-full overflow-hidden bg-gray-100 hover:opacity-95"
+                          onClick={() => openDetail(x)}
+                        >
                           {x.image
                             ? <img src={`/api/pocketbase-proxy/api/files/${x.collectionId}/${x.id}/${x.image}`} alt={x.name} className="h-full w-full object-cover" />
                             : <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-xs text-gray-400"><ImagePlus className="h-5 w-5" />{t("无图")}</div>}
-                          <label className="absolute inset-0 z-10 flex cursor-pointer items-center justify-center bg-black/0 text-xs font-medium text-transparent transition group-hover:bg-black/40 group-hover:text-white" title={t("点击换照片")}>
-                            {t("点击换照片")}
-                            <input type="file" accept="image/*" className="hidden" disabled={busy}
-                              onChange={(e) => { const f = e.target.files?.[0]; if (f) changeImage("contribution_items", x.id, f) }} />
-                          </label>
-                          {x.image && (
-                            <button
-                              className="absolute right-1.5 top-1.5 z-20 h-8 w-8 rounded-full bg-black/55 text-sm leading-8 text-white hover:bg-red-600"
-                              disabled={busy} title={t("删照片")}
-                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); clearImage("contribution_items", x.id) }}
-                            >×</button>
-                          )}
-                        </div>
+                        </button>
 
                         {/* 贡献榜：直接放在照片下面，带占比 bar */}
                         <div className="border-b bg-gray-50/60 px-3 py-2">
