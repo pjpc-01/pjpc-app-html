@@ -34,7 +34,7 @@ const NAV = [
 
 // 1) 用 PB superuser 代登录拿身份（不需要任何人的密码）
 // 代理加了守门后不能匿名查 users/impersonate → 走 scripts/probes/_auth.mjs 直连 PB
-const { adminAuth } = await import('./probes/_auth.mjs');
+const { adminAuth } = await import('./lib/pb-auth.mjs');
 const imp = await adminAuth();
 if (!imp.token) { console.error('代登录失败'); process.exit(1); }
 console.log(`✓ 以 ${imp.model?.name}(${imp.model?.role}) 身份浏览`);

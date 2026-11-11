@@ -19,7 +19,7 @@ const PAGES = [
 ];
 
 // 代理加了守门后不能匿名查 users/impersonate → 与 ux-audit 一致，直连 PB 取身份
-const { adminAuth } = await import('./probes/_auth.mjs');
+const { adminAuth } = await import('./lib/pb-auth.mjs');
 const imp = await adminAuth();
 if (!imp.token) { console.error('代登录失败'); process.exit(1); }
 const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });

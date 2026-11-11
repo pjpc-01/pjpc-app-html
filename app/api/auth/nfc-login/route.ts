@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCardUidSearchTerms } from '@/lib/utils'
+import { rateLimit, clientIp } from '@/lib/rate-limit'
 import { getAdminToken } from '@/lib/pb-admin-token'
 
 const PB_URL = 'http://127.0.0.1:8090'
@@ -10,6 +11,17 @@ async function pbAuth(): Promise<string> {
 
 export async function POST(request: NextRequest) {
   try {
+    // 免登录接口：不限制的话卡号（8~10 位十六进制）可以被枚举，
+    // 枚举到一张老师的卡就等于拿到那个账号。
+    const ip = clientIp(request)
+    const rl = rateLimit(`nfc-login:${ip}`, 15, 10 * 60 * 1000) // 10 分钟最多 15 次
+    if (!rl.ok) {
+      return NextResponse.json(
+        { success: false, error: `刷卡太频繁，请 ${rl.retryAfter} 秒后再试` },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } },
+      )
+    }
+
     const { card_uid } = await request.json()
 
     if (!card_uid) {
@@ -69,6 +81,7 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ success: false, error: '未绑定账户，请在用户管理中绑定档案' })
     }
+
 
     // 3. 卡验过了、人也找到了 —— 换成**这个账号自己的** token
     //

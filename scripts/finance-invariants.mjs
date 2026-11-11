@@ -14,7 +14,7 @@
  * 6. 学生费用的 totalAmount == 费用项合计 - 折扣
  * 7. 全库应收 = Σ发票总额；实收 = Σ付款；未收 = 应收 - 实收（只报数，不判定好坏）
  */
-import { suToken } from './probes/_auth.mjs'
+import { suToken } from './lib/pb-auth.mjs'
 
 const PB = process.env.PB_URL || 'http://127.0.0.1:8090'
 const token = await suToken()

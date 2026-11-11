@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { normalizeCardUid, getCardUidSearchTerms } from '@/lib/utils'
+import { rateLimit, clientIp } from '@/lib/rate-limit'
 import { getAdminToken } from '@/lib/pb-admin-token'
 
 const PB_URL = 'http://127.0.0.1:8090'
@@ -11,6 +12,12 @@ async function pbAuth(): Promise<string> {
 // POST: NFC card tapped — resolve card_uid → person (student or teacher)
 export async function POST(request: NextRequest) {
   try {
+    // 免登录：卡号可枚举，限一下频率（正常刷卡一分钟几次就够）
+    const rl = rateLimit(`nfc-tap:${clientIp(request)}`, 60, 60 * 1000)
+    if (!rl.ok) {
+      return NextResponse.json({ error: `太频繁，请 ${rl.retryAfter} 秒后再试` }, { status: 429 })
+    }
+
     const token = await pbAuth()
     const { card_uid: rawUid } = await request.json()
 
