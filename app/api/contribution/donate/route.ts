@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
 import { earnedFrom, getContributionRate, releaseItemContributions } from '@/lib/contribution'
+import { applyPoints } from '@/lib/points'
 
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
 
@@ -58,23 +59,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '这个物品已经筹集够了' }, { status: 400 })
     }
 
-    // 3) 扣总积分
-    const after = before - points
-    const uRes = await fetch(`${PB_URL}/api/collections/students/records/${encodeURIComponent(sid)}`, {
-      method: 'PATCH', headers: H,
-      body: JSON.stringify({ points: after }),
+    // 3) 扣总积分 + 写流水（唯一入口：锁内重读、要么都成要么都不成）
+    const deducted = await applyPoints({
+      studentId: sid,
+      delta: -points,
+      reason: `贡献中心物品：${item.name || '-'}`,
+      token,
     })
-    if (!uRes.ok) return NextResponse.json({ success: false, error: '扣积分失败' }, { status: 500 })
-
-    // 4) 积分流水（负数，留痕）
-    await fetch(`${PB_URL}/api/collections/point_logs/records`, {
-      method: 'POST', headers: H,
-      body: JSON.stringify({
-        student: sid, teacher: '', amount: -points,
-        reason: `贡献中心物品：${item.name || '-'}`,
-        points_before: before, points_after: after,
-      }),
-    }).catch(() => {})
+    // 并发保护：锁内重读后发现分数已不够，立刻退回这一笔，不让分数变成负数
+    if (deducted.after < 0) {
+      await applyPoints({
+        studentId: sid,
+        delta: points,
+        reason: `投入失败退回：${item.name || '-'}（投入时积分已不足）`,
+        token,
+      }).catch(() => {})
+      return NextResponse.json({ success: false, error: `你的积分不够 ${points} 分了，请重新整理后再投` }, { status: 400 })
+    }
 
     // 5) 物品进度 + 投入记录（积分先锁定，物品完成才发放贡献积分）
     const rate = await getContributionRate(token)
@@ -104,9 +105,12 @@ export async function POST(request: NextRequest) {
       }),
     })
     if (!logRes.ok) {
-      // 记录写不进去就把积分加回去，不能让学生的分数凭空少掉
-      await fetch(`${PB_URL}/api/collections/students/records/${encodeURIComponent(sid)}`, {
-        method: 'PATCH', headers: H, body: JSON.stringify({ points: before }),
+      // 记录写不进去就把这一笔退回（走唯一入口，留痕在 point_logs）
+      await applyPoints({
+        studentId: sid,
+        delta: points,
+        reason: `投入失败退回：${item.name || '-'}（投入记录写不进去）`,
+        token,
       }).catch(() => {})
       return NextResponse.json({ success: false, error: '记录投入失败，积分已退回，请再试一次' }, { status: 500 })
     }
@@ -119,8 +123,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      points_before: before,
-      points_after: after,
+      points_before: deducted.before,
+      points_after: deducted.after,
       contributed: points,
       rate,
       earned_pending: earned,          // 锁住的贡献积分（物品完成才入账）
