@@ -1295,6 +1295,7 @@ const translations: Record<Language, Record<string, string>> = {
     "暂无请假记录": "暂无请假记录",
     "加载中…": "加载中…",
     "学生自助刷卡 kiosk": "学生自助刷卡 kiosk",
+    "nav.attendance_manual": "手动点名",
 },
   en: {
     // 手动点名（考勤门禁 → 手动点名）
