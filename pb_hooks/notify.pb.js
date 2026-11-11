@@ -81,11 +81,18 @@ onRecordAfterCreateSuccess((e) => {
 
     // students.id → 登录账号
     let uid = "";
+    let urole = "";
     try {
       const us = app.findRecordsByFilter("users", "student_id = {:sid}", "", 1, 0, { sid: sid });
-      if (us && us.length > 0) uid = String(us[0].id || "");
+      if (us && us.length > 0) {
+        uid = String(us[0].id || "");
+        urole = String(us[0].get("role") || "");
+      }
     } catch (x2) {}
     if (!uid) return; // 这学生没账号 → 不写
+
+    // 学生本人不需要财务通知（发票、收款）：这两类只给家长账号
+    if ((kind === "invoice" || kind === "payment") && urole === "student") return;
 
     const coll = app.findCollectionByNameOrId("notifications");
     if (!coll) return;
