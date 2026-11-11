@@ -291,7 +291,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         href: "/teacher-workspace",
         icon: ClipboardCheck,
         children: [
-          { label: "今日待办", href: "/teacher-workspace", icon: ClipboardCheck },
+          { label: "概览", href: "/teacher-workspace", icon: ClipboardCheck },
           { label: "我的学生", href: "/teacher-workspace/students", icon: Users },
           { label: "我的课程", href: "/teacher-workspace/courses", icon: BookOpen },
           { label: "我的考勤与积分", href: "/teacher-workspace/attendance", icon: UserCheck },
