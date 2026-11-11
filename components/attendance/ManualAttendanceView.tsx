@@ -432,7 +432,8 @@ export default function ManualAttendanceView() {
                                     key={k}
                                     disabled={marking === s.id}
                                     onClick={() => markOne(s, k)}
-                                    className={`h-6 min-w-[36px] rounded border px-1 text-[11px] font-medium ${active ? onCls : `bg-white ${offCls}`} ${marking === s.id ? "opacity-50" : ""}`}
+                                    style={{ minWidth: 44 }}
+                                    className={`h-8 whitespace-nowrap rounded-md border px-1.5 text-[11px] font-medium transition ${active ? onCls : `bg-white ${offCls}`} ${marking === s.id ? "opacity-50" : ""}`}
                                   >
                                     {label}
                                   </button>
@@ -502,7 +503,8 @@ export default function ManualAttendanceView() {
                                 key={k}
                                 disabled={marking === s.id}
                                 onClick={() => markOne(s, k)}
-                                className={`h-8 min-w-[44px] rounded-md border px-1 text-[11px] font-medium transition ${
+                                style={{ minWidth: 46 }}
+                                className={`h-8 whitespace-nowrap rounded-md border px-1.5 text-[11px] font-medium transition ${
                                   active ? onCls : `bg-white ${offCls}`
                                 } ${marking === s.id ? "opacity-50" : ""}`}
                               >
