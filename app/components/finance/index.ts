@@ -12,7 +12,6 @@ export * from './reports-overview'
 
 // Student Fee Matrix Components
 export { StudentFeeMatrix } from './student-fee-matrix'
-export { StudentCard } from './student-fee-matrix'
 export { SearchAndFilter } from './student-fee-matrix'
 export { StudentFeeMatrixHeader } from './student-fee-matrix'
 

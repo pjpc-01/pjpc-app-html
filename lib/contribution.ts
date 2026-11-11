@@ -1,4 +1,5 @@
 import { notify } from '@/lib/notify'
+import { applyPoints } from '@/lib/points'
 
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
 
@@ -163,19 +164,14 @@ export async function refundItemContributions(
       if (sid && pts > 0) {
         const stu = await pbGet(token, `students/records/${sid}`)
         if (stu?.id) {
-          const before = Number(stu.points || 0)
-          const after = before + pts
-          await fetch(`${PB_URL}/api/collections/students/records/${sid}`, {
-            method: 'PATCH', headers: H, body: JSON.stringify({ points: after }),
+          // 走唯一积分入口：串行锁 + 锁内重读 + 必写流水。
+          // 以前这里裸 PATCH students.points，两个人同时退回会丢分或退两次。
+          await applyPoints({
+            studentId: sid,
+            delta: pts,
+            reason: `${reason}：退回「${r.item_name || '-'}」投入的 ${pts} 分`,
+            token,
           })
-          await fetch(`${PB_URL}/api/collections/point_logs/records`, {
-            method: 'POST', headers: H,
-            body: JSON.stringify({
-              student: sid, teacher: '', amount: pts,
-              reason: `${reason}：退回「${r.item_name || '-'}」投入的 ${pts} 分`,
-              points_before: before, points_after: after,
-            }),
-          }).catch(() => {})
           refunded += pts
           students++
           await notify(token, {

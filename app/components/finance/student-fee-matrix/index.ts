@@ -1,4 +1,3 @@
 export { StudentFeeMatrix } from './StudentFeeMatrix'
-export { StudentCard } from './StudentCard'
 export { SearchAndFilter } from './SearchAndFilter'
 export { StudentFeeMatrixHeader } from './StudentFeeMatrixHeader'

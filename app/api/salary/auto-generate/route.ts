@@ -213,7 +213,18 @@ export async function POST(request: NextRequest) {
 
         // 计算薪资
         const baseSalary = structure.base_salary || 0
-        const hourlyRate = structure.hourly_rate || (baseSalary / 160) // 假设月工作160小时
+        // 时薪制必须有时薪。以前没填就拿「底薪 ÷ 160 小时」当小时率，
+        // 等于凭空造一个时薪（160 小时是猜的），算出来的薪资没有依据。
+        if (structure.salary_type === 'hourly' && !(Number(structure.hourly_rate) > 0)) {
+          results.push({
+            teacher_id: teacher.id,
+            teacher_name: teacher.name,
+            status: 'skipped',
+            message: '时薪没填（薪资结构的时薪是空的），不生成薪资记录，请先补时薪',
+          })
+          continue
+        }
+        const hourlyRate = Number(structure.hourly_rate) || 0
         const overtimeRate = structure.overtime_rate || (hourlyRate * 1.5)
         
         const overtimePay = overtimeHours * overtimeRate
