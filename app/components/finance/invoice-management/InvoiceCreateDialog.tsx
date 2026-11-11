@@ -27,6 +27,8 @@ interface InvoiceCreateDialogProps {
   activeFees: any[]
   isFeeAssigned: (studentId: string, feeId: string) => boolean
   calculateStudentTotal: (studentId: string) => number
+  /** 按学生取带份数的明细行（优先用它，价目表单价没有份数） */
+  getFeeLines?: (studentId: string) => Array<{ name: string; amount: number; unitPrice?: number; quantity?: number }>
   onDirectCreate: (student: any, dueDate: string, notes: string, period: string, discounts?: CreateDiscounts) => void
   onBulkCreate: (selectedGrades: string[], formData: any) => void
 }
@@ -46,6 +48,7 @@ export function InvoiceCreateDialog({
   activeFees,
   isFeeAssigned,
   calculateStudentTotal,
+  getFeeLines,
   onDirectCreate,
   onBulkCreate,
 }: InvoiceCreateDialogProps) {
@@ -100,9 +103,11 @@ export function InvoiceCreateDialog({
     const firstStudent = selectedStudentObjects[0]
     if (!firstStudent) return null
     const studentId = firstStudent.id
-    const items = activeFees
-      .filter(fee => isFeeAssigned(studentId, fee.id))
-      .map(fee => ({ name: fee.name, amount: fee.amount }))
+    // 优先用学生自己的费用明细（带份数）——餐点 2 份 ×8、迟接 11 次 ×5 要算成 16 和 55
+    const own = getFeeLines?.(studentId) || []
+    const items = own.length > 0
+      ? own.map(l => ({ name: l.name, amount: l.amount, unitPrice: l.unitPrice, quantity: l.quantity }))
+      : activeFees.filter(fee => isFeeAssigned(studentId, fee.id)).map(fee => ({ name: fee.name, amount: fee.amount }))
     const lines = applyItemDiscounts(items, activeItemRules)   // 单项折扣展开成负数行
     const itemDiscTotal = sumLines(lines) - sumLines(items)     // 负数
     const afterItems = sumLines(lines)
@@ -111,7 +116,7 @@ export function InvoiceCreateDialog({
       : 0
     const total = sumLines(lines) - overallDisc
     return { items, lines, total, itemDiscTotal, overallDisc, studentName: firstStudent.name || firstStudent.student_name }
-  }, [selectedStudents, activeFees, isFeeAssigned, selectedStudentObjects, activeItemRules, overallEnabled, overallValue, overallType])
+  }, [selectedStudents, activeFees, isFeeAssigned, getFeeLines, selectedStudentObjects, activeItemRules, overallEnabled, overallValue, overallType])
 
   const handleGradeToggle = (grade: string) => {
     setSelectedGrades(prev => 
@@ -295,7 +300,14 @@ export function InvoiceCreateDialog({
                     return (
                       <TableRow key={idx}>
                         <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
-                        <TableCell className="text-sm">{item.name}</TableCell>
+                        <TableCell className="text-sm">
+                          {item.name}
+                          {Number((item as any).quantity) > 1 ? (
+                            <span className="ml-1 text-xs text-muted-foreground">
+                              {t("（RM")}{Number((item as any).unitPrice || 0).toFixed(2)} × {Number((item as any).quantity)}{t("）")}
+                            </span>
+                          ) : null}
+                        </TableCell>
                         <TableCell className="text-right font-medium">{item.amount.toFixed(2)}</TableCell>
                         <TableCell>
                           <Input

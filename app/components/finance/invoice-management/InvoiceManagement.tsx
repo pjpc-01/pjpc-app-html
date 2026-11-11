@@ -80,7 +80,7 @@ export default function InvoiceManagement() {
 
   // Data hooks
   const { students } = useStudents()
-  const { calculateStudentTotal, isAssigned } = useStudentFees()
+  const { calculateStudentTotal, isAssigned, getStudentFeeLines } = useStudentFees()
   const { fees } = useFees()
   const { createReceipt } = useReceipts()
   const { payments } = usePayments()
@@ -507,9 +507,11 @@ Prospek Cemerlang`,
   }
 
   const handleDirectCreate = async (student: any, dueDate: string, notes: string, period?: string, discounts?: any) => {
-    const feeLines = activeFees
-      .filter(fee => isAssigned(student.id, fee.id))
-      .map(fee => ({ name: fee.name, amount: fee.amount }))
+    // 用学生自己的费用明细（带份数）。以前用全局价目表单价，数量被当成 1 → 71 变 13。
+    const studentLines = getStudentFeeLines(student.id)
+    const feeLines = studentLines.length > 0
+      ? studentLines
+      : activeFees.filter(fee => isAssigned(student.id, fee.id)).map(fee => ({ name: fee.name, amount: fee.amount }))
 
     // 分项折扣：每个项目各自的折扣 → 展开成「原价行 + 折扣负数行」
     let invoiceItems: any[] = applyItemDiscounts(feeLines, discounts?.items)
@@ -547,6 +549,13 @@ Prospek Cemerlang`,
       }
     }
 
+    // 明细名补 (×N)：票面上要能看出「餐点 RM8 ×2 = 16」，不然院长只看到一个 16
+    const displayItems = invoiceItems.map((it: any) =>
+      Number(it?.quantity) > 1 && !/\(×\d+\)\s*$/.test(String(it?.name || ''))
+        ? { ...it, name: `${it.name} (×${it.quantity})` }
+        : it,
+    )
+
     const totalAmount = sumLines(invoiceItems)
     const discountTotal = Math.abs(sumLines(invoiceItems) - sumLines(feeLines))
     
@@ -554,8 +563,8 @@ Prospek Cemerlang`,
       studentName: student.name || student.student_name,
       studentId: student.id,
       studentGrade: student.grade || student.standard,
-      studentNumber: student.student_id, // 学号
-      items: invoiceItems.length > 0 ? invoiceItems : [{ name: "学生费用", amount: totalAmount || 0 }],
+      studentNumber: student.student_id,
+      items: displayItems.length > 0 ? displayItems : [{ name: "学生费用", amount: totalAmount || 0 }],
       status: "issued" as const,
       issueDate: defaultInvoiceDates().issueDate,
       dueDate: dueDate,
@@ -963,6 +972,7 @@ Prospek Cemerlang`,
         students={studentsWithAmounts}
         activeFees={activeFees}
         isFeeAssigned={isAssigned}
+        getFeeLines={getStudentFeeLines}
         calculateStudentTotal={calculateStudentTotal}
         onDirectCreate={handleDirectCreate}
         onBulkCreate={(selectedGrades, formData) => {
@@ -971,9 +981,10 @@ Prospek Cemerlang`,
           )
           const discounts = formData?.discounts
           target.forEach((student: any) => {
-            const feeLines = activeFees
-              .filter(fee => isAssigned(student.id, fee.id))
-              .map(fee => ({ name: fee.name, amount: fee.amount }))
+            const studentLines = getStudentFeeLines(student.id)
+            const feeLines = studentLines.length > 0
+              ? studentLines
+              : activeFees.filter(fee => isAssigned(student.id, fee.id)).map(fee => ({ name: fee.name, amount: fee.amount }))
             // 批量开票也走同一套折扣：分项先展开，整单再作用在分项折后金额上
             const invoiceItems = applyItemDiscounts(feeLines, discounts?.items)
             let discountTotal = Math.abs(sumLines(invoiceItems) - sumLines(feeLines))
@@ -988,6 +999,11 @@ Prospek Cemerlang`,
                 discountTotal += d
               }
             }
+            const displayItems = invoiceItems.map((it: any) =>
+              Number(it?.quantity) > 1 && !/\(×\d+\)\s*$/.test(String(it?.name || ''))
+                ? { ...it, name: `${it.name} (×${it.quantity})` }
+                : it,
+            )
             const totalAmount = sumLines(invoiceItems)
             
             createInvoice({
