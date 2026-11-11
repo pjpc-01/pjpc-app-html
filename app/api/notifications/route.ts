@@ -20,11 +20,14 @@ export async function GET(request: NextRequest) {
   try {
     const token = await getAdminToken()
     const H = { Authorization: token }
-    const mine = encodeURIComponent(`user="${uid}"`)
+    // 学生不关心财务：发票、收款这两类通知不推给学生（家长账号照旧能收）
+    const isStudent = gate.session.role === 'student'
+    const base = `user="${uid}"` + (isStudent ? ' && kind != "invoice" && kind != "payment"' : '')
+    const mine = encodeURIComponent(base)
 
     const [listRes, unreadRes] = await Promise.all([
       fetch(`${PB_URL}/api/collections/notifications/records?perPage=${limit}&sort=-created&filter=${mine}`, { headers: H }),
-      fetch(`${PB_URL}/api/collections/notifications/records?perPage=1&filter=${encodeURIComponent(`user="${uid}" && read=false`)}`, { headers: H }),
+      fetch(`${PB_URL}/api/collections/notifications/records?perPage=1&filter=${encodeURIComponent(base + ' && read=false')}`, { headers: H }),
     ])
     const list = listRes.ok ? await listRes.json() : { items: [] }
     const unread = unreadRes.ok ? await unreadRes.json() : { totalItems: 0 }
