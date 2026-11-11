@@ -115,7 +115,7 @@ export function useStudentFees() {
 
       const processedData: StudentFee[] = studentFeesData.map((record: any) => ({
         id: record.id,
-        students: record.students,
+        students: record.students || record.student_id,
         fee_items: safeParse(record.fee_items),
         totalAmount: record.totalAmount || 0,
         status: record.status || 'pending',
@@ -130,9 +130,14 @@ export function useStudentFees() {
 
       // Build lookup map: studentId → StudentFee record
       const lookupMap = new Map<string, StudentFee>();
-      processedData.forEach(sf => {
+      processedData.forEach((sf, idx) => {
+        // students 关联字段偶尔是空的（历史数据 / 外部导入只写了 student_id），
+        // 空了就退回 student_id，否则这个学生的费用在开票弹窗里一律算成 0。
         if (sf.students) {
           lookupMap.set(sf.students, sf);
+        } else {
+          const rawId = (studentFeesData[idx] as any)?.student_id
+          if (rawId) lookupMap.set(rawId, sf)
         }
       });
 
@@ -166,6 +171,25 @@ export function useStudentFees() {
       return assignment.fee_items.some((item: FeeItem) => item.id === feeId && item.active === true);
     }
   }, [feeByStudentId, localFeeAssignments, isEditMode]);
+
+  /**
+   * 按学生取费用明细行 —— 带数量。
+   *
+   * fee_items 是全局价目表（只有单价，没有每人份数），每人的份数存在
+   * student_fees.fee_items 里。开票必须用这个，不能用价目表的单价凑数，
+   * 否则餐点 2 份、迟接 11 次会被当成各 1 份（71 变 13）。
+   */
+  const getStudentFeeLines = useCallback((studentId: string) => {
+    const assignment = feeByStudentId.get(studentId)
+    if (!assignment) return [] as Array<{ name: string; amount: number; unitPrice: number; quantity: number }>
+    return (assignment.fee_items || [])
+      .filter((item: FeeItem) => item.active === true)
+      .map((item: FeeItem) => {
+        const unit = Number(item.amount) || 0
+        const qty = Number(item.quantity) || 1
+        return { name: item.name || '', amount: unit * qty, unitPrice: unit, quantity: qty }
+      })
+  }, [feeByStudentId])
 
   // Get total amount of active fee items for a student (after discount)
   const getStudentAmount = useCallback((studentId: string, allFees?: any[]): number => {
@@ -682,6 +706,7 @@ export function useStudentFees() {
     deleteStudentFee: () => {},
     isAssigned,
     getStudentAmount,
+    getStudentFeeLines,
     calculateStudentTotal: (studentId: string) => getStudentAmount(studentId),
     assignFeeToStudent,
     removeFeeFromStudent,
