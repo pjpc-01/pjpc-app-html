@@ -20,7 +20,8 @@ import { gradeLabel, gradeRank } from "@/lib/grades"
  * 页面按纸质点名表排：一人一行，横着一整月，绿=点名出席 红=点名缺勤 蓝=请假。
  */
 
-const CENTERS = ["全部", "PU1", "BATU14"]
+/** 分行只按学生资料里实际出现的 center 取，写死会让新分行看不到 */
+const PU1_FIRST = (a: string, b: string) => (a === "PU1" ? -1 : b === "PU1" ? 1 : a.localeCompare(b))
 
 const localDay = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
@@ -39,7 +40,7 @@ export default function ManualAttendanceView() {
   const { t } = useLanguage()
   const { students, loading: studentsLoading } = useStudents()
   const [month, setMonth] = useState(() => localDay().slice(0, 7))
-  const [center, setCenter] = useState("全部")
+  const [center, setCenter] = useState("") // 空 = 还没选，加载后自动选第一个分行
   const [keyword, setKeyword] = useState("")
   const [rows, setRows] = useState<RollRow[]>([])
   const [nfcToday, setNfcToday] = useState<Set<string>>(new Set())
@@ -52,6 +53,20 @@ export default function ManualAttendanceView() {
   const [q, setQ] = useState("")
   const [saving, setSaving] = useState(false)
   const [result, setResult] = useState("")
+
+  const centers = useMemo(() => {
+    const set = new Set<string>()
+    for (const s of students as any[]) {
+      const c = String(s?.center || "").trim()
+      if (c) set.add(c)
+    }
+    const arr = Array.from(set).sort(PU1_FIRST)
+    return arr.length > 0 ? arr : ["PU1"]
+  }, [students])
+
+  useEffect(() => {
+    if (!center && centers.length > 0) setCenter(centers[0])
+  }, [center, centers])
 
   const today = localDay()
   const todayDay = Number(today.slice(8, 10))
@@ -120,8 +135,9 @@ export default function ManualAttendanceView() {
   const roster = useMemo(() => {
     const kw = keyword.trim().toLowerCase()
     const list = students.filter((s: any) => {
-      if ((s.status || "active") === "inactive") return false
-      if (center !== "全部" && (s.center || "") !== center) return false
+      // 只点名在读学生：已停课(withdrawn) / 已毕业(graduated) / 已删(deleted) 都不该出现
+      if ((s.status || "active") !== "active") return false
+      if (center && (s.center || "") !== center) return false
       if (kw) {
         const hay = `${s.name || ""} ${s.student_id || ""} ${gradeLabel(s.grade, s.is_peralihan)}`.toLowerCase()
         if (!hay.includes(kw)) return false
@@ -145,7 +161,7 @@ export default function ManualAttendanceView() {
 
   // 点名范围 = 当前中心的所有在职学生。不受搜索框影响，否则被搜掉的人会被误记缺勤。
   const scope = useMemo(
-    () => students.filter((s: any) => (s.status || "active") !== "inactive" && (center === "全部" || (s.center || "") === center)),
+    () => students.filter((s: any) => (s.status || "active") === "active" && (!center || (s.center || "") === center)),
     [students, center],
   )
 
@@ -199,7 +215,7 @@ export default function ManualAttendanceView() {
       const res = await fetch("/api/attendance/roll-call", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: today, center: center === "全部" ? "" : center, present, absent }),
+        body: JSON.stringify({ date: today, center: center || "", present, absent }),
       })
       const json = await res.json()
       if (json?.success) {
@@ -238,7 +254,7 @@ export default function ManualAttendanceView() {
           </div>
 
           <div className="flex items-center gap-1 rounded-md border border-slate-300 p-0.5">
-            {CENTERS.map((c) => (
+            {centers.map((c) => (
               <button
                 key={c}
                 onClick={() => setCenter(c)}
