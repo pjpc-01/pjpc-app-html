@@ -36,9 +36,9 @@ export default function ContributionManagementPage() {
   const [error, setError] = useState("")
   const [msg, setMsg] = useState("")
   const [busy, setBusy] = useState(false)
-  // 单个物品的贡献排行（弹窗）
-  const [itemRank, setItemRank] = useState<any>(null)
-  const [rankLoading, setRankLoading] = useState(false)
+  // 每个物品自己的贡献榜（列表里直接显示）+ 详情弹窗
+  const [ranks, setRanks] = useState<Record<string, any>>({})
+  const [detailItem, setDetailItem] = useState<any>(null)
 
   // 新增表单
   const [iName, setIName] = useState("")
@@ -83,7 +83,16 @@ export default function ContributionManagementPage() {
       ])
       const [da, db, dc, dd, de, df, dg] = await Promise.all([a.json(), b.json(), c.json(), d.json(), e.json(), f.json(), g.json()])
       if (!a.ok || !b.ok || !c.ok) throw new Error(t("读取失败"))
-      setItems(da.items || [])
+      const itemList: any[] = da.items || []
+      setItems(itemList)
+      // 每个物品自己的贡献榜（谁给这个东西投了多少），列表里直接显示，不用点开才看
+      Promise.all(itemList.slice(0, 30).map(async (it: any) => {
+        try {
+          const r = await fetch(`/api/contribution/item-ranking?itemId=${encodeURIComponent(it.id)}`)
+          const rj = await r.json().catch(() => ({}))
+          if (r.ok && rj?.success) setRanks((prev) => ({ ...prev, [it.id]: rj }))
+        } catch { /* 单个物品榜拉不到不影响整页 */ }
+      })).catch(() => {})
       setRewards(db.items || [])
       setPending(dc.items || [])
       if (d.ok && dd?.success) setRank({ overall: dd.overall || { list: [], total_points: 0, students: 0 }, groups: dd.groups || [] })
@@ -165,18 +174,16 @@ export default function ContributionManagementPage() {
     if (!r.ok) throw new Error(`更新失败（${r.status}）`)
   }
 
-  // 单个物品的贡献排行
-  const openItemRank = async (it: any) => {
-    setRankLoading(true); setMsg("")
-    setItemRank({ item: it, rows: [], loading: true })
-    try {
-      const r = await fetch(`/api/contribution/item-ranking?itemId=${encodeURIComponent(it.id)}`)
-      const d = await r.json().catch(() => ({}))
-      if (!r.ok || !d?.success) throw new Error(d?.error || `加载失败（${r.status}）`)
-      setItemRank(d)
-    } catch (e: any) {
-      setMsg(String(e?.message || e)); setItemRank(null)
-    } finally { setRankLoading(false) }
+  // 点物品 → 详情（图片大一点、完整榜单、动作都在里面）
+  const openDetail = async (it: any) => {
+    setDetailItem(it)
+    if (!ranks[it.id]) {
+      try {
+        const r = await fetch(`/api/contribution/item-ranking?itemId=${encodeURIComponent(it.id)}`)
+        const d = await r.json().catch(() => ({}))
+        if (r.ok && d?.success) setRanks((prev) => ({ ...prev, [it.id]: d }))
+      } catch { /* 拉不到就显示空榜 */ }
+    }
   }
 
   // 删除物品（中心物品 / 私人物品共用）
@@ -241,14 +248,15 @@ export default function ContributionManagementPage() {
     setMsg(t("已导出"))
   }
 
-  const exportItemRank = () => {
-    const rowsRaw = itemRank?.rows || []
+  const exportItemRank = (item?: any, rankData?: any) => {
+    const data = rankData
+    const rowsRaw = data?.rows || []
     if (!rowsRaw.length) { setMsg(t("没有数据可以导出")); return }
     const rows: (string | number)[][] = [
       [t("排名"), t("学生"), t("中心"), t("投入"), t("次数"), t("占比")],
       ...rowsRaw.map((r: any) => [r.rank, r.studentName || "", r.center || "", r.points || 0, r.times || 0, (r.share || 0) + "%"]),
     ]
-    downloadCsv(`物品排行_${itemRank?.item?.name || ""}_${today()}.csv`, rows)
+    downloadCsv(`物品排行_${(item || data?.item)?.name || ""}_${today()}.csv`, rows)
     setMsg(t("已导出"))
   }
 
@@ -673,19 +681,64 @@ export default function ContributionManagementPage() {
                 </div>
                 {items.length === 0 ? <p className="text-sm text-gray-500">{t("还没有物品")}</p> : (
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                    {items.map((x: any) => (
+                    {items.map((x: any) => {
+                      const rk = ranks[x.id]
+                      const rows: any[] = rk?.rows || []
+                      return (
                       <div key={x.id} className="flex flex-col overflow-hidden rounded-xl border bg-white">
-                        <div className="relative aspect-square w-full bg-gray-100">
+                        {/* 照片：点照片就换照片，右上角 × 删照片（像 social media） */}
+                        <div className="group relative aspect-square w-full bg-gray-100">
                           {x.image
                             ? <img src={`/api/pocketbase-proxy/api/files/${x.collectionId}/${x.id}/${x.image}`} alt={x.name} className="h-full w-full object-cover" />
                             : <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-xs text-gray-400"><ImagePlus className="h-5 w-5" />{t("无图")}</div>}
-                        </div>
-                        <div className="flex flex-1 flex-col gap-2 p-3">
-                          <p className="line-clamp-2 min-h-[2.5rem] text-sm font-medium">{x.name}</p>
-                          <p className="text-xs text-gray-500">{x.current_points || 0} / {x.target_points || 0}{x.center ? ` · ${x.center}` : ""}</p>
-                          {x.status === "active" && Number(x.current_points || 0) > 0 && (
-                            <p className="text-[11px] text-orange-600">{t("投进去的积分先锁着，物品完成才发放")}</p>
+                          <label className="absolute inset-0 z-10 flex cursor-pointer items-center justify-center bg-black/0 text-xs font-medium text-transparent transition group-hover:bg-black/40 group-hover:text-white" title={t("点击换照片")}>
+                            {t("点击换照片")}
+                            <input type="file" accept="image/*" className="hidden" disabled={busy}
+                              onChange={(e) => { const f = e.target.files?.[0]; if (f) changeImage("contribution_items", x.id, f) }} />
+                          </label>
+                          {x.image && (
+                            <button
+                              className="absolute right-2 top-2 z-20 rounded-full bg-black/55 px-2 py-1 text-[11px] text-white hover:bg-red-600"
+                              disabled={busy} title={t("删照片")}
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); clearImage("contribution_items", x.id) }}
+                            >×</button>
                           )}
+                        </div>
+
+                        {/* 贡献榜：直接放在照片下面，带占比 bar */}
+                        <div className="border-b bg-gray-50/60 px-3 py-2">
+                          <div className="flex items-baseline justify-between gap-2">
+                            <p className="text-[11px] font-medium text-gray-600">{t("贡献榜")}</p>
+                            <p className="text-[11px] text-gray-400">
+                              {rows.length > 0 ? `${rows.length} ${t("人")} · ${rk?.raised || 0} ${t("分")}` : t("还没有人投入")}
+                            </p>
+                          </div>
+                          {rows.slice(0, 3).map((r: any) => (
+                            <div key={r.studentId} className="mt-1.5">
+                              <div className="flex items-baseline justify-between gap-2 text-[11px]">
+                                <span className="min-w-0 truncate text-gray-700">{r.rank}. {r.studentName || "-"}</span>
+                                <span className="shrink-0 text-orange-600">{r.points} · {r.share}%</span>
+                              </div>
+                              <div className="mt-0.5 h-1 w-full overflow-hidden rounded bg-gray-200">
+                                <div className="h-full bg-orange-400" style={{ width: `${Math.min(100, Number(r.share) || 0)}%` }} />
+                              </div>
+                            </div>
+                          ))}
+                          {rows.length > 3 && (
+                            <button className="mt-2 w-full rounded border bg-white px-2 py-1 text-[11px] text-gray-600 hover:bg-gray-50"
+                              onClick={() => openDetail(x)}>{t("看全部")} {rows.length} {t("人")}</button>
+                          )}
+                        </div>
+
+                        <div className="flex flex-1 flex-col gap-2 p-3">
+                          <button className="line-clamp-2 min-h-[2.5rem] text-left text-sm font-medium hover:text-orange-600"
+                            onClick={() => openDetail(x)}>{x.name}</button>
+                          <div>
+                            <p className="text-xs text-gray-500">{x.current_points || 0} / {x.target_points || 0}{x.center ? ` · ${x.center}` : ""}</p>
+                            <div className="mt-1 h-1.5 w-full overflow-hidden rounded bg-gray-100">
+                              <div className="h-full bg-orange-500" style={{ width: `${Math.min(100, Math.round(((Number(x.current_points) || 0) / (Number(x.target_points) || 1)) * 100))}%` }} />
+                            </div>
+                          </div>
                           <span className={`w-fit rounded px-1.5 py-0.5 text-[11px] ${
                             x.status === "active" ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"
                           }`}>
@@ -702,32 +755,22 @@ export default function ContributionManagementPage() {
                             )
                           )}
                           <div className="mt-auto flex items-center gap-2 pt-1">
-                            <label className="flex-1 cursor-pointer rounded border px-2 py-1.5 text-center text-xs hover:bg-gray-50">
-                              {t("换照片")}
-                              <input type="file" accept="image/*" className="hidden"
-                                onChange={(e) => { const f = e.target.files?.[0]; if (f) changeImage("contribution_items", x.id, f) }} />
-                            </label>
-                            {x.image && (
-                              <button className="rounded border border-red-200 px-2 py-1.5 text-xs text-red-600 hover:bg-red-50" disabled={busy}
-                                onClick={() => clearImage("contribution_items", x.id)}>{t("删照片")}</button>
-                            )}
                             {x.status === "active" && (
                               <>
-                                <button className="rounded border px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50" disabled={busy} onClick={() => setStatus(x, "achieved")}>{t("标记完成")}</button>
-                                <button className="rounded border px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50" disabled={busy} onClick={() => setStatus(x, "closed")}>{t("下架")}</button>
+                                <button className="flex-1 rounded border px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50" disabled={busy} onClick={() => setStatus(x, "achieved")}>{t("标记完成")}</button>
+                                <button className="flex-1 rounded border px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50" disabled={busy} onClick={() => setStatus(x, "closed")}>{t("下架")}</button>
                               </>
                             )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button className="flex-1 rounded border px-2 py-1.5 text-xs text-gray-700 hover:bg-gray-50" onClick={() => openItemRank(x)}>{t("贡献排行")}</button>
                             <button className="rounded border border-red-200 px-2 py-1.5 text-xs text-red-600 hover:bg-red-50" disabled={busy} onClick={() => deleteItem("upgrade", x)}>{t("删除")}</button>
                           </div>
                         </div>
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
-              </CardContent>
+              
+</CardContent>
             </Card>
 
             <Card>
@@ -859,59 +902,103 @@ export default function ContributionManagementPage() {
           </>
         )}
       </div>
-      {/* 单个物品的贡献排行 */}
-      {itemRank && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setItemRank(null)}>
-          <div className="max-h-[80vh] w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between gap-3 border-b p-4">
-              <div>
-                <p className="text-sm font-semibold">{t("贡献排行")} · {itemRank.item?.name || ""}</p>
-                <p className="mt-1 text-xs text-gray-500">
-                  {Number(itemRank.item?.current_points || 0)} / {Number(itemRank.item?.target_points || 0)} {t("分")}
-                  {itemRank.donors ? ` · ${itemRank.donors} ${t("人")}` : ""}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button className="rounded border px-2 py-1 text-xs text-gray-600 hover:bg-gray-50" onClick={exportItemRank}>{t("导出")}</button>
-                <button className="rounded border px-2 py-1 text-xs text-gray-600 hover:bg-gray-50" onClick={() => setItemRank(null)}>{t("关闭")}</button>
-              </div>
-            </div>
-            <div className="max-h-[60vh] overflow-y-auto p-4">
-              {itemRank.loading ? (
-                <p className="py-6 text-center text-sm text-gray-500">{t("加载中...")}</p>
-              ) : (itemRank.rows || []).length === 0 ? (
-                <p className="py-6 text-center text-sm text-gray-500">{t("还没有人投入")}</p>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b text-left text-xs text-gray-500">
-                      <th className="py-2 pr-2">#</th>
-                      <th className="py-2 pr-2">{t("学生")}</th>
-                      <th className="py-2 pr-2 text-right">{t("投入")}</th>
-                      <th className="py-2 pr-2 text-right">{t("次数")}</th>
-                      <th className="py-2 text-right">{t("占比")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(itemRank.rows || []).map((r: any) => (
-                      <tr key={r.studentId} className="border-b last:border-0">
-                        <td className="py-2 pr-2 text-xs text-gray-400">{r.rank}</td>
-                        <td className="py-2 pr-2">
-                          <div className="font-medium">{r.studentName || "-"}</div>
-                          <div className="text-[11px] text-gray-400">{r.center || ""}</div>
-                        </td>
-                        <td className="py-2 pr-2 text-right font-semibold text-orange-600">{r.points}</td>
-                        <td className="py-2 pr-2 text-right text-xs text-gray-500">{r.times}</td>
-                        <td className="py-2 text-right text-xs text-gray-600">{r.share}%</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+      {/* 物品详情：点物品进来（大图 + 完整贡献榜 + 动作都在这里） */}
+      {detailItem && (() => {
+        const rk = ranks[detailItem.id]
+        const rows: any[] = rk?.rows || []
+        const cur = Number(detailItem.current_points ?? rk?.item?.current_points ?? 0)
+        const target = Number(detailItem.target_points ?? rk?.item?.target_points ?? 0)
+        const pct = target > 0 ? Math.min(100, Math.round((cur / target) * 100)) : 0
+        return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDetailItem(null)}>
+          <div className="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="group relative aspect-video w-full bg-gray-100">
+              {detailItem.image
+                ? <img src={`/api/pocketbase-proxy/api/files/${detailItem.collectionId}/${detailItem.id}/${detailItem.image}`} alt={detailItem.name} className="h-full w-full object-cover" />
+                : <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-sm text-gray-400"><ImagePlus className="h-6 w-6" />{t("无图")}</div>}
+              <button className="absolute left-2 top-2 z-20 rounded-full bg-black/55 px-2.5 py-1 text-xs text-white hover:bg-black/70" onClick={() => setDetailItem(null)}>{t("关闭")}</button>
+              <label className="absolute bottom-2 right-2 z-20 cursor-pointer rounded-full bg-black/55 px-3 py-1.5 text-xs text-white hover:bg-black/70">
+                {t("换照片")}
+                <input type="file" accept="image/*" className="hidden" disabled={busy}
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) changeImage("contribution_items", detailItem.id, f) }} />
+              </label>
+              {detailItem.image && (
+                <button className="absolute right-2 top-2 z-20 rounded-full bg-black/55 px-2.5 py-1 text-xs text-white hover:bg-red-600" disabled={busy}
+                  onClick={() => clearImage("contribution_items", detailItem.id)}>{t("删照片")}</button>
               )}
+            </div>
+
+            <div className="space-y-3 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <p className="text-lg font-semibold">{detailItem.name}</p>
+                  {detailItem.description ? <p className="mt-0.5 text-xs text-gray-500">{detailItem.description}</p> : null}
+                  <span className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[11px] ${
+                    detailItem.status === "active" ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"
+                  }`}>
+                    {detailItem.status === "active" ? t("进行中") : detailItem.status === "achieved" ? t("已完成") : t("已关闭")}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-orange-600">{cur} <span className="text-xs font-normal text-gray-500">/ {target}</span></p>
+                  <p className="text-[11px] text-gray-400">{rows.length} {t("人")} · {rk?.raised ?? cur} {t("分")}</p>
+                </div>
+              </div>
+
+              <div className="h-2 w-full overflow-hidden rounded bg-gray-100">
+                <div className="h-full bg-orange-500" style={{ width: `${pct}%` }} />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between">
+                  <p className="flex items-center gap-1.5 text-sm font-medium"><Trophy className="h-4 w-4 text-orange-500" />{t("贡献榜")}</p>
+                  <button className="rounded border px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+                    onClick={() => exportItemRank(detailItem, rk)}>{t("导出")}</button>
+                </div>
+                {rows.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-gray-500">{t("还没有人投入")}</p>
+                ) : (
+                  <ul className="mt-2 divide-y">
+                    {rows.map((r: any) => (
+                      <li key={r.studentId} className="py-2">
+                        <div className="flex items-baseline justify-between gap-2 text-sm">
+                          <span className="min-w-0 truncate">
+                            <span className="mr-1.5 text-xs text-gray-400">{r.rank}</span>
+                            {r.studentName || "-"}
+                            {r.center ? <span className="ml-1 text-[11px] text-gray-400">{r.center}</span> : null}
+                          </span>
+                          <span className="shrink-0 text-xs text-gray-500">{r.times} {t("次")} · <span className="font-semibold text-orange-600">{r.points}</span> · {r.share}%</span>
+                        </div>
+                        <div className="mt-1 h-1.5 w-full overflow-hidden rounded bg-gray-100">
+                          <div className="h-full bg-orange-400" style={{ width: `${Math.min(100, Number(r.share) || 0)}%` }} />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+                {detailItem.status === "active" && (
+                  <>
+                    <button className="rounded border px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50" disabled={busy}
+                      onClick={() => setStatus(detailItem, "achieved")}>{t("标记完成")}</button>
+                    <button className="rounded border px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50" disabled={busy}
+                      onClick={() => setStatus(detailItem, "closed")}>{t("下架")}</button>
+                  </>
+                )}
+                {detailItem.status === "achieved" && !detailItem.received_at && (
+                  <button className="rounded border border-green-300 px-3 py-1.5 text-xs text-green-700 hover:bg-green-50" disabled={busy}
+                    onClick={() => markReceived(detailItem)}>{t("标记已领取")}</button>
+                )}
+                <button className="ml-auto rounded border border-red-200 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50" disabled={busy}
+                  onClick={() => deleteItem("upgrade", detailItem)}>{t("删除")}</button>
+              </div>
             </div>
           </div>
         </div>
-      )}
+        )
+      })()}
 
     </PageLayout>
   )
