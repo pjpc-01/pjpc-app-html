@@ -55,6 +55,7 @@ export default function ManualAttendanceView() {
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<string | null>(null) // 手机上展开某人的整月格子
 
+  const [marking, setMarking] = useState<string | null>(null) // 手机上一人一键点名中
   const [open, setOpen] = useState(false)
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [markAbsentRest, setMarkAbsentRest] = useState(false)
@@ -81,6 +82,48 @@ export default function ManualAttendanceView() {
   const [y, m] = month.split("-").map(Number)
   const daysInMonth = new Date(y, m, 0).getDate()
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
+
+  // ── 手机：点名字右边那三个按钮直接点名，再按一次撤销回未点名 ──
+  const markOne = async (s: any, next: "present" | "absent" | "leave") => {
+    if (marking) return
+    const cur = (grid[s.id] || {})[todayDay] || "none"
+    const status = cur === next ? "none" : next // 同一个再按 = 撤销，防按错
+    setMarking(s.id)
+    try {
+      const res = await fetch("/api/attendance/roll-call", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentId: s.id, date: today, status }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json?.success) throw new Error(json?.error || `失败（${res.status}）`)
+
+      // 本地同步这一人，不用整月重拉
+      setRows((prev) => {
+        const rest = prev.filter((r) => !(r.student_id === s.id && localDay(new Date(r.date)) === today))
+        if (status === "none") return rest
+        const rec = json.record || {}
+        return [...rest, {
+          id: rec.id || `tmp-${s.id}`,
+          student_id: s.id,
+          student_name: s.name || "",
+          date: rec.date || `${today} 00:00:00.000Z`,
+          status,
+        }]
+      })
+      setResult(
+        status === "none"
+          ? `${s.name} · ${t("已改回未点名")}`
+          : status === "absent"
+            ? `${s.name} · ${t("缺勤")}${json.deducted ? ` ${json.deducted}` : ""}${json.refunded ? ` ${t("退回")} +${json.refunded}` : ""}`
+            : `${s.name} · ${status === "present" ? t("出席") : t("请假")}`,
+      )
+    } catch (e: any) {
+      setResult(String(e?.message || e))
+    } finally {
+      setMarking(null)
+    }
+  }
 
   // ── 当月点名记录 ────────────────────────────
   const loadMonth = useCallback(async () => {
@@ -325,20 +368,21 @@ export default function ManualAttendanceView() {
                     </th>
                   )
                 })}
+                <th className="border-b border-l px-2 py-2 text-center font-medium text-slate-500">{t("今天点名")}</th>
                 <th className="w-12 border-b border-l px-1 py-2 text-center font-medium text-slate-500">{t("出勤")}</th>
               </tr>
             </thead>
             <tbody>
               {loading || studentsLoading ? (
                 <tr>
-                  <td colSpan={daysInMonth + 3} className="py-16 text-center text-slate-400">
+                  <td colSpan={daysInMonth + 4} className="py-16 text-center text-slate-400">
                     <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />
                     {t("正在读取点名记录…")}
                   </td>
                 </tr>
               ) : totalStudents === 0 ? (
                 <tr>
-                  <td colSpan={daysInMonth + 3} className="py-16 text-center text-slate-400">
+                  <td colSpan={daysInMonth + 4} className="py-16 text-center text-slate-400">
                     {t("没有符合条件的学生")}
                   </td>
                 </tr>
@@ -346,7 +390,7 @@ export default function ManualAttendanceView() {
                 roster.map((group) => (
                   <Fragment key={group.grade}>
                     <tr className="bg-slate-100/80">
-                      <td colSpan={daysInMonth + 3} className="sticky left-0 px-2 py-1.5 text-[11px] font-semibold tracking-wide text-slate-600">
+                      <td colSpan={daysInMonth + 4} className="sticky left-0 px-2 py-1.5 text-[11px] font-semibold tracking-wide text-slate-600">
                         {t(group.grade)} · {group.items.length} {t("人")}
                       </td>
                     </tr>
@@ -375,6 +419,27 @@ export default function ManualAttendanceView() {
                               </td>
                             )
                           })}
+                          <td className="border-b border-l px-1.5 py-1">
+                            <div className="flex items-center justify-center gap-1">
+                              {([
+                                ["present", t("出席"), "bg-emerald-500 text-white", "border-emerald-400 text-emerald-700"],
+                                ["absent", t("缺勤"), "bg-rose-500 text-white", "border-rose-300 text-rose-600"],
+                                ["leave", t("请假"), "bg-sky-500 text-white", "border-sky-300 text-sky-700"],
+                              ] as const).map(([k, label, onCls, offCls]) => {
+                                const active = row[todayDay] === k
+                                return (
+                                  <button
+                                    key={k}
+                                    disabled={marking === s.id}
+                                    onClick={() => markOne(s, k)}
+                                    className={`h-6 min-w-[36px] rounded border px-1 text-[11px] font-medium ${active ? onCls : `bg-white ${offCls}`} ${marking === s.id ? "opacity-50" : ""}`}
+                                  >
+                                    {label}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </td>
                           <td className="border-b border-l px-1 py-1 text-center font-medium text-slate-700">{count || ""}</td>
                         </tr>
                       )
@@ -411,26 +476,42 @@ export default function ManualAttendanceView() {
                   const dot = st === "present" ? "bg-emerald-500" : st === "absent" ? "bg-rose-400" : st === "leave" ? "bg-sky-400" : "bg-slate-200"
                   return (
                     <div key={s.id} className="border-b border-slate-100 last:border-b-0">
-                      <button
-                        onClick={() => setExpanded(isOpen ? null : s.id)}
-                        className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left hover:bg-slate-50"
-                      >
-                        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${dot}`} />
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-medium text-slate-800" title={s.name}>{s.name}</span>
-                          <span className="block truncate text-[11px] text-slate-400">
-                            {s.student_id ? s.student_id + " · " : ""}{s.center || ""} · {t("出勤")} {count}
+                      <div className="flex items-center gap-1.5 px-2 py-1.5">
+                        <button
+                          onClick={() => setExpanded(isOpen ? null : s.id)}
+                          className="flex min-w-0 flex-1 items-center gap-2 py-1 text-left"
+                        >
+                          <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${dot}`} />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-medium text-slate-800" title={s.name}>{s.name}</span>
+                            <span className="block truncate text-[11px] text-slate-400">
+                              {s.student_id ? s.student_id + " · " : ""}{s.center || ""} · {t("出勤")} {count}
+                            </span>
                           </span>
-                        </span>
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                          st === "present" ? "bg-emerald-50 text-emerald-700"
-                            : st === "absent" ? "bg-rose-50 text-rose-600"
-                            : st === "leave" ? "bg-sky-50 text-sky-700"
-                            : "bg-slate-100 text-slate-600"
-                        }`}>
-                          {st === "present" ? t("出席") : st === "absent" ? t("缺勤") : st === "leave" ? t("请假 / 其他") : t("未点名")}
-                        </span>
-                      </button>
+                        </button>
+                        {/* 名字右边的点名状态：按一下就记，再按一次变回未点名 */}
+                        <div className="flex shrink-0 items-center gap-1">
+                          {([
+                            ["present", t("出席"), "bg-emerald-500 text-white", "border-emerald-500 text-emerald-700"],
+                            ["absent", t("缺勤"), "bg-rose-500 text-white", "border-rose-400 text-rose-600"],
+                            ["leave", t("请假"), "bg-sky-500 text-white", "border-sky-400 text-sky-700"],
+                          ] as const).map(([k, label, onCls, offCls]) => {
+                            const active = st === k
+                            return (
+                              <button
+                                key={k}
+                                disabled={marking === s.id}
+                                onClick={() => markOne(s, k)}
+                                className={`h-8 min-w-[44px] rounded-md border px-1 text-[11px] font-medium transition ${
+                                  active ? onCls : `bg-white ${offCls}`
+                                } ${marking === s.id ? "opacity-50" : ""}`}
+                              >
+                                {label}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
                       {isOpen ? (
                         <div className="grid gap-1 border-t border-slate-100 bg-slate-50/70 p-2" style={{ gridTemplateColumns: "repeat(8, minmax(0, 1fr))" }}>
                           {days.map((d) => {

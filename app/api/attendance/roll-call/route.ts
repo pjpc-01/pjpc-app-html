@@ -45,6 +45,14 @@ async function pbCreate(token: string, collection: string, data: any) {
   return res.json()
 }
 
+async function pbDelete(token: string, collection: string, id: string) {
+  const res = await fetch(`${PB_URL}/api/collections/${collection}/records/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: token },
+  })
+  if (!res.ok && res.status !== 404) throw new Error(`删除 ${collection} 失败: ${res.status} ${await res.text()}`)
+}
+
 async function pbUpdate(token: string, collection: string, id: string, data: any) {
   const res = await fetch(`${PB_URL}/api/collections/${collection}/records/${id}`, {
     method: 'PATCH',
@@ -222,6 +230,132 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('点名失败:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
+// ── PATCH：单个学生改点名状态（手机上一人一键） ──
+// body: { studentId, date?, status: 'present'|'absent'|'leave'|'none' }
+//  · status='none' 就是撤销：删掉当天这条点名，缺勤扣的分原样加回去
+//  · 缺勤 → 出席/请假 也会把之前扣的分加回去
+//  · 改回缺勤才重新扣（一天只扣一次，靠「扣分 - 撤销」净额判断）
+export async function PATCH(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
+  try {
+    const body = await request.json()
+    const studentId: string = body.studentId || ''
+    const date: string = body.date || todayLocal()
+    const status: string = body.status || ''
+    const markedBy: string = body.markedBy || 'manual'
+    if (!studentId) return NextResponse.json({ error: '缺学生' }, { status: 400 })
+    if (!['present', 'absent', 'leave', 'none'].includes(status)) {
+      return NextResponse.json({ error: '状态不对' }, { status: 400 })
+    }
+
+    const token = await pbAuth()
+
+    // 学生档案
+    const stRes = await pbList(token, 'students', { perPage: '1', filter: `id="${studentId}"` })
+    const s = (stRes.items || [])[0]
+    if (!s) return NextResponse.json({ error: '学生不存在' }, { status: 404 })
+
+    // 当天这条点名
+    const addDays = (day: string, n: number) => {
+      const dt = new Date(`${day}T00:00:00.000Z`)
+      dt.setUTCDate(dt.getUTCDate() + n)
+      return dt.toISOString().slice(0, 10)
+    }
+    const existRes = await fetch(
+      `${PB_URL}/api/collections/roll_call/records?perPage=5&filter=${encodeURIComponent(
+        `student_id="${studentId}" && date >= "${date} 00:00:00.000Z" && date < "${addDays(date, 1)} 00:00:00.000Z"`,
+      )}`,
+      { headers: { Authorization: token } },
+    ).then(r => r.json())
+    const row = (existRes.items || [])[0]
+
+    // 当天缺勤扣分净额（扣过的减掉已撤销的）
+    const netDeducted = async () => {
+      const r = await fetch(
+        `${PB_URL}/api/collections/point_logs/records?perPage=50&filter=${encodeURIComponent(
+          `student="${studentId}" && reason~"${date}" && (reason~"点名缺勤" || reason~"撤销点名缺勤")`,
+        )}`,
+        { headers: { Authorization: token } },
+      ).then(x => x.json())
+      let net = 0
+      for (const l of r.items || []) {
+        const amt = Math.abs(Number(l.amount || 0))
+        net += String(l.reason || '').includes('撤销') ? -amt : amt
+      }
+      return net
+    }
+
+    const cfg = await settingsFor(token, s.center || '')
+    const pointsAbsent: number = cfg?.points_absent ?? -3
+    const pointsOn: boolean = cfg?.enable_points !== false
+    let refunded = 0
+    let deducted = 0
+
+    // 撤销：删记录 + 把扣的分加回去
+    if (status === 'none') {
+      const net = await netDeducted()
+      if (net > 0) {
+        await applyPoints({
+          studentId,
+          delta: net,
+          reason: `撤销点名缺勤 (${date})`,
+        })
+        refunded = net
+      }
+      if (row) await pbDelete(token, 'roll_call', row.id)
+      return NextResponse.json({ success: true, status: 'none', refunded, deleted: !!row })
+    }
+
+    const payload = {
+      student_id: studentId,
+      student_name: s.name || '',
+      date,
+      status,
+      center: s.center || '',
+      grade: s.grade || '',
+      notes: status === 'present' ? '点名出席' : status === 'absent' ? '点名缺勤' : '请假',
+      marked_by: markedBy,
+    }
+    const saved = row
+      ? await pbUpdate(token, 'roll_call', row.id, payload)
+      : await pbCreate(token, 'roll_call', payload)
+
+    // 积分：只有缺勤扣，出席/请假不扣
+    const net = await netDeducted()
+    if (status === 'absent') {
+      if (net <= 0 && pointsOn && pointsAbsent < 0 && s?.points_enabled !== false) {
+        await applyPoints({
+          studentId,
+          delta: pointsAbsent,
+          reason: `点名缺勤 (${date})`,
+          dedupeTerms: ['缺勤'],
+        })
+        deducted = pointsAbsent
+      }
+    } else if (net > 0) {
+      await applyPoints({
+        studentId,
+        delta: net,
+        reason: `撤销点名缺勤 (${date})`,
+      })
+      refunded = net
+    }
+
+    return NextResponse.json({
+      success: true,
+      status,
+      record: saved,
+      deducted,
+      refunded,
+      points_absent: pointsAbsent,
+    })
+  } catch (error: any) {
+    console.error('改点名状态失败:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
