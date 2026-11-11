@@ -9,7 +9,7 @@ import PageLayout from "@/components/layouts/PageLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/contexts/language-context"
-import { AlertCircle, MessageSquare, Send } from "lucide-react"
+import { AlertCircle, MessageSquare, MessageSquarePlus, Send } from "lucide-react"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 
 const STATUS_LABEL: Record<string, string> = { new: "待处理", reading: "处理中", done: "已完成" }
@@ -35,6 +35,13 @@ export default function SuggestionsPage() {
   const [status, setStatus] = useState("")
   const [draft, setDraft] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState("")
+
+  // 写建议（老师/管理员也能在这里直接提，不用绕去「我的建议」）
+  const [writeOpen, setWriteOpen] = useState(false)
+  const [newTarget, setNewTarget] = useState("center")
+  const [newContent, setNewContent] = useState("")
+  const [sending, setSending] = useState(false)
+  const [sentMsg, setSentMsg] = useState("")
 
   const load = useCallback(async () => {
     setLoading(true); setError("")
@@ -76,9 +83,71 @@ export default function SuggestionsPage() {
 
   const roleLabel = (r: string) => (r === "student" ? t("学生") : r === "teacher" ? t("老师") : t("职员"))
 
+  const submitSuggestion = async () => {
+    if (newContent.trim().length < 2) { setError(t("请写下你的建议")); return }
+    setSending(true); setError(""); setSentMsg("")
+    try {
+      const r = await fetch("/api/suggestions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target: newTarget, content: newContent }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d?.success) throw new Error(d?.error || `提交失败（HTTP ${r.status}）`)
+      setNewContent("")
+      setSentMsg(t("已提交，谢谢你的建议"))
+      setWriteOpen(false)
+      await load()
+    } catch (e: any) {
+      setError(String(e?.message || e))
+    } finally {
+      setSending(false)
+    }
+  }
+
   return (
     <PageLayout backUrl={userProfile?.role === "teacher" ? "/teacher-workspace" : "/"} title={t("建议箱")} description={t("老师、学生给中心和 PJPC 系统提的改进建议")}>
       <div className="p-4 md:p-6 max-w-4xl space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" onClick={() => { setWriteOpen(v => !v); setSentMsg("") }}>
+            <MessageSquarePlus className="mr-1.5 h-4 w-4" />{t("写建议")}
+          </Button>
+          {sentMsg && <span className="text-sm text-green-600">{sentMsg}</span>}
+        </div>
+
+        {writeOpen && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base"><MessageSquarePlus className="h-4 w-4" />{t("写建议")}</CardTitle>
+              <CardDescription>{t("提的是改进意见，不会影响成绩和积分")}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setNewTarget("center")}
+                  className={`rounded-md px-3 py-1.5 text-sm ${newTarget === "center" ? "bg-gray-900 text-white" : "border text-gray-600"}`}
+                >{t("给中心")}</button>
+                <button
+                  onClick={() => setNewTarget("app")}
+                  className={`rounded-md px-3 py-1.5 text-sm ${newTarget === "app" ? "bg-gray-900 text-white" : "border text-gray-600"}`}
+                >{t("给 PJPC 系统")}</button>
+              </div>
+              <textarea
+                className="min-h-[100px] w-full resize-y rounded-md border px-3 py-2 text-sm"
+                placeholder={newTarget === "center" ? t("比如：希望中心多办点活动、桌椅太旧、想加什么科目") : t("比如：哪个页面不好用、想加什么功能")}
+                value={newContent}
+                onChange={(e) => setNewContent(e.target.value)}
+              />
+              <div className="flex items-center gap-2">
+                <Button disabled={sending} onClick={submitSuggestion}>
+                  <Send className="mr-1.5 h-4 w-4" />{sending ? t("提交中…") : t("提交")}
+                </Button>
+                <Button variant="outline" disabled={sending} onClick={() => setWriteOpen(false)}>{t("取消")}</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="flex flex-wrap items-center gap-2">
           <select className="h-9 rounded-md border px-2 text-sm" value={target} onChange={(e) => setTarget(e.target.value)}>
             <option value="">{t("全部对象")}</option>
