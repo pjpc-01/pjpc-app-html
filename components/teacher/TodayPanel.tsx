@@ -9,7 +9,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { Clock, CalendarCheck, CheckCircle2, AlertCircle, Users, FileCheck2, RefreshCw } from "lucide-react"
 
 /**
- * 教师工作台「概览」（原「今日待办」）。
+ * 教师工作台「今日待办」卡片（导航里叫「概览」）。
  *
  * 三件事：今天几节课 / 待批作业 / 今天谁没来，另外一键点名。
  * （原来的「公告」卡片已从工作台移除 —— 工作台只留排班日历 + 概览 + 快速操作）
@@ -117,7 +117,7 @@ export default function TodayPanel({ teacherId }: { teacherId?: string }) {
       {/* 今日待办三行 */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base"><Clock className="h-4 w-4" />{t("概览")}</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base"><Clock className="h-4 w-4" />{t("今日待办")}</CardTitle>
           <CardDescription>{today.weekday_zh} · {today.date}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
