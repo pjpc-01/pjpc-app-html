@@ -3792,6 +3792,8 @@ export const ZH_TO_EN: Record<string, string> = {
   "点名缺勤": "Absent (roll call)",
   "已改回未点名": "Back to unmarked",
   "今天点名": "Today's roll call",
+  "点出席": "Mark present",
+  "取消点名": "Undo roll call",
   "点名和刷卡打卡是两套记录，互不改写": "Roll call and NFC check-in are separate records and never overwrite each other",
   "把今天已经刷卡的人先勾上，再补勾没刷卡的": "Tick everyone who already scanned today, then add the rest",
   "勾上已刷卡的人": "Tick those who scanned",

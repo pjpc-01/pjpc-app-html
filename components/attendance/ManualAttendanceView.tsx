@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Loader2, RefreshCw, Search, UserCheck, CalendarDays, Nfc } from "lucide-react"
+import { Loader2, RefreshCw, Search, UserCheck, CalendarDays, Nfc, Check, X } from "lucide-react"
 import { useStudents } from "@/hooks/useStudents"
 import { useLanguage } from "@/contexts/language-context"
 import { gradeLabel, gradeRank } from "@/lib/grades"
@@ -84,10 +84,8 @@ export default function ManualAttendanceView() {
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
 
   // ── 手机：点名字右边那三个按钮直接点名，再按一次撤销回未点名 ──
-  const markOne = async (s: any, next: "present" | "absent" | "leave") => {
+  const markOne = async (s: any, status: "present" | "absent" | "leave" | "none") => {
     if (marking) return
-    const cur = (grid[s.id] || {})[todayDay] || "none"
-    const status = cur === next ? "none" : next // 同一个再按 = 撤销，防按错
     setMarking(s.id)
     try {
       const res = await fetch("/api/attendance/roll-call", {
@@ -420,25 +418,29 @@ export default function ManualAttendanceView() {
                             )
                           })}
                           <td className="border-b border-l px-1.5 py-1">
-                            <div className="flex items-center justify-center gap-1">
-                              {([
-                                ["present", t("出席"), "bg-emerald-500 text-white", "border-emerald-400 text-emerald-700"],
-                                ["absent", t("缺勤"), "bg-rose-500 text-white", "border-rose-300 text-rose-600"],
-                                ["leave", t("请假"), "bg-sky-500 text-white", "border-sky-300 text-sky-700"],
-                              ] as const).map(([k, label, onCls, offCls]) => {
-                                const active = row[todayDay] === k
-                                return (
-                                  <button
-                                    key={k}
-                                    disabled={marking === s.id}
-                                    onClick={() => markOne(s, k)}
-                                    style={{ minWidth: 44 }}
-                                    className={`h-8 whitespace-nowrap rounded-md border px-1.5 text-[11px] font-medium transition ${active ? onCls : `bg-white ${offCls}`} ${marking === s.id ? "opacity-50" : ""}`}
-                                  >
-                                    {label}
-                                  </button>
-                                )
-                              })}
+                            <div className="flex items-center justify-center gap-1.5">
+                              <span className={`text-[11px] font-medium ${
+                                row[todayDay] === "present" ? "text-emerald-600"
+                                  : row[todayDay] === "absent" ? "text-rose-600"
+                                  : row[todayDay] === "leave" ? "text-sky-600"
+                                  : "text-slate-400"
+                              }`}>
+                                {row[todayDay] === "present" ? t("出席") : row[todayDay] === "absent" ? t("缺勤") : row[todayDay] === "leave" ? t("请假") : t("未点名")}
+                              </span>
+                              <button
+                                disabled={marking === s.id}
+                                onClick={() => markOne(s, row[todayDay] ? "none" : "present")}
+                                title={row[todayDay] ? t("取消点名") : t("点出席")}
+                                className={`flex h-7 w-7 items-center justify-center rounded-full border transition ${
+                                  !row[todayDay]
+                                    ? "border-emerald-400 text-emerald-600 hover:bg-emerald-50"
+                                    : row[todayDay] === "absent"
+                                      ? "border-rose-400 bg-rose-500 text-white hover:bg-rose-600"
+                                      : "border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600"
+                                } ${marking === s.id ? "opacity-50" : ""}`}
+                              >
+                                {!row[todayDay] ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+                              </button>
                             </div>
                           </td>
                           <td className="border-b border-l px-1 py-1 text-center font-medium text-slate-700">{count || ""}</td>
@@ -490,28 +492,30 @@ export default function ManualAttendanceView() {
                             </span>
                           </span>
                         </button>
-                        {/* 名字右边的点名状态：按一下就记，再按一次变回未点名 */}
-                        <div className="flex shrink-0 items-center gap-1">
-                          {([
-                            ["present", t("出席"), "bg-emerald-500 text-white", "border-emerald-500 text-emerald-700"],
-                            ["absent", t("缺勤"), "bg-rose-500 text-white", "border-rose-400 text-rose-600"],
-                            ["leave", t("请假"), "bg-sky-500 text-white", "border-sky-400 text-sky-700"],
-                          ] as const).map(([k, label, onCls, offCls]) => {
-                            const active = st === k
-                            return (
-                              <button
-                                key={k}
-                                disabled={marking === s.id}
-                                onClick={() => markOne(s, k)}
-                                style={{ minWidth: 46 }}
-                                className={`h-8 whitespace-nowrap rounded-md border px-1.5 text-[11px] font-medium transition ${
-                                  active ? onCls : `bg-white ${offCls}`
-                                } ${marking === s.id ? "opacity-50" : ""}`}
-                              >
-                                {label}
-                              </button>
-                            )
-                          })}
+                        {/* 名字右边：状态文字 + 一个按钮（没点名是勾，点过名变叉，再按回未点名） */}
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          <span className={`text-[11px] font-medium ${
+                            st === "present" ? "text-emerald-600"
+                              : st === "absent" ? "text-rose-600"
+                              : st === "leave" ? "text-sky-600"
+                              : "text-slate-400"
+                          }`}>
+                            {st === "present" ? t("出席") : st === "absent" ? t("缺勤") : st === "leave" ? t("请假") : t("未点名")}
+                          </span>
+                          <button
+                            disabled={marking === s.id}
+                            onClick={() => markOne(s, st === "none" || !st ? "present" : "none")}
+                            title={st === "none" || !st ? t("点出席") : t("取消点名")}
+                            className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${
+                              st === "none" || !st
+                                ? "border-emerald-400 text-emerald-600 active:bg-emerald-50"
+                                : st === "absent"
+                                  ? "border-rose-400 bg-rose-500 text-white"
+                                  : "border-emerald-500 bg-emerald-500 text-white"
+                            } ${marking === s.id ? "opacity-50" : ""}`}
+                          >
+                            {st === "none" || !st ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                          </button>
                         </div>
                       </div>
                       {isOpen ? (
