@@ -1,0 +1,11 @@
+[Unit]
+Description=PJPC 看门狗定时器（每 5 分钟）
+
+[Timer]
+OnBootSec=4min
+OnUnitActiveSec=5min
+AccuracySec=30s
+Unit=pjpc-watchdog.service
+
+[Install]
+WantedBy=timers.target

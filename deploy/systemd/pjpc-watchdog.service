@@ -1,0 +1,9 @@
+[Unit]
+Description=PJPC 看门狗（服务/页面/5xx/磁盘/备份 自检）
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/pjpc/pjpc-app-prod
+ExecStart=/usr/local/bin/node /home/pjpc/pjpc-app-prod/scripts/watchdog.mjs
+TimeoutStartSec=120

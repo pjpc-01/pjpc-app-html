@@ -1,4 +1,5 @@
 import { roleHas } from '@/lib/role-perms'
+import { rateLimit, clientIp } from '@/lib/rate-limit'
 import { NextRequest, NextResponse } from 'next/server'
 
 const POCKETBASE_URL = 'http://127.0.0.1:8090'
@@ -294,6 +295,27 @@ async function proxyRequest(method: string, request: NextRequest) {
   const pbPath = url.pathname.replace('/api/pocketbase-proxy', '')
   let targetPath = pbPath
   let targetSearch = method === 'GET' ? url.search : ''
+
+  // 密码登录限流：这是唯一能「试出口令」的入口，按真实来源 IP 挡爆破
+  // （PocketBase 自带的限流全是本机来的，开了也没用，还会把内部调用一起限死）
+  // auth-refresh 每个请求都会打，绝对不能进这里，否则全站掉线。
+  if (method === 'POST' && /^\/api\/collections\/(users|_superusers)\/auth-with-password\/?$/.test(pbPath)) {
+    const ik = process.env.PROXY_INTERNAL_KEY || ''
+    const internal = !!ik && request.headers.get('x-pjpc-internal') === ik
+    if (!internal) {
+      // 30 次 / 10 分钟 / 每个来源 IP：
+      // 中心所有老师通常共用一个出口 IP，阈值太紧会「一人打错、全办公室登不进」
+      // 30 次够 3 个人各错几次，对爆破仍然是 4300 次/天 的硬上限
+      const rl = rateLimit(`login:${clientIp(request)}`, 30, 10 * 60 * 1000)
+      if (!rl.ok) {
+        console.warn('[login-limit] 登录尝试过多:', clientIp(request))
+        return NextResponse.json(
+          { error: `登录尝试太多，请 ${Math.ceil(rl.retryAfter / 60)} 分钟后再试` },
+          { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } },
+        )
+      }
+    }
+  }
 
   const headers: Record<string, string> = {}
   let auditActor: { id: string; name: string; role: string } | null = null
