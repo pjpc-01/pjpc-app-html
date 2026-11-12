@@ -9,23 +9,20 @@
  * 退出码 0 = 通过（cron watchdog 模式：没输出就不推送）
  * 退出码 1 = 有问题
  */
+// 凭据只从 .env.local 读（scripts/lib/pb-auth.mjs），不再在代码里留兜底口令
+import { suToken } from './lib/pb-auth.mjs'
 const PB = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
-const EMAIL = process.env.POCKETBASE_ADMIN_EMAIL || 'admin@pjpc.com'
-const PASSWORD = process.env.POCKETBASE_ADMIN_PASSWORD || '1234567890'
 
 const money = (n) => Math.round((Number(n) || 0) * 100) / 100
 
 async function main() {
-  const auth = await fetch(`${PB}/api/collections/_superusers/auth-with-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ identity: EMAIL, password: PASSWORD }),
-  })
-  if (!auth.ok) {
-    console.log('❌ 体检失败：PocketBase 认证不通过')
+  let token = ''
+  try {
+    token = await suToken()
+  } catch (e) {
+    console.log('❌ 体检失败：', String(e).message || e)
     process.exit(1)
   }
-  const { token } = await auth.json()
   const H = { Authorization: token }
 
   async function all(collection) {

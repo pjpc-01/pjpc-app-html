@@ -215,10 +215,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
             console.log('🔧 [DEV] 尝试自动登录...')
             try {
-              // 使用真实用户账号自动登录 (users 表)
-              const devEmail = 'adrian.sacrafix@gmail.com'
-              const devPassword = '1234567890'
-              
+              // 开发环境自动登录：账号口令只能从 .env.local 的 DEV_AUTO_EMAIL / DEV_AUTO_PASSWORD 读。
+              // 以前这里直接写死了真实管理员的邮箱和口令，而仓库是公开的 —— 等于把门钥匙贴在门上。
+              const devEmail = process.env.NEXT_PUBLIC_DEV_AUTO_EMAIL || ''
+              const devPassword = process.env.NEXT_PUBLIC_DEV_AUTO_PASSWORD || ''
+              if (!devEmail || !devPassword) {
+                console.log('🔧 [DEV] 没配 DEV_AUTO_EMAIL / DEV_AUTO_PASSWORD，跳过自动登录')
+                setLoading(false)
+                return
+              }
+
               const authData = await pbInstance.collection('users').authWithPassword(devEmail, devPassword)
               console.log('✅ 自动登录成功:', authData.record.email)
               
