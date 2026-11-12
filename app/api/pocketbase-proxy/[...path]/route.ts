@@ -216,6 +216,21 @@ const ADMIN_ONLY = new Set([
 const STAFF_ROLES = new Set(['admin', 'teacher', 'office_admin'])
 
 /**
+ * 财务数据：只有这些角色能读。
+ * 老师要带课、点名、看学生，但没理由看全中心的发票和收款
+ * —— 之前老师账号 GET 是不设防的，能直接读 500 多张发票、300 多笔收款。
+ */
+const FINANCE_ROLES = new Set(['admin', 'office_admin', 'boss', 'accountant'])
+const FINANCE_COLLECTIONS = new Set([
+  'invoices', 'payments', 'receipts', 'refunds', 'expenses',
+  'student_fees', 'student_credits', 'debts', 'debt_payments',
+  'budgets', 'bank_accounts', 'bank_transactions',
+  'utility_bills', 'reconciliation_runs', 'fee_packages', 'fee_package_items',
+  'salary_parameters', 'teacher_salary_structures',
+  'payslip_settings', 'receipt_settings', 'invoice_settings',
+])
+
+/**
  * 写操作守门：集合 → 权限 key（跟侧边栏开关同一张 role_permissions 表）。
  * 开关关掉的页面，对应集合也不能直接通过代理写（否则界面挡住、接口还能改）。
  */
@@ -269,6 +284,8 @@ function withStudentFilter(pbPath: string, search: string, field: string, sid: s
 const TEACHER_SELF_FIELD: Record<string, string> = {
   teacher_teaching_reports: 'teacher_id',
   teacher_leave_record: 'teacher_id',
+  // 老师可以看自己的工资/工资单，但只能看自己的那几条
+  teacher_salary_records: 'teacher_id',
 }
 
 async function proxyRequest(method: string, request: NextRequest) {
@@ -354,6 +371,9 @@ async function proxyRequest(method: string, request: NextRequest) {
       } else if (!STAFF_ROLES.has(session.role)) {
         // 未知/未开放角色
         return NextResponse.json({ error: '没有权限' }, { status: 403 })
+      } else if (col && FINANCE_COLLECTIONS.has(col) && !FINANCE_ROLES.has(session.role)) {
+        // 财务数据只给财务角色看：老师读发票/收款一律挡
+        return NextResponse.json({ error: '没有权限查看财务数据' }, { status: 403 })
       } else if (session.role !== 'admin' && method !== 'GET' && col && COLLECTION_PERM[col] && !(await roleHas(session.role, COLLECTION_PERM[col]))) {
         // ★ 写操作按权限表拦（开关关了就不能改数据，不只是看不见菜单）
         return NextResponse.json(
