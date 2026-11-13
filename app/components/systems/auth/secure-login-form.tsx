@@ -15,9 +15,15 @@ import { Eye, EyeOff, GraduationCap, AlertTriangle, CheckCircle, Loader2, Shield
 import { useNfcAuth } from "@/contexts/nfc-auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import LanguageSwitcher from "@/components/LanguageSwitcher"
+import { useCompanyProfile } from "@/lib/company-profile"
 
 export default function SecureLoginForm() {
   const { t } = useLanguage()
+  // 机构名字和 logo 从 company_profile 取（换客户不用改代码），取不到才用旧文案
+  const { profile: company } = useCompanyProfile()
+  const orgName = company.name || t("温馨小屋")
+  const orgLogo = company.logo || "/logo.png"
+  const orgSubtitle = company.slogan || t("安亲补习中心管理系统")
   const { signIn, signUp, resetPassword } = useAuth()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
@@ -287,8 +293,8 @@ export default function SecureLoginForm() {
           <div className="flex justify-center mb-4">
             <div className="bg-white p-4 rounded-2xl shadow-lg border-2 border-yellow-200">
               <img 
-                src="/logo.png" 
-                alt={t("温馨小屋 - 安亲补习中心")} 
+                src={orgLogo} 
+                alt={orgName} 
                 className="h-16 w-auto"
                 onError={(e) => {
                   // 如果logo文件不存在，显示备用图标
@@ -304,8 +310,8 @@ export default function SecureLoginForm() {
               </div>
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">{t("温馨小屋")}</h1>
-          <p className="text-gray-600">{t("安亲补习中心管理系统")}</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">{orgName}</h1>
+          <p className="text-gray-600">{orgSubtitle}</p>
         </div>
 
         <Card className="shadow-lg">

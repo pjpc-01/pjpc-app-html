@@ -10,7 +10,36 @@ export const CLAIM_STATUS_TEXT: Record<string, string> = {
   rejected: '已驳回 Rejected',
 }
 
-export function generateClaimFormHTML(c: ClaimForm): string {
+export interface ClaimCompanyInfo {
+  name?: string
+  name_en?: string
+  address?: string
+  phone?: string
+  phone2?: string
+  email?: string
+  slogan?: string
+}
+
+/**
+ * 报销单抬头的公司资料。
+ * 以前这里是写死的（温馨小屋 / 地址 / 电话 / 邮箱），换客户就得改代码；
+ * 现在由调用方从 company_profile 传入，没传就留空，不再硬编码。
+ */
+export function generateClaimFormHTML(c: ClaimForm, company: ClaimCompanyInfo = {}): string {
+  const co = {
+    name: (company.name || '').trim(),
+    name_en: (company.name_en || '').trim(),
+    address: (company.address || '').trim(),
+    phone: (company.phone || '').trim(),
+    phone2: (company.phone2 || '').trim(),
+    email: (company.email || '').trim(),
+    slogan: (company.slogan || '').trim(),
+  }
+  const contactLines = [
+    co.address,
+    [co.phone, co.phone2].filter(Boolean).join(' / '),
+    co.email,
+  ].filter(Boolean).join('<br>')
   const items = (Array.isArray(c.items) ? c.items : []) as ClaimItem[]
   const rows = items.map((it, i) => {
     const amt = typeof it.amount === 'number' ? it.amount.toFixed(2) : '0.00'
@@ -49,8 +78,8 @@ export function generateClaimFormHTML(c: ClaimForm): string {
     .foot{text-align:center;font-size:9px;color:#5a606b;margin-top:16px;}
   </style></head><body>
     <div class="head">
-      <div><div class="org">温馨小屋</div><div class="en">Pusat Jagaan Prospek Cemerlang · PJPC BATU14</div><div class="slogan">自信自强 · 勤学善思 · 合作共进 · 全面发展</div></div>
-      <div class="contact">1, Jalan PU10/8, Taman Puchong Utama<br>012-2270775 / 03-80519553<br>Sarawong080773@hotmail.com</div>
+      <div><div class="org">${esc(co.name)}</div><div class="en">${esc(co.name_en)}</div><div class="slogan">${esc(co.slogan)}</div></div>
+      <div class="contact">${contactLines}</div>
     </div>
     <h1>员工费用报销单  CLAIM FORM</h1>
     <div class="sub">状态：${esc(status)}　·　报销编号：${esc(c.claim_no)}</div>
