@@ -11,74 +11,16 @@ import { scoreToGrade } from '@/lib/utils'
 import { round2, sumLines, subtotalOf } from '@/lib/finance-calc'
 import { invoiceView } from '@/lib/invoice-build'
 
-// ── Enrichment Class 名单：学生(中文名) → 参加的课程名（2026-10-16 依最新分班表更新，57 人） ──
-export const ENRICHMENT_MAP: Record<string, string> = {
-  "亚沙迪": "BC",
-  "亚菲": "BC",
-  "伊乐": "BC",
-  "伍宇恒": "BM Lvl 2 · BI",
-  "伍若淇": "BI",
-  "何泽田": "BI",
-  "侯俊昊": "BC LVL 1",
-  "刘晋宏": "BM Lvl 1",
-  "刘权霆": "BI",
-  "刘芝榛": "BM Lvl 2",
-  "加华": "BC",
-  "卡立": "BC LVL 2",
-  "叶凯恒": "BM Lvl 1 · BC · BI",
-  "叶凯轩": "BM Lvl 1",
-  "叶程恺": "BM Lvl 1",
-  "叶纹仙": "BM Lvl 2",
-  "叶纹君": "BM Lvl 1",
-  "周颁哲": "BC LVL 2",
-  "塔润雅": "BM Lvl 1 · BC · BI",
-  "帆提": "BC",
-  "张耀天": "BM Lvl 2",
-  "张耀阳": "BM Lvl 2",
-  "张艺谋": "BM Lvl 2",
-  "徐嘉霃": "BM Lvl 2 · BC LVL 2 · BI",
-  "徐誉洋": "BM Lvl 1 · BC · BI",
-  "拉亦来卡": "BC LVL 1",
-  "朱宸妍": "BI",
-  "李珮瑄": "BM Lvl 1 · BC · BI",
-  "林倢慧": "BM Lvl 1",
-  "林湧昇": "BM Lvl 2",
-  "沈仁平": "BM Lvl 1 · BC · BI",
-  "潘晴": "BM Lvl 2",
-  "王沅菖": "BM Lvl 2 · BC · BI",
-  "程宣瑜": "BC",
-  "程芊瑜": "BC LVL 2",
-  "罗兆俊": "BC",
-  "罗玉晶": "BM Lvl 2",
-  "胡建沣": "BM Lvl 2 · BC LVL 2 · BI",
-  "艾思琳": "BM Lvl 2",
-  "艾曼达": "BC",
-  "艾登": "BM Lvl 1 · BC · BI",
-  "艾迷": "BC LVL 2",
-  "苏佳炆": "BM Lvl 2",
-  "苏宏杰": "BM Lvl 1 · BC · BI",
-  "莎拉": "BC LVL 1",
-  "萃森": "BC LVL 1",
-  "许瑜桐": "BM Lvl 2",
-  "郑俊浠": "BM Lvl 2 · BC",
-  "郑皓键": "BM Lvl 2",
-  "陆美玥": "BI",
-  "陆美珈": "BM Lvl 2 · BI",
-  "陈姿錡": "BM Lvl 1 · BC · BI",
-  "陈宗政": "BM Lvl 2",
-  "黄于恩": "BM Lvl 1 · BI",
-  "黄柏玮": "BC LVL 1",
-  "龙泓升": "BM Lvl 2 · BC LVL 1",
-  "龙泓宇": "BM Lvl 1 · BC LVL 1",
-}
-// 由学生名字(含中文)解析出 Enrichment Class 课程名，无则返回 ''
-export const resolveEnrichment = (name?: string): string => {
-  if (!name) return ''
-  return Object.entries(ENRICHMENT_MAP).find(([cn]) => name.includes(cn))?.[1] || ''
-}
+// ── Enrichment（补习班）科目 ────────────────────────────────────────────────
+// 以前这里写死了 57 个学生姓名 → 课程名的对照表（公开仓库里等于泄漏学生名单，
+// 而且学生一转班就得改代码）。现在存在 students.enrichment_classes 字段，
+// 由「学生档案」编辑，报告只负责显示。
+export const resolveEnrichment = (_name?: string, enrichment?: string): string =>
+  String(enrichment || '').trim()
+
 // Enrichment 各科评价条目：把合并课程名拆成 [{subject, evaluation}]（供老师逐科写评价）
-export const resolveEnrichmentSubjects = (name?: string): { subject: string; evaluation: string }[] => {
-  const merged = resolveEnrichment(name)
+export const resolveEnrichmentSubjects = (_name?: string, enrichment?: string): { subject: string; evaluation: string }[] => {
+  const merged = resolveEnrichment(undefined, enrichment)
   if (!merged) return []
   return merged.split(/[·,、]/).map(s => s.trim()).filter(Boolean)
     .map(subject => ({ subject, evaluation: '' }))
@@ -1161,7 +1103,7 @@ ${monthlySection}
       // Enrichment Class：逐科显示。优先用报告的 enrichment[]；否则回退名单课程名
       const ecSubjects = Array.isArray(report.enrichment) && report.enrichment.length > 0
         ? report.enrichment
-        : (report.enrichment_class || resolveEnrichment(student?.name))
+        : (report.enrichment_class || resolveEnrichment(student?.name, (student as any)?.enrichment_classes))
             .split(/[·,、]/)
             .map((s: string) => ({ subject: s.trim(), evaluation: '' }))
             .filter((o: any) => o.subject)

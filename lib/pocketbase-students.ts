@@ -44,6 +44,8 @@ export interface Student {
   // 🔄 中心关联 — 新系统使用 centerId (relation)，旧版兼容用 center (text)
   centerId?: string
   center?: string
+  /** Enrichment（补习班）科目，多科用 · 分隔；学生报告按它逐科显示 */
+  enrichment_classes?: string
 
   // 扩展信息
   nric?: string
