@@ -108,6 +108,7 @@ export default function StudentForm({
     dob: '',
     // 新增字段
     nric: '',
+    enrichment_classes: '',
     school: '',
     emergencyContact: '',
     emergencyPhone: '',
@@ -166,6 +167,7 @@ export default function StudentForm({
         is_peralihan: student.is_peralihan || false,
         // 新增字段
         nric: student.nric || '',
+        enrichment_classes: (student as any).enrichment_classes || '',
         school: student.school || '',
         emergencyContact: student.emergencyContact || '',
         emergencyPhone: student.emergencyPhone || '',
@@ -670,6 +672,17 @@ export default function StudentForm({
                   className={errors.nric ? 'border-red-500' : ''}
                 />
                 {errors.nric && <p className="text-red-500 text-sm mt-1">{errors.nric}</p>}
+              </div>
+
+              <div>
+                <Label htmlFor="enrichment_classes">{t("Enrichment 补习科目")}</Label>
+                <Input
+                  id="enrichment_classes"
+                  value={formData.enrichment_classes || ''}
+                  onChange={(e) => handleInputChange('enrichment_classes' as any, e.target.value)}
+                  placeholder={t("例如: BM Lvl 1 · BC · BI（多科用 · 分隔，没有就留空）")}
+                />
+                <p className="text-xs text-gray-500 mt-1">{t("学生报告会按这里写的科目逐科显示，以前是靠代码里的名单")}</p>
               </div>
 
               <div>

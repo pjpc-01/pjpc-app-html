@@ -346,10 +346,9 @@ export default function StudentReportContent() {
     }
   }
 
-  // Use shared ENRICHMENT_MAP / resolveEnrichment from pdf-generator (single source of truth)
   const studentName = (student as any)?.name || ''
-  // 学生中文名 → 命中的 Enrichment 课程名（未命中则为空 → 不显示栏）
-  const matchedEnrichment = resolveEnrichment(studentName)
+  // Enrichment 课程名来自学生档案（students.enrichment_classes），不再按姓名查死名单
+  const matchedEnrichment = resolveEnrichment(studentName, (student as any)?.enrichment_classes)
   // 显示条件：在名单上，或报告已存 Enrichment（客制课程，如 TEP）
   const showEnrichment = !!matchedEnrichment || !!report?.enrichment_class || (Array.isArray(report?.enrichment) && report.enrichment.length > 0)
   // Enrichment 各科评价：优先用报告已存的 [{subject, evaluation}]，否则从名单 / enrichment_class 生成（空评价）
@@ -468,7 +467,9 @@ export default function StudentReportContent() {
         dob: student.dob,
         grade: student.grade,
         avatar: avatarSrc,
-      }, { pdfPageImages, monthlyTests, monthlyYear: Number((report as any)?.year || 0) })
+        // PDF 生成器要用它来显示 Enrichment 科目（以前靠代码里的姓名名单）
+        enrichment_classes: (student as any).enrichment_classes,
+      } as any, { pdfPageImages, monthlyTests, monthlyYear: Number((report as any)?.year || 0) })
     } catch (e: any) {
       alert("PDF下载失败: " + (e.message || "未知错误"))
     } finally {

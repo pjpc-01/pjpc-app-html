@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback, useRef } from "react"
 import { AnnouncementItem, Student, StudentPoints } from "../types"
 import { isSameCenter, normalizeCenter } from "../utils"
 import { apiService } from "../services/api"
-import { MOCK_STUDENTS } from "@/lib/mock-data"
 
 interface TVBoardDataResult {
   announcements: AnnouncementItem[]
@@ -74,23 +73,16 @@ const processData = (
   try {
     // 检查是否有错误
     if (!studentsResult.success) {
-      debugLog('学生数据获取失败，使用 Mock 数据', studentsResult.error)
-      
-      const mockStudents = MOCK_STUDENTS.filter(s => s.center === center)
-      setStudents(mockStudents as any)
-      
-      const mockPoints = mockStudents.map(s => ({
-        student_id: s.id,
-        points: Math.floor(Math.random() * 500) + 100,
-        last_update: new Date().toISOString()
-      }))
-      setPoints(mockPoints as any)
-      
-      setAnnouncements([{ id: 'mock-1', content: 'Welcome to TV Board (Mock Mode)!', type: 'info', center: center }] as any)
+      // 以前这里拿一份假学生名单 + 随机积分顶上，看板上会出现不存在的小孩和假排名。
+      // 取不到就老实显示空 + 一条提示，别给假数据。
+      debugLog('学生数据获取失败，显示空看板', studentsResult.error)
+      setStudents([] as any)
+      setPoints([] as any)
+      setAnnouncements([{ id: 'err-1', content: '看板取数失败，请检查网络或联系管理员', type: 'warning', center }] as any)
       setTransactions([])
       setLastUpdate(new Date())
-      setReady(true) 
-      setError(null) 
+      setReady(true)
+      setError(String(studentsResult.error || '学生数据获取失败'))
       return
     }
 
@@ -185,11 +177,11 @@ export function useTVBoardData(center: string): TVBoardDataResult {
       } catch (err) {
         // 只有在真的取不到时才退回 Mock，并且把错误显示出来（别静默假装有数据）
         debugLog('取数失败，退回 Mock:', err)
+        // 同样不再用假数据：空列表 + 提示
         try {
-          const mockStudents = MOCK_STUDENTS.filter(s => s.center === center)
-          setStudents(mockStudents as any)
-          setPoints(mockStudents.map(s => ({ student_id: s.id, points: 0, last_update: new Date().toISOString() })) as any)
-          setAnnouncements([{ id: 'mock-err', content: '看板取数失败，显示的是占位数据，请检查网络或接口', type: 'warning', center }] as any)
+          setStudents([] as any)
+          setPoints([] as any)
+          setAnnouncements([{ id: 'err-2', content: '看板取数失败，请检查网络或接口', type: 'warning', center }] as any)
           setTransactions([])
           setLastUpdate(new Date())
           setReady(true)
