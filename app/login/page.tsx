@@ -5,9 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { GraduationCap } from 'lucide-react'
 import SecureLoginForm from '../components/systems/auth/secure-login-form'
 import { useLanguage } from '@/contexts/language-context'
+import { useCompanyProfile } from '@/lib/company-profile'
 
 export default function LoginPage() {
   const { t } = useLanguage()
+  // 机构名从 company_profile 取，换客户不用改代码
+  const { profile } = useCompanyProfile()
+  const orgName = profile.name || t("安亲班管理系统")
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
@@ -18,7 +22,7 @@ export default function LoginPage() {
               <GraduationCap className="h-8 w-8 text-white" />
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-gray-800" style={{ fontFamily: 'Nunito, sans-serif' }}>{t("安亲班管理系统")}</h1>
+          <h1 className="text-2xl font-bold text-gray-800" style={{ fontFamily: 'Nunito, sans-serif' }}>{orgName}</h1>
           <p className="text-amber-700/70 text-sm mt-1">{t("请登录您的账户")}</p>
         </div>
 

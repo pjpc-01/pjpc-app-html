@@ -1160,7 +1160,17 @@ ${monthlySection}
       { id: "summary", type: "summary", title: "五、总结", enabled: false },
     ]
     // ⛔ 学生报告不显示「总结」（2026-09-28 用户要求）
-    return secs.filter((s: any) => s.enabled && s.type !== 'summary').map((section: any) => {
+    // ⛔ 4-6 年级报告不显示「存在问题」「改进措施」（2026-11-12 用户要求）
+    const gRaw = String((student as any)?.grade || '').trim()
+    const gNum = (() => {
+      const m = gRaw.match(/(\d)/)
+      if (m) return parseInt(m[1], 10)
+      const cn: Record<string, number> = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6 }
+      for (const k of Object.keys(cn)) if (gRaw.includes(k)) return cn[k]
+      return 0
+    })()
+    const hidePI = gNum >= 4 && gNum <= 6
+    return secs.filter((s: any) => s.enabled && s.type !== 'summary' && !(hidePI && (s.type === 'problems' || s.type === 'improvements'))).map((section: any) => {
       switch(section.type) {
         case 'problems':
           return `<div class="card">

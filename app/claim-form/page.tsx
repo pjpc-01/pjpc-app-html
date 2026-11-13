@@ -14,6 +14,7 @@ import { Plus, Trash2, Printer, Eye, Pen, CheckCircle2, XCircle, Loader2 } from 
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useClaimForms, type ClaimForm, type ClaimItem, CLAIM_STATUS_LABEL, type ClaimStatus } from "@/hooks/useClaimForms"
 import { generateClaimFormHTML } from "@/lib/claim-form-pdf"
+import { useCompanyProfile } from "@/lib/company-profile"
 import { useLanguage } from "@/contexts/language-context"
 
 const STATUS_COLOR: Record<string, string> = {
@@ -50,7 +51,8 @@ export default function ClaimFormPage() {
   const [memoId, setMemoId] = useState<string | null>(null)
   const [comment, setComment] = useState("")
 
-  useEffect(() => { if (view) setPrintHtml(generateClaimFormHTML(view)) }, [view])
+  const { profile: company } = useCompanyProfile()
+  useEffect(() => { if (view) setPrintHtml(generateClaimFormHTML(view, company)) }, [view, company])
 
   const tot = (form.items || []).reduce((s, it) => s + (Number(it.amount) || 0), 0)
 
