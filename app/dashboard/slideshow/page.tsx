@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Plus, Trash2, GripVertical, Play, Pause, Settings2, ChevronLeft, ChevronRight, LayoutGrid, MonitorPlay, Trophy, Cake, Calendar, Megaphone, X, MoveUp, MoveDown, Palette, Eye, EyeOff, Target } from "lucide-react"
+import { Loader2, Plus, Trash2, GripVertical, Play, Pause, Settings2, ChevronLeft, ChevronRight, LayoutGrid, MonitorPlay, Trophy, Cake, Calendar, Megaphone, X, MoveUp, MoveDown, Palette, Eye, EyeOff, Target, Gift } from "lucide-react"
 import { LeaderboardList, type LeaderboardStudent } from "@/components/shared/LeaderboardList"
 import ExamTargetsWidget from "@/components/dashboard/ExamTargetsWidget"
 import { useLanguage } from "@/contexts/language-context"
@@ -20,7 +20,7 @@ interface Student {
 
 interface WidgetConfig {
   id: string
-  type: "leaderboard" | "birthdays" | "events" | "announcement" | "examTargetsRotate" | "examTargetsOverview"
+  type: "leaderboard" | "birthdays" | "events" | "announcement" | "examTargetsRotate" | "examTargetsOverview" | "contribution"
   title: string
   settings: Record<string, any>
   enabled: boolean
@@ -43,6 +43,7 @@ const WIDGET_TYPES: WidgetTypeInfo[] = [
   { type: "announcement", label: "公告栏", icon: <Megaphone className="h-4 w-4" />, defaultTitle: "公告栏", defaultSettings: { text: "" } },
   { type: "examTargetsRotate", label: "考试目标（轮播）", icon: <Target className="h-4 w-4" />, defaultTitle: "考试目标", defaultSettings: { mode: "rotate", interval: 7 } },
   { type: "examTargetsOverview", label: "考试目标（总览）", icon: <Target className="h-4 w-4" />, defaultTitle: "考试目标 · 全班", defaultSettings: { mode: "overview" } },
+  { type: "contribution", label: "贡献物品", icon: <Gift className="h-4 w-4" />, defaultTitle: "贡献物品 · 谁贡献了多少", defaultSettings: {} },
 ]
 
 /** 考试目标总览在幻灯片里每页人数（与拆分幻灯片的逻辑保持一致）
@@ -53,7 +54,15 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: "w1", type: "leaderboard", title: "积分排行榜", settings: { limit: 10 }, enabled: true },
   { id: "w2", type: "birthdays", title: "本月寿星", settings: { showAge: false }, enabled: true },
   { id: "w3", type: "events", title: "活动预告", settings: { events: [] }, enabled: true },
+  { id: "w4", type: "contribution", title: "贡献物品 · 谁贡献了多少", settings: {}, enabled: true },
 ]
+
+/** 老存档里没有「贡献物品」这个组件，载入时自动补一个，免得还要手动加 */
+function withContribution(list: WidgetConfig[]): WidgetConfig[] {
+  if (!Array.isArray(list) || list.length === 0) return DEFAULT_WIDGETS
+  if (list.some(w => w.type === "contribution")) return list
+  return [...list, { id: "w_contrib", type: "contribution", title: "贡献物品 · 谁贡献了多少", settings: {}, enabled: true }]
+}
 
 // ─── Main Page ──────────────────────────────────────────────────────
 export default function DashboardPage() {
@@ -250,6 +259,113 @@ function AnnouncementWidget({ text, onUpdate }: { text: string; onUpdate?: (text
   )
 }
 
+// ─── Contribution Widget（贡献物品 + 谁贡献了多少） ─────────────────
+// 给学生看的：这一区有什么可以贡献积分的升级物品，谁贡献了多少分。
+// 数据来源与「贡献积分管理」一致：contribution_items + /api/contribution/item-ranking
+function ContributionWidget({ centerCode }: { centerCode: string }) {
+  const { t } = useLanguage()
+  const [items, setItems] = useState<any[]>([])
+  const [ranks, setRanks] = useState<Record<string, any>>({})
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      setLoading(true)
+      try {
+        const r = await fetch('/api/pocketbase-proxy/api/collections/contribution_items/records?perPage=50&sort=-created')
+        const d = await r.json()
+        const all = (d?.items || []) as any[]
+        const code = centerCode && centerCode !== 'all' ? centerCode : ''
+        const list = all.filter(x => {
+          const st = String(x.status || '').toLowerCase()
+          if (['archived', 'deleted', 'cancelled', 'removed', 'claimed'].includes(st)) return false
+          if (!code) return true
+          const c = String(x.center || '')
+          return !c || c === 'all' || c === code
+        })
+        if (!alive) return
+        setItems(list)
+        setLoading(false)
+        // 物品数量很少，逐个取榜最准（跟管理端显示一致）
+        const out: Record<string, any> = {}
+        for (const it of list.slice(0, 12)) {
+          try {
+            const rr = await fetch(`/api/contribution/item-ranking?itemId=${it.id}`)
+            const jj = await rr.json()
+            if (jj?.success) out[it.id] = jj
+          } catch {}
+        }
+        if (alive) setRanks(out)
+      } catch {
+        if (alive) { setItems([]); setLoading(false) }
+      }
+    })()
+    return () => { alive = false }
+  }, [centerCode])
+
+  if (loading) {
+    return <div className="py-10 text-center"><Loader2 className="h-6 w-6 mx-auto animate-spin text-gray-300" /></div>
+  }
+  if (!items.length) {
+    return <p className="text-gray-400 text-sm text-center py-10">{t("这个分行还没有贡献物品")}</p>
+  }
+
+  // 有贡献的排前面（电视上先看到有人气的）
+  const sortedItems = [...items].sort((a, b) => {
+    const pa = Number(ranks[a.id]?.item?.current_points ?? a.current_points ?? 0)
+    const pb = Number(ranks[b.id]?.item?.current_points ?? b.current_points ?? 0)
+    return pb - pa
+  })
+  const cols = sortedItems.length > 3 ? 2 : 1
+  return (
+    <div className="h-full overflow-hidden"
+      style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: 16, alignContent: cols === 1 ? 'stretch' : 'start' }}>
+      {sortedItems.map((it) => {
+        const rank = ranks[it.id]
+        const cur = Number(rank?.item?.current_points ?? it.current_points ?? 0)
+        const target = Number(rank?.item?.target_points ?? it.target_points ?? 0)
+        const pct = target > 0 ? Math.min(100, Math.round((cur / target) * 100)) : 0
+        const top = (rank?.rows || []).slice(0, 5)
+        const donors = Number(rank?.donors || 0)
+        const img = it.image ? `/api/pocketbase-proxy/api/files/${it.collectionId}/${it.id}/${it.image}` : ''
+        return (
+          <div key={it.id} className="flex items-center gap-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div className="shrink-0 overflow-hidden rounded-2xl bg-gray-100" style={{ width: cols === 1 ? 180 : 110, height: cols === 1 ? 180 : 110 }}>
+              {img
+                ? <img src={img} alt={it.name} className="h-full w-full object-cover" />
+                : <div className="flex h-full w-full items-center justify-center text-2xl">🎁</div>}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="truncate font-bold text-gray-900" style={{ fontSize: cols === 1 ? 34 : 22 }}>{it.name}</p>
+                <span className="shrink-0 text-gray-500" style={{ fontSize: cols === 1 ? 18 : 14 }}>{donors} {t("人贡献")}</span>
+              </div>
+              <div className="mt-2 w-full overflow-hidden rounded-full bg-gray-100" style={{ height: cols === 1 ? 14 : 10 }}>
+                <div className="h-full rounded-full bg-amber-400" style={{ width: `${pct}%` }} />
+              </div>
+              <p className="mt-1 text-gray-600" style={{ fontSize: cols === 1 ? 20 : 14 }}>{t("已筹")} {cur} {target > 0 ? `/ ${target}` : ''} · {pct}%</p>
+              {top.length > 0 && (
+                <div className="mt-1.5 space-y-0.5">
+                  {top.map((r: any) => (
+                    <div key={r.studentId} className="flex items-center justify-between gap-2" style={{ fontSize: cols === 1 ? 24 : 16 }}>
+                      <span className="truncate text-gray-700">
+                        <span className="mr-1.5 inline-block text-gray-400" style={{ width: 16, fontSize: 13 }}>{r.rank}</span>
+                        {r.studentName}
+                      </span>
+                      <span className="shrink-0 font-semibold text-amber-700">{r.points}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ─── Slideshow Overlay ──────────────────────────────────────────────
 function SlideshowOverlay({
   centerName, widgets, students, router, eventsByWidget, announcementsByWidget, onClose
@@ -382,6 +498,7 @@ function SlideshowOverlay({
       case "events": return <EventsWidget
         events={events.length > 0 ? events : (eventsByWidget[w.id] || w.settings.events || [])} />
       case "announcement": return <AnnouncementWidget text={announcementsByWidget[w.id] || w.settings.text || ""} />
+      case "contribution": return <ContributionWidget centerCode={centerCode} />
       default: return null
     }
   }
@@ -480,7 +597,7 @@ function DashboardContent() {
         const data = await res.json()
         const rec = data?.items?.[0]
         if (rec) {
-          setWidgets(rec.widgets || DEFAULT_WIDGETS)
+          setWidgets(withContribution(rec.widgets || DEFAULT_WIDGETS))
           setEventsByWidget(rec.events || {})
           setAnnouncementsByWidget(rec.announcements || {})
           setWidgetRecordId(rec.id)
@@ -491,7 +608,7 @@ function DashboardContent() {
             const saved = localStorage.getItem(legacyKey)
             if (saved) {
               const parsed = JSON.parse(saved)
-              setWidgets(parsed.widgets || DEFAULT_WIDGETS)
+              setWidgets(withContribution(parsed.widgets || DEFAULT_WIDGETS))
               setEventsByWidget(parsed.events || {})
               setAnnouncementsByWidget(parsed.announcements || {})
             } else {
@@ -677,6 +794,8 @@ function DashboardContent() {
           text={announcementsByWidget[w.id] || w.settings.text || ""}
           onUpdate={editMode ? (text) => { setAnnouncementsByWidget(prev => ({ ...prev, [w.id]: text })); saveWidgets(widgets, eventsByWidget, { ...announcementsByWidget, [w.id]: text }) } : undefined}
         />
+      case "contribution":
+        return <ContributionWidget centerCode={selectedCenter || centerName} />
       default:
         return null
     }
