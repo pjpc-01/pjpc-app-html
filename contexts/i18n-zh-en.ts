@@ -3296,6 +3296,8 @@ export const ZH_TO_EN: Record<string, string> = {
   "已添加可兑换物品": "Redeemable item added",
   "已申请兑换": "Redemption requested",
   "已筹": "Raised",
+  "已开启": "On",
+  "模板开关：每种组件只有一个，点一下开启或关闭": "Widget switch: one of each, click to turn on or off",
   "这个分行还没有贡献物品": "No contribution items for this centre yet",
   "人贡献": "contributors",
   "贡献物品": "Contribution Items",

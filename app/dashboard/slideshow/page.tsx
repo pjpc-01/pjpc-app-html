@@ -57,11 +57,23 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: "w4", type: "contribution", title: "贡献物品 · 谁贡献了多少", settings: {}, enabled: true },
 ]
 
-/** 老存档里没有「贡献物品」这个组件，载入时自动补一个，免得还要手动加 */
-function withContribution(list: WidgetConfig[]): WidgetConfig[] {
-  if (!Array.isArray(list) || list.length === 0) return DEFAULT_WIDGETS
-  if (list.some(w => w.type === "contribution")) return list
-  return [...list, { id: "w_contrib", type: "contribution", title: "贡献物品 · 谁贡献了多少", settings: {}, enabled: true }]
+/** 载入存档时整理一次：
+ *  1) 同一个模板只留一个（以前点两次「添加」就会叠出两份，改成合并成一份并记为开启）
+ *  2) 没有「贡献物品」的老存档自动补上
+ */
+function normalizeWidgets(list: WidgetConfig[]): WidgetConfig[] {
+  if (!Array.isArray(list) || list.length === 0) return DEFAULT_WIDGETS.map(w => ({ ...w, settings: { ...w.settings } }))
+  const out: WidgetConfig[] = []
+  for (const w of list) {
+    if (!w || !w.type) continue
+    const dup = out.find(x => x.type === w.type)
+    if (dup) { if (w.enabled) dup.enabled = true; continue }
+    out.push({ ...w, settings: { ...(w.settings || {}) } })
+  }
+  if (!out.some(w => w.type === "contribution")) {
+    out.push({ id: "w_contrib", type: "contribution", title: "贡献物品 · 谁贡献了多少", settings: {}, enabled: true })
+  }
+  return out
 }
 
 // ─── Main Page ──────────────────────────────────────────────────────
@@ -597,7 +609,7 @@ function DashboardContent() {
         const data = await res.json()
         const rec = data?.items?.[0]
         if (rec) {
-          setWidgets(withContribution(rec.widgets || DEFAULT_WIDGETS))
+          setWidgets(normalizeWidgets(rec.widgets || DEFAULT_WIDGETS))
           setEventsByWidget(rec.events || {})
           setAnnouncementsByWidget(rec.announcements || {})
           setWidgetRecordId(rec.id)
@@ -608,7 +620,7 @@ function DashboardContent() {
             const saved = localStorage.getItem(legacyKey)
             if (saved) {
               const parsed = JSON.parse(saved)
-              setWidgets(withContribution(parsed.widgets || DEFAULT_WIDGETS))
+              setWidgets(normalizeWidgets(parsed.widgets || DEFAULT_WIDGETS))
               setEventsByWidget(parsed.events || {})
               setAnnouncementsByWidget(parsed.announcements || {})
             } else {
@@ -714,16 +726,21 @@ function DashboardContent() {
         (selectedCenter === "BATU14" && (s.center === "小学（BATU14）" || s.center === "BATU14")))
 
   // Widget management
-  const addWidget = (type: WidgetConfig["type"]) => {
-    const info = WIDGET_TYPES.find(t => t.type === type)!
-    const newWidget: WidgetConfig = {
-      id: `w_${Date.now()}`,
-      type,
-      title: info.defaultTitle,
-      settings: { ...info.defaultSettings },
-      enabled: true,
+  // 一种模板只有一个：已存在就只是开/关，不再新增
+  const toggleTemplate = (type: WidgetConfig["type"]) => {
+    const existing = widgets.find(w => w.type === type)
+    if (existing) {
+      saveWidgets(
+        widgets.map(w => (w.id === existing.id ? { ...w, enabled: !w.enabled } : w)),
+        eventsByWidget, announcementsByWidget
+      )
+      return
     }
-    saveWidgets([...widgets, newWidget], eventsByWidget, announcementsByWidget)
+    const info = WIDGET_TYPES.find(t => t.type === type)!
+    saveWidgets(
+      [...widgets, { id: `w_${type}_${Date.now()}`, type, title: info.defaultTitle, settings: { ...info.defaultSettings }, enabled: true }],
+      eventsByWidget, announcementsByWidget
+    )
   }
 
   const removeWidget = (id: string) => {
@@ -868,16 +885,26 @@ function DashboardContent() {
             </div>
           </div>
 
-          {/* Edit mode: add widget buttons */}
+          {/* Edit mode: 模板开关（每种模板只有一个，只能开或关） */}
           {editMode && (
-            <div className="flex items-center gap-2 flex-wrap p-3 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-              <span className="text-xs text-gray-400 mr-1">{t("添加组件：")}</span>
-              {WIDGET_TYPES.map(t => (
-                <Button key={t.type} variant="ghost" size="sm" className="h-7 text-xs gap-1 bg-white border"
-                  onClick={() => addWidget(t.type)}>
-                  {t.icon}{t.label}
-                </Button>
-              ))}
+            <div className="p-3 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+              <p className="text-xs text-gray-400 mb-2">{t("模板开关：每种组件只有一个，点一下开启或关闭")}</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                {WIDGET_TYPES.map((info) => {
+                  const w = widgets.find(x => x.type === info.type)
+                  const on = !!w?.enabled
+                  return (
+                    <button key={info.type} onClick={() => toggleTemplate(info.type)}
+                      className={`flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs transition-colors ${on
+                        ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                        : "border-gray-200 bg-white text-gray-400 hover:text-gray-600"}`}>
+                      {info.icon}
+                      <span>{info.label}</span>
+                      <span className="ml-1 font-medium">{on ? t("已开启") : t("已关闭")}</span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           )}
 
