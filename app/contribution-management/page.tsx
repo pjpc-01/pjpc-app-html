@@ -20,7 +20,8 @@ import { AlertCircle, Gift, Heart, CheckCircle2, ImagePlus, Trophy,
   Percent,
   SlidersHorizontal,
   Lightbulb,
-  History
+  History,
+  X
 } from "lucide-react"
 
 const API = "/api/pocketbase-proxy/api/collections"
@@ -39,6 +40,7 @@ export default function ContributionManagementPage() {
   // 每个物品自己的贡献榜（列表里直接显示）+ 详情弹窗
   const [ranks, setRanks] = useState<Record<string, any>>({})
   const [detailItem, setDetailItem] = useState<any>(null)
+  const [targetDraft, setTargetDraft] = useState<string>("")
 
   // 新增表单
   const [iName, setIName] = useState("")
@@ -137,6 +139,28 @@ export default function ContributionManagementPage() {
   }
 
   // 给已有物品换照片
+  // 改「需要多少分」（目标积分）：改了以后进度按新目标算，已投入的分数不动
+  const saveTarget = async (item: any) => {
+    const n = Number(targetDraft)
+    if (!Number.isFinite(n) || n < 0) { setMsg(t("请填一个数字")); return }
+    const val = Math.round(n)
+    setBusy(true); setMsg("")
+    try {
+      const r = await fetch(`${API}/contribution_items/records/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target_points: val }),
+      })
+      if (!r.ok) throw new Error(`${t("保存失败")}（${r.status}）`)
+      setDetailItem({ ...item, target_points: val })
+      setMsg(`${t("已改成需要")} ${val} ${t("分")}`)
+      await load()
+      const rr = await fetch(`/api/contribution/item-ranking?itemId=${encodeURIComponent(item.id)}`)
+      const dd = await rr.json().catch(() => ({}))
+      if (rr.ok && dd?.success) setRanks((prev) => ({ ...prev, [item.id]: dd }))
+    } catch (e: any) { setMsg(String(e?.message || e)) } finally { setBusy(false) }
+  }
+
   const changeImage = async (col: string, id: string, file: File) => {
     setBusy(true); setMsg("")
     try {
@@ -177,6 +201,7 @@ export default function ContributionManagementPage() {
   // 点物品 → 详情（图片大一点、完整榜单、动作都在里面）
   const openDetail = async (it: any) => {
     setDetailItem(it)
+    setTargetDraft(String(it?.target_points ?? ""))
     if (!ranks[it.id]) {
       try {
         const r = await fetch(`/api/contribution/item-ranking?itemId=${encodeURIComponent(it.id)}`)
@@ -897,7 +922,10 @@ export default function ContributionManagementPage() {
               {detailItem.image
                 ? <img src={`/api/pocketbase-proxy/api/files/${detailItem.collectionId}/${detailItem.id}/${detailItem.image}`} alt={detailItem.name} className="h-full w-full object-cover" />
                 : <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-sm text-gray-400"><ImagePlus className="h-6 w-6" />{t("无图")}</div>}
-              <button className="absolute left-2 top-2 z-20 rounded-full bg-black/70 px-3 py-2 text-xs font-medium text-white shadow hover:bg-black/85" onClick={() => setDetailItem(null)}>{t("关闭")}</button>
+              <button className="absolute left-2 top-2 z-20 rounded-full bg-black/70 p-2 text-white shadow hover:bg-black/85"
+                onClick={() => setDetailItem(null)} aria-label={t("关闭")} title={t("关闭")}>
+                <X className="h-4 w-4" />
+              </button>
               <label className="absolute bottom-2 right-2 z-20 cursor-pointer rounded-full bg-black/70 px-3 py-2 text-xs font-medium text-white shadow hover:bg-black/85">
                 {t("换照片")}
                 <input type="file" accept="image/*" className="hidden" disabled={busy}
@@ -928,6 +956,19 @@ export default function ContributionManagementPage() {
 
               <div className="h-2 w-full overflow-hidden rounded bg-gray-100">
                 <div className="h-full bg-orange-500" style={{ width: `${pct}%` }} />
+              </div>
+
+              {/* 改需要的积分 */}
+              <div className="flex flex-wrap items-end gap-2 rounded-lg bg-gray-50 p-2.5">
+                <div>
+                  <Label className="text-[11px] text-gray-500">{t("需要多少分")}</Label>
+                  <Input className="mt-0.5 h-8 w-28 text-sm" inputMode="numeric" disabled={busy}
+                    value={targetDraft}
+                    onChange={(e) => setTargetDraft(e.target.value.replace(/[^0-9]/g, ""))} />
+                </div>
+                <Button size="sm" className="h-8 text-xs" disabled={busy || targetDraft === String(target)}
+                  onClick={() => saveTarget(detailItem)}>{t("保存分数")}</Button>
+                <span className="pb-1 text-[11px] text-gray-400">{t("改完进度按新目标重算，已投入的分数不变")}</span>
               </div>
 
               <div>
