@@ -41,7 +41,10 @@ export async function POST(request: NextRequest) {
   if (!['GET', 'POST', 'PATCH', 'DELETE'].includes(method)) {
     return NextResponse.json({ success: false, error: 'method 只能是 GET / POST / PATCH / DELETE' }, { status: 400 })
   }
-  if (!path.startsWith('/api/collections/')) {
+  // GET 允许访问 /api/collections 本身（列集合名），其余必须带集合路径
+  const barePath = path.split('?')[0].replace(/\/+$/, '')
+  const isListCollections = method === 'GET' && barePath === '/api/collections'
+  if (!isListCollections && !path.startsWith('/api/collections/')) {
     return NextResponse.json({ success: false, error: 'path 必须以 /api/collections/ 开头' }, { status: 400 })
   }
   if (BLOCKED.some((b) => path.includes(b))) {
