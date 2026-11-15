@@ -290,8 +290,9 @@ function ContributionWidget({ centerCode }: { centerCode: string }) {
         const all = (d?.items || []) as any[]
         const code = centerCode && centerCode !== 'all' ? centerCode : ''
         const list = all.filter(x => {
+          // 只放还差分数的物品：已完成(achieved)/已关闭/已下架 都不再上幻灯片
           const st = String(x.status || '').toLowerCase()
-          if (['archived', 'deleted', 'cancelled', 'removed', 'claimed'].includes(st)) return false
+          if (st && st !== 'active') return false
           if (!code) return true
           const c = String(x.center || '')
           return !c || c === 'all' || c === code
