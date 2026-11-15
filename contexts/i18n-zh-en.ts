@@ -170,6 +170,7 @@ export const ZH_TO_EN: Record<string, string> = {
   "财务批准": "Finance Approve",
   "驳回": "Reject",
   "分": " pts",
+  "需要": "Needs",
   "操作失败": "Operation Failed",
   "积分操作": "Points Operation",
   "老师": "Teacher",

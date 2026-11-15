@@ -696,8 +696,33 @@ export default function ContributionManagementPage() {
                             : <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-xs text-gray-400"><ImagePlus className="h-5 w-5" />{t("无图")}</div>}
                         </button>
 
-                        {/* 贡献榜：直接放在照片下面，带占比 bar */}
-                        <div className="border-b bg-gray-50/60 px-3 py-2">
+                        {/* 卡片上只留：名字、需要多少分、进度；其他操作都进详情 */}
+                        <div className="flex flex-col gap-1.5 p-3">
+                          <button className="line-clamp-2 text-left text-sm font-semibold text-gray-900 hover:text-orange-600"
+                            onClick={() => openDetail(x)}>{x.name}</button>
+                          <p className="text-xs text-gray-500">
+                            {t("需要")} {x.target_points || 0} {t("分")}
+                            {" · "}
+                            {t("已筹")} {x.current_points || 0}{x.center ? ` · ${x.center}` : ""}
+                          </p>
+                          <div className="h-1.5 w-full overflow-hidden rounded bg-gray-100">
+                            <div className="h-full bg-orange-500" style={{ width: `${Math.min(100, Math.round(((Number(x.current_points) || 0) / (Number(x.target_points) || 1)) * 100))}%` }} />
+                          </div>
+                          <span className={`w-fit rounded px-1.5 py-0.5 text-[11px] ${
+                            x.status === "active" ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"
+                          }`}>
+                            {x.status === "active" ? t("进行中") : x.status === "achieved" ? t("已完成") : t("已关闭")}
+                          </span>
+                          {x.status === "achieved" && x.received_at && (
+                            <p className="text-[11px] text-gray-500">
+                              {t("已领取")} {String(x.received_at).slice(0, 10)}{x.received_by ? ` · ${x.received_by}` : ""}
+                              {x.received_note ? ` · ${x.received_note}` : ""}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* 贡献榜：名字与所需积分之后才显示 */}
+                        <div className="border-t bg-gray-50/60 px-3 py-2">
                           <div className="flex items-baseline justify-between gap-2">
                             <p className="text-[11px] font-medium text-gray-600">{t("贡献榜")}</p>
                             <p className="text-[11px] text-gray-400">
@@ -719,41 +744,6 @@ export default function ContributionManagementPage() {
                             <button className="mt-2 w-full rounded border bg-white px-2 py-1 text-[11px] text-gray-600 hover:bg-gray-50"
                               onClick={() => openDetail(x)}>{t("看全部")} {rows.length} {t("人")}</button>
                           )}
-                        </div>
-
-                        <div className="flex flex-1 flex-col gap-2 p-3">
-                          <button className="line-clamp-2 min-h-[2.5rem] text-left text-sm font-medium hover:text-orange-600"
-                            onClick={() => openDetail(x)}>{x.name}</button>
-                          <div>
-                            <p className="text-xs text-gray-500">{x.current_points || 0} / {x.target_points || 0}{x.center ? ` · ${x.center}` : ""}</p>
-                            <div className="mt-1 h-1.5 w-full overflow-hidden rounded bg-gray-100">
-                              <div className="h-full bg-orange-500" style={{ width: `${Math.min(100, Math.round(((Number(x.current_points) || 0) / (Number(x.target_points) || 1)) * 100))}%` }} />
-                            </div>
-                          </div>
-                          <span className={`w-fit rounded px-1.5 py-0.5 text-[11px] ${
-                            x.status === "active" ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"
-                          }`}>
-                            {x.status === "active" ? t("进行中") : x.status === "achieved" ? t("已完成") : t("已关闭")}
-                          </span>
-                          {x.status === "achieved" && (
-                            x.received_at ? (
-                              <p className="text-[11px] text-gray-500">
-                                {t("已领取")} {String(x.received_at).slice(0, 10)}{x.received_by ? ` · ${x.received_by}` : ""}
-                                {x.received_note ? ` · ${x.received_note}` : ""}
-                              </p>
-                            ) : (
-                              <button className="w-fit rounded border border-green-300 px-2 py-1 text-[11px] text-green-700 hover:bg-green-50" disabled={busy} onClick={() => markReceived(x)}>{t("标记已领取")}</button>
-                            )
-                          )}
-                          <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
-                            {x.status === "active" && (
-                              <>
-                                <button className="min-w-[80px] flex-1 rounded border px-2 py-2.5 text-xs text-gray-600 hover:bg-gray-50" disabled={busy} onClick={() => setStatus(x, "achieved")}>{t("标记完成")}</button>
-                                <button className="min-w-[64px] flex-1 rounded border px-2 py-2.5 text-xs text-gray-600 hover:bg-gray-50" disabled={busy} onClick={() => setStatus(x, "closed")}>{t("下架")}</button>
-                              </>
-                            )}
-                            <button className="rounded border border-red-200 px-3 py-2.5 text-xs text-red-600 hover:bg-red-50" disabled={busy} onClick={() => deleteItem("upgrade", x)}>{t("删除")}</button>
-                          </div>
                         </div>
                       </div>
                       )
