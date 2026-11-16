@@ -14,7 +14,7 @@ def get_token():
     r = os.popen(
         f'curl -s --connect-timeout 5 -X POST "{PB_URL}/api/admins/auth-with-password" '
         f'-H "Content-Type: application/json" '
-        f'-d \'{{"identity":"***REMOVED***","password":"***REMOVED***"}}\''
+        f'-d \'{{"identity":"{_env("POCKETBASE_ADMIN_EMAIL")}","password":"{_env("POCKETBASE_ADMIN_PASSWORD")}"}}\''
     ).read()
     return json.loads(r).get("token", "")
 

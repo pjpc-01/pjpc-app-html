@@ -6,6 +6,25 @@ import json
 import re
 import time
 
+# 读 .env.local 取 Synorex 账号，不硬编码
+_ENV = {}
+def _env(key, default=""):
+    global _ENV
+    if not _ENV:
+        import os as _os
+        try:
+            with open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", ".env.local")) as _f:
+                for _line in _f:
+                    if "=" in _line and not _line.strip().startswith("#"):
+                        _k, _v = _line.split("=", 1)
+                        _ENV[_k.strip()] = _v.strip().strip('"').strip("'")
+        except Exception:
+            pass
+    return _ENV.get(key, default)
+
+SYNOREX_EMAIL = _env("SYNOREX_EMAIL")
+SYNOREX_PASS = _env("SYNOREX_PASSWORD")
+
 BASE_URL = "https://pjpc2479.tuitionsys.synorex.work"
 
 session = requests.Session()
@@ -29,8 +48,8 @@ for hidden in soup.find_all('input', type='hidden'):
         print(f"   Hidden: {name} = {value[:30]}...")
 
 # Add email and password
-payload['email'] = '***REMOVED***'
-payload['password'] = '***REMOVED***'
+payload['email'] = SYNOREX_EMAIL
+payload['password'] = SYNOREX_PASS
 
 print(f"   Payload keys: {list(payload.keys())}")
 

@@ -5,6 +5,25 @@ import json
 import re
 from playwright.async_api import async_playwright
 
+# 读 .env.local 取 Synorex 账号，不硬编码
+_ENV = {}
+def _env(key, default=""):
+    global _ENV
+    if not _ENV:
+        import os as _os
+        try:
+            with open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", ".env.local")) as _f:
+                for _line in _f:
+                    if "=" in _line and not _line.strip().startswith("#"):
+                        _k, _v = _line.split("=", 1)
+                        _ENV[_k.strip()] = _v.strip().strip('"').strip("'")
+        except Exception:
+            pass
+    return _ENV.get(key, default)
+
+SYNOREX_EMAIL = _env("SYNOREX_EMAIL")
+SYNOREX_PASS = _env("SYNOREX_PASSWORD")
+
 BASE = "https://pjpc2479.tuitionsys.synorex.work"
 OUTPUT = "/home/pjpc/pjpc-app-prod/scripts/synorex_teachers.json"
 
@@ -16,8 +35,8 @@ async def main():
         # Login
         print("Logging in...")
         await page.goto(f"{BASE}/auth/login")
-        await page.fill('input[placeholder="Email"]', "***REMOVED***")
-        await page.fill('input[placeholder="Password"]', "***REMOVED***")
+        await page.fill('input[placeholder="Email"]', SYNOREX_EMAIL)
+        await page.fill('input[placeholder="Password"]', SYNOREX_PASS)
         await page.click('button:has-text("Login")')
         await page.wait_for_timeout(3000)
         
