@@ -142,3 +142,8 @@ tsconfig.tsbuildinfo
 
 # 本地数据库备份，不入库（含学生资料）
 backups/
+
+# 数据库文件（含学生资料）
+*.db
+*.sqlite
+*.sqlite3

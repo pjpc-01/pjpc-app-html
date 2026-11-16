@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# 挡住：凭据文件、数据库、学生数据导出、以及疑似写死的口令
+set -u
+
+bad=$(git diff --cached --name-only --diff-filter=ACM | grep -E '(^|/)\.env($|\.)|(^|/)pb_data/|\.db$|\.sqlite3?$|^data/|synorex.*\.json$|students.*backup.*\.json$' || true)
+if [ -n "$bad" ]; then
+  echo "拒绝提交：以下文件不允许进仓库（凭据 / 数据库 / 学生数据）"
+  echo "$bad"
+  exit 1
+fi
+
+hits=$(git diff --cached -U0 | grep -E '^\+' | grep -viE 'example|placeholder|<.*>|process\.env' \
+  | grep -iE "(password|passwd|secret|token|api[_-]?key|访问密钥)[\"']?[[:space:]]*[:=][[:space:]]*[\"'][^\"']{8,}[\"']" || true)
+if [ -n "$hits" ]; then
+  echo "拒绝提交：疑似写死的密钥（左边是文件名，右边已遮蔽）"
+  echo "$hits" | sed -E "s/([:=][[:space:]]*[\"'])[^\"']+/\1***/" | head -5
+  exit 1
+fi
+
+echo "pre-commit: 通过"
