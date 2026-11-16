@@ -330,10 +330,14 @@ function ContributionWidget({ centerCode }: { centerCode: string }) {
     const pb = Number(ranks[b.id]?.item?.current_points ?? b.current_points ?? 0)
     return pb - pa
   })
-  const cols = sortedItems.length > 3 ? 2 : 1
+  // 竖版卡：物品在上、名字和进度在中、贡献榜在下 —— 一个屏能读到「谁贡献了多少」
+  const cols = sortedItems.length <= 2 ? Math.max(1, sortedItems.length) : sortedItems.length <= 4 ? 2 : 3
+  const imgH = cols === 1 ? 420 : cols === 2 ? 320 : 220
+  const nameSize = cols === 1 ? 34 : cols === 2 ? 26 : 20
+  const subSize = cols === 1 ? 20 : cols === 2 ? 16 : 13
   return (
     <div className="h-full overflow-hidden"
-      style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: 16, alignContent: cols === 1 ? 'stretch' : 'start' }}>
+      style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: 16, alignItems: 'stretch' }}>
       {sortedItems.map((it) => {
         const rank = ranks[it.id]
         const cur = Number(rank?.item?.current_points ?? it.current_points ?? 0)
@@ -343,33 +347,45 @@ function ContributionWidget({ centerCode }: { centerCode: string }) {
         const donors = Number(rank?.donors || 0)
         const img = it.image ? `/api/pocketbase-proxy/api/files/${it.collectionId}/${it.id}/${it.image}` : ''
         return (
-          <div key={it.id} className="flex items-center gap-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-            <div className="shrink-0 overflow-hidden rounded-2xl bg-gray-100" style={{ width: cols === 1 ? 180 : 110, height: cols === 1 ? 180 : 110 }}>
+          <div key={it.id} className="flex h-full min-h-0 flex-col rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            {/* 图在上 */}
+            <div className="w-full min-h-0 flex-1 overflow-hidden rounded-2xl bg-gray-100" style={{ minHeight: imgH }}>
               {img
                 ? <img src={img} alt={it.name} className="h-full w-full object-cover" />
-                : <div className="flex h-full w-full items-center justify-center text-2xl">🎁</div>}
+                : <div className="flex h-full w-full items-center justify-center text-4xl">🎁</div>}
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-baseline justify-between gap-2">
-                <p className="truncate font-bold text-gray-900" style={{ fontSize: cols === 1 ? 34 : 22 }}>{it.name}</p>
-                <span className="shrink-0 text-gray-500" style={{ fontSize: cols === 1 ? 18 : 14 }}>{donors} {t("人贡献")}</span>
-              </div>
-              <div className="mt-2 w-full overflow-hidden rounded-full bg-gray-100" style={{ height: cols === 1 ? 14 : 10 }}>
-                <div className="h-full rounded-full bg-amber-400" style={{ width: `${pct}%` }} />
-              </div>
-              <p className="mt-1 text-gray-600" style={{ fontSize: cols === 1 ? 20 : 14 }}>{t("已筹")} {cur} {target > 0 ? `/ ${target}` : ''} · {pct}%</p>
-              {top.length > 0 && (
-                <div className="mt-1.5 space-y-0.5">
+
+            {/* 名字 + 人数 */}
+            <div className="mt-3 flex shrink-0 items-baseline justify-between gap-2">
+              <p className="truncate font-bold text-gray-900" style={{ fontSize: nameSize }}>{it.name}</p>
+              <span className="shrink-0 text-gray-500" style={{ fontSize: subSize - 2 }}>{donors} {t("人贡献")}</span>
+            </div>
+
+            {/* 进度 */}
+            <div className="mt-2 w-full shrink-0 overflow-hidden rounded-full bg-gray-100" style={{ height: cols === 1 ? 14 : 10 }}>
+              <div className="h-full rounded-full bg-amber-400" style={{ width: `${pct}%` }} />
+            </div>
+            <p className="mt-1 shrink-0 text-gray-600" style={{ fontSize: subSize }}>
+              {t("已筹")} {cur} {target > 0 ? `/ ${target}` : ''} · {pct}%
+            </p>
+
+            {/* 贡献榜：竖着往下排，占满剩余高度 */}
+            <div className="mt-2 flex shrink-0 flex-col">
+              <p className="shrink-0 font-semibold text-gray-400" style={{ fontSize: subSize - 3 }}>{t("贡献榜")}</p>
+              {top.length > 0 ? (
+                <div className="mt-1 space-y-1">
                   {top.map((r: any) => (
-                    <div key={r.studentId} className="flex items-center justify-between gap-2" style={{ fontSize: cols === 1 ? 24 : 16 }}>
+                    <div key={r.studentId} className="flex items-center justify-between gap-2" style={{ fontSize: subSize }}>
                       <span className="truncate text-gray-700">
-                        <span className="mr-1.5 inline-block text-gray-400" style={{ width: 16, fontSize: 13 }}>{r.rank}</span>
+                        <span className="mr-1.5 inline-block text-gray-400" style={{ width: 18 }}>{r.rank}</span>
                         {r.studentName}
                       </span>
                       <span className="shrink-0 font-semibold text-amber-700">{r.points}</span>
                     </div>
                   ))}
                 </div>
+              ) : (
+                <p className="mt-1 text-gray-300" style={{ fontSize: subSize }}>{t("还没有人投入")}</p>
               )}
             </div>
           </div>

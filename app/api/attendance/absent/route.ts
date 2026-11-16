@@ -30,12 +30,18 @@ function isWeekend(d: Date) {
 }
 
 // POST — 处理今日缺勤扣分
+// 内部定时器（lib/absent-scheduler.ts）没有用户会话，靠 x-pjpc-internal 头进入；
+// 带 dryRun 时只算不改（用来核对今天会扣谁）。
 export async function POST(request: NextRequest) {
-  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
-  if ('error' in gate) return gate.error
+  const internal = request.headers.get('x-pjpc-internal') === process.env.PROXY_INTERNAL_KEY
+  if (!internal) {
+    const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+    if ('error' in gate) return gate.error
+  }
   try {
     const body = await request.json().catch(() => ({}))
     const center = body.center || ''
+    const dryRun = body.dryRun === true || request.nextUrl.searchParams.get('dryRun') === '1'
     const today = todayLocal()
 
     // 周末不扣分（安亲班周末不上课，缺勤不算）
@@ -119,11 +125,15 @@ export async function POST(request: NextRequest) {
 
     // 6. Deduct points for each absent student
     let processed = 0
+    const wouldDeduct: string[] = []
     for (const s of absentStudents) {
       if (alreadyDeducted.has(s.id)) continue
 
       // 积分守卫：积分系统已关闭的学生拒绝扣分
       if (s.points_enabled === false) continue
+
+      wouldDeduct.push(`${s.name || s.id}(${s.center || '-'})`)
+      if (dryRun) continue
 
       // 唯一写入口：锁内重读、写分数、回读校验、必写流水；失败不影响其余学生
       try {
@@ -145,7 +155,9 @@ export async function POST(request: NextRequest) {
       absent: processed,
       total: absentStudents.length,
       skipped: absentStudents.length - processed,
-      message: `已处理 ${processed} 人缺勤扣分`,
+      dryRun,
+      wouldDeduct,
+      message: dryRun ? `预演：今天会扣 ${wouldDeduct.length} 人` : `已处理 ${processed} 人缺勤扣分`,
     })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })

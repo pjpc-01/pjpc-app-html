@@ -16,16 +16,24 @@ async function runAbsentOnce() {
     return
   }
 
-  console.log(`[ABSENT-SCHEDULER] Running absent deduction for ${today}`)
+  const autoOn = process.env.ABSENT_AUTO_DEDUCT === '1'
+  console.log(`[ABSENT-SCHEDULER] Running absent deduction for ${today}${autoOn ? '' : ' (dry run: ABSENT_AUTO_DEDUCT!=1)'}`)
 
   try {
     const res = await fetch('http://127.0.0.1:3001/api/attendance/absent', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
+      headers: {
+        'Content-Type': 'application/json',
+        // 内部定时器没有用户会话，走内部钥匙头（原来不带任何凭证 → 每次都 401，扣分从没跑成）
+        'x-pjpc-internal': process.env.PROXY_INTERNAL_KEY || '',
+      },
+      body: JSON.stringify({ dryRun: !autoOn }),
     })
     const data = await res.json()
-    console.log(`[ABSENT-SCHEDULER] ${data.message || data.absent + ' absent'}`)
+    console.log(`[ABSENT-SCHEDULER] ${data.message || JSON.stringify(data).slice(0, 200)}`)
+    if (Array.isArray(data.wouldDeduct) && data.wouldDeduct.length) {
+      console.log(`[ABSENT-SCHEDULER] 名单: ${data.wouldDeduct.join(', ')}`)
+    }
   } catch (e) {
     console.error('[ABSENT-SCHEDULER] Failed:', e)
   }
