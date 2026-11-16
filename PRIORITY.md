@@ -182,6 +182,26 @@
     ③ 2 门课程标题尾随空格 → 已 trim（`'Form 2 BC '`→`Form 2 BC`、`'STANDARD 3 BC '`→`STANDARD 3 BC`）
 - ✅ 已解决：凭证编号体系、资产负债表简版、26 张发票补账期、票号重复已重编 + 唯一索引
 
+### 🆕 2026-11-16 每周体检新发现（待处理）
+
+**只读全站体检（dev-check + 45 页真浏览器 + Back/筛选 + 智能会计师 + 死代码 + 用法扫描）**
+
+- 🔴 **11-15 生产站挂 6 分 38 秒（10:21:51 → 10:28:29）**
+  - 现象：`pjpc-nextjs` 连报 26 次 `Error: Could not find a production build in the '.next' directory` + `prerender-manifest.json` ENOENT，自动重启也救不回来，最后 10:28:29 手动 restart 才恢复；现在 `BUILD_ID` 是 11-15 14:02 那次 build。
+  - 成因：`.next` 在服务运行中被 `next build` 清空覆盖（与「build 后 kill 旧 3001 再启」同一坑），build 期间进程一直抢不到可用产物。
+  - 建议：`next build` 前先 `systemctl --user stop pjpc-nextjs`（或改用独立 `distDir` 构建后原子切换），build 完立刻 start，别让生产进程对着半成品 `.next` 跑。
+- 🟡 **10 月票「材料费 RM180」普遍漏收，且票状态没随收款更新**
+  - 本周（11-09~11-13）新收 8 张票金额对不上：`INV-202610-066` 620/440、`171` 510/330、`073` 740/560、`180` 576/390、`057` 600/420、`157` 640/460、`062` 750/570（都只缴了学费行，材料费 180 未缴），`INV-202610-119` 760/860（多收 100）。
+  - 这 8 张 `status` 全部仍是 `issued`，而 10-30/11-02 的同款票（`140`/`072`/`095`）已经是 `partially_paid` → **收款登记没有统一回写票状态**，收付不一致从上周 11 张涨到 19 张，催收名单漏 RM1,260，多收的 RM100 也没人跟进。
+  - 建议：收款接口按 `实收 < 票额` 自动转 `partially_paid`、`实收 > 票额` 记多收（走 `student_credits`）；材料费确认是分期收还是一次性收，别再靠人工改状态。
+- 🟡 **多收抵扣 6 → 7 笔、RM327.50 → RM427.50，全部 `unused`、`usedAmount` 0**
+  - 本周新增 1 笔 RM100（对应上面 `INV-202610-119` 多收）；11-05 `/api/credits/apply` 两次 500（`totalAmount` 不能为空）仍未修 → 自动抵扣在真票上一次都没跑通。
+- 🟡 **新老师 Ong Kah Yi（11-10 入职，`e67p7sbbv245r6k`）档案是空的**
+  - `nric` / `phone` / `bankAccountNo` / `epfNo` / `socsoNo` 全空，`notes` 里 Citizen/Married 写了两遍 → 本月薪资和 SOCSO/EPF 报单会缺；先补档案再出粮。
+- ✅ **本轮修好的**：Wong Zi Hong `centerId` 已补（在读学生 `centerId`/学号/年级 0 缺口）；45 页 0 控制台错 / 0 失败请求 / 0 stuckLoading / 0 横向溢出；Back 唯一报警 `/finance/expenses` 仍是脚本点 `target=_blank` 凭证图的假阳性。
+- ℹ️ **未动（沿用上周）**：`teacher_salary_records` `centerId` 全空（审计口径 50 → 51）、`monthly_closings` 0 条、`debt_payments` 0 条、死文件仍是 `components/ui/use-toast.ts` + `components/ui/tooltip.tsx`、6 个零数据页面（接送/兑换物品/建议箱/报销单/教师绩效/作业提交）、银行流水 0 条 / 无现金账户。
+- ℹ️ **账务**：开票 201,251.25；未收 43,970.50 → 11,233.50（本周回款 RM32,526，正常）；支出 118 笔都有分行/凭证，凭证号 116/118；本月（2026-11）薪资未生成（月中，正常）。
+
 ### 🆕 2026-11-09 每周体检新发现（待处理）
 
 **只读全站体检（dev-check + 45 页真浏览器 + Back/筛选 + 智能会计师 + 死代码 + 用法扫描）**
