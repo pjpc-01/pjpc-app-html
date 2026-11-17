@@ -8,7 +8,7 @@
  * （一个年级一种底色），格子里只放 科目 / 时间 / 老师 三行，不再写小表头。
  * 同一天有几节课就展开几行，没课的格子留空。老师/院长会印出来发学生，所以带「打印」。
  */
-import { useState, useEffect, useCallback } from "react"
+import { Fragment, useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, AlertCircle, RefreshCw, Printer, Table2 } from "lucide-react"
@@ -157,7 +157,7 @@ export default function GradeTimetableGrid() {
         </div>
       </CardHeader>
       <CardContent className="overflow-x-auto">
-        <table className="w-full table-fixed border-collapse text-[13px] leading-tight">
+        <table className="w-full table-fixed min-w-[900px] border-collapse text-[13px] leading-tight">
           <thead>
             <tr>
               <th className="w-[62px] border border-gray-200 bg-gray-100 px-1 py-1.5 text-[11px] font-semibold text-gray-600">
@@ -166,7 +166,7 @@ export default function GradeTimetableGrid() {
               {grades.map((g, gi) => {
                 const st = styleFor(gi)
                 return (
-                  <th key={g} className="border border-gray-200 px-2 py-1.5 text-[13px] font-bold text-gray-800"
+                  <th key={g} colSpan={3} className="border border-gray-200 px-2 py-1.5 text-[13px] font-bold text-gray-800"
                       style={{ backgroundColor: st.head }}>
                     {gradeLabel(g) || g}
                   </th>
@@ -187,18 +187,25 @@ export default function GradeTimetableGrid() {
                   {grades.map((g, gi) => {
                     const st = styleFor(gi)
                     const slot = grid[g][day][i]
-                    // 没课就留空，不打 —（打满了反而杂）
+                    // 每个年级三列外框铺年级底色；没课就三个空格，不打 —
                     if (!slot) {
-                      return <td key={`${g}-${day}-${i}`} className="border border-gray-200 px-2 py-1.5"
-                        style={{ backgroundColor: st.cell }} />
+                      return (
+                        <Fragment key={`${g}-${day}-${i}`}>
+                          <td className="border border-gray-200 px-2 py-1.5" style={{ backgroundColor: st.cell }} />
+                          <td className="border border-gray-200" style={{ backgroundColor: st.cell }} />
+                          <td className="border border-gray-200" style={{ backgroundColor: st.cell }} />
+                        </Fragment>
+                      )
                     }
                     return (
-                      <td key={`${g}-${day}-${i}`} className="border border-gray-200 px-2 py-1.5"
-                        style={{ backgroundColor: st.cell, borderLeft: `2px solid ${st.edge}` }}>
-                        <div className="font-bold uppercase tracking-wide text-gray-900">{t(slot.subject)}</div>
-                        <div className="text-[12px] text-gray-700">{slot.start}–{slot.end}{slot.room ? ` · ${slot.room}` : ""}</div>
-                        <div className="text-[12px] text-gray-500">{slot.teacher || "—"}</div>
-                      </td>
+                      <Fragment key={`${g}-${day}-${i}`}>
+                        <td className="border border-gray-200 px-2 py-1.5 font-bold uppercase tracking-wide text-gray-900"
+                          style={{ backgroundColor: st.cell, borderLeft: `2px solid ${st.edge}` }}>{t(slot.subject)}</td>
+                        <td className="border border-gray-200 whitespace-nowrap px-2 py-1.5 text-gray-700" style={{ backgroundColor: st.cell }}>
+                          {slot.start}–{slot.end}{slot.room ? <span className="ml-1 text-[11px] text-gray-500">@{slot.room}</span> : null}
+                        </td>
+                        <td className="border border-gray-200 px-2 py-1.5 text-gray-600" style={{ backgroundColor: st.cell }}>{slot.teacher || ""}</td>
+                      </Fragment>
                     )
                   })}
                 </tr>
