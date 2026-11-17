@@ -93,10 +93,15 @@ async function main() {
   const problems = []
   const notes = []
 
-  // 1. 服务
+  // 1. 服务：不在就自己拉起来（2026-11-17 加 —— 有任务停服构建失败后没起回来，站点 502 没人管）
   for (const svc of ['pjpc-nextjs', 'pjpc-pocketbase', 'pjpc-tunnel']) {
     const st = sh('systemctl', ['--user', 'is-active', svc])
-    if (st !== 'active') problems.push(`服务 ${svc} 状态：${st || '未知'}`)
+    if (st === 'active') continue
+    sh('systemctl', ['--user', 'start', svc])
+    await new Promise((r) => setTimeout(r, 4000))
+    const st2 = sh('systemctl', ['--user', 'is-active', svc])
+    if (st2 === 'active') notes.push(`服务 ${svc} 原本 ${st || '未知'}，已自动拉起`)
+    else problems.push(`服务 ${svc} 自动拉起失败，仍 ${st2 || '未知'}`)
   }
 
   // 2. 站点 + 数据库
