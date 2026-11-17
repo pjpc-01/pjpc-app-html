@@ -644,6 +644,12 @@ export const ZH_TO_EN: Record<string, string> = {
   "全选 / 取消全选": "Select All / Deselect All",
   "全部分类": "All Categories",
   "全部分行": "All Branches",
+  "各年级课表": "Timetable by Grade",
+  "课表": "Timetable",
+  "甘特图": "Gantt",
+  "星期": "Day",
+  "每个年级自己的时间表放在一起看，同一天几节课就展开几行": "All grades side by side; extra rows expand when a day has several lessons",
+
   "只在这个分行的幻灯片显示": "Shown only on this branch's slideshow",
   "全部合计": "Grand Total",
   "全部员工": "All Staff",
