@@ -6,10 +6,16 @@ import { authenticateAdmin } from '@/lib/auth-utils'
 const DAY_INDEX: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-// 从课程时间表自动生成时薪老师本月排班（真实日期，今天起，已过日期不动）
+// 从课程时间表把某个整月铺成真实日期的排班（默认当前月，可传 year/month）
+// 已存在的跳过；公假、已批请假不排；已过的日期缺的也补上
 export async function POST(request: NextRequest) {
-  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
-  if ('error' in gate) return gate.error
+  // 定时任务（systemd timer）用内部钥匙调用，不走登录会话
+  const internalKey = request.headers.get('x-pjpc-internal')
+  const isInternal = !!internalKey && internalKey === process.env.PROXY_INTERNAL_KEY
+  if (!isInternal) {
+    const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+    if ('error' in gate) return gate.error
+  }
   try {
     const pb = await getPocketBase()
     if (!pb.authStore.isValid) await authenticateAdmin(pb)
@@ -31,16 +37,22 @@ export async function POST(request: NextRequest) {
     })
     const timetable = courseSchedules.filter((s: any) => s.teacher_id && schedulerTeacherIds.has(s.teacher_id))
 
-    // 3) 计算本月（从今天起）所有日期及其星期
+    // 3) 生成哪个月：body 可传 {year, month(1-12)}，不传就是当前月
+    //    整月铺满（1 号到月末）—— 原来「从今天起」会把月初漏掉（10 月 1~5 号就是这样没排的）
+    const body = await request.json().catch(() => ({} as any))
     const now = new Date()
-    const year = now.getFullYear()
-    const month = now.getMonth()
-    const todayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    const year = Number(body?.year) > 0 ? Number(body.year) : now.getFullYear()
+    const monthNum = Number(body?.month) > 0 ? Number(body.month) : now.getMonth() + 1
+    const month = monthNum - 1
+    const daysInMonth = new Date(year, monthNum, 0).getDate()
+    const monthStart = `${year}-${String(monthNum).padStart(2, '0')}-01`
+    const nextMonthNum = monthNum === 12 ? 1 : monthNum + 1
+    const nextMonthYear = monthNum === 12 ? year + 1 : year
+    const monthEndExclusive = `${nextMonthYear}-${String(nextMonthNum).padStart(2, '0')}-01`
 
     // 4) 收集本月已有的课程排班，避免重复（按 teacher+date+course）
     const existing = await pb.collection('schedules').getFullList({
-      filter: `schedule_type = "course_schedule" && date >= "${todayStr}"`,
+      filter: `schedule_type = "course_schedule" && date >= "${monthStart}" && date < "${monthEndExclusive}"`,
     })
     const existingKeys = new Set(
       existing.map((e: any) => `${e.teacher_id}|${(e.date || '').split(' ')[0]}|${e.course_id || ''}`)
@@ -93,8 +105,8 @@ export async function POST(request: NextRequest) {
     let skippedHoliday = 0
     let skippedLeave = 0
 
-    // 5) 对本月每个日期（今天起），匹配时间表生成
-    for (let d = now.getDate(); d <= daysInMonth; d++) {
+    // 5) 整月每天（1 号到月末）匹配时间表生成；已存在的跳过，已过的日期缺的也补
+    for (let d = 1; d <= daysInMonth; d++) {
       const dateObj = new Date(year, month, d)
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
       const weekday = WEEKDAYS[dateObj.getDay()]

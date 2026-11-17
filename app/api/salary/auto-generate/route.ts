@@ -99,117 +99,47 @@ export async function POST(request: NextRequest) {
           filter: `teacher_id = "${teacher.id}" && date >= "${startDate}" && date < "${endExclusive}"`
         })
 
-        // 计算工作时长：排班为主，打卡兜底
-        // 1) 有排班的用排班时间（start_time ~ end_time）
-        // 2) 没排班的用实际打卡（check_in ~ check_out，当天多次打卡累加）
-        // 3) 都没有则按默认月工时 160h 反推（月薪类型）
+        // 工时口径（2026-11-17 老板定）：
+        //   时薪 = 只认排班，打卡一律不参与（原话：不要算打卡的）
+        //   月薪 / 佣金 = 不按工时装钱，工时只作记录，固定记 160
         let totalHours = 0
         let overtimeHours = 0
-
-        // 收集排班日期，避免同一老师同一天重复计算
-        const scheduledDates = new Set<string>()
         const scheduleHoursByDate: Record<string, number> = {}
         const seenSlots = new Set<string>()
 
-        schedules.items.forEach(schedule => {
-          // 口径：月薪不按排班算工时（时薪才按工时）。非时薪一律不把排班工时计入，
-          // 直接走下面的打卡分支，与「排班加入前」的行为完全一致 —— 排班表变化不会影响月薪。
-          if (structure.salary_type !== 'hourly') return
-          if (schedule.start_time && schedule.end_time) {
+        if (structure.salary_type === 'hourly') {
+          schedules.items.forEach((schedule: any) => {
+            if (!schedule.start_time || !schedule.end_time) return
             const start = new Date(`2000-01-01T${schedule.start_time}`)
             const end = new Date(`2000-01-01T${schedule.end_time}`)
             const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
             if (hours < 0 || hours > 24) return
-
             const dateStr = (schedule.date || '').split(' ')[0]
             // 同一老师同一天同时段重复排班(如两条不同课程撞时段)只算一次，避免双算
             const slotKey = `${dateStr}|${schedule.start_time}|${schedule.end_time}`
             if (seenSlots.has(slotKey)) return
             seenSlots.add(slotKey)
-            scheduledDates.add(dateStr)
             scheduleHoursByDate[dateStr] = (scheduleHoursByDate[dateStr] || 0) + hours
-          }
-        })
-
-        // 打卡兜底：只补没有排班的日期
-        if (schedules.items.length > 0 && scheduledDates.size > 0) {
-          const attendanceList = await pb.collection('teacher_attendance').getList(1, 500, {
-            filter: `teacher_id = "${teacher.id}" && date >= "${startDate}" && date < "${endExclusive}"`
           })
 
-          attendanceList.items.forEach(att => {
-            const attDate = (att.check_in || '').split('T')[0].split(' ')[0]
-            if (scheduledDates.has(attDate)) return // 这天有排班，跳过
-
-            const checkIn = att.check_in ? new Date(att.check_in) : null
-            const checkOut = att.check_out ? new Date(att.check_out) : null
-            if (!checkIn || !checkOut) return
-
-            const hours = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60)
-            if (hours < 0 || hours > 24) return
-            totalHours += hours
-          })
-
-          // 加上排班工时
           for (const dateStr of Object.keys(scheduleHoursByDate)) {
-            totalHours += scheduleHoursByDate[dateStr]
+            const dayHours = scheduleHoursByDate[dateStr]
+            totalHours += dayHours
+            if (dayHours > 8) overtimeHours += dayHours - 8
           }
-        } else {
-          // 无排班：直接用打卡
-          const attendanceList = await pb.collection('teacher_attendance').getList(1, 500, {
-            filter: `teacher_id = "${teacher.id}" && date >= "${startDate}" && date < "${endExclusive}"`
-          })
 
-          attendanceList.items.forEach(att => {
-            const checkIn = att.check_in ? new Date(att.check_in) : null
-            const checkOut = att.check_out ? new Date(att.check_out) : null
-            if (!checkIn || !checkOut) return
-
-            const hours = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60)
-            if (hours < 0 || hours > 24) return
-            totalHours += hours
-          })
-        }
-
-        // 都没有任何工时数据：月薪用默认 160h；时薪无法估算则记 0（避免乱发钱）
-        const hasHoursData = totalHours > 0
-        if (!hasHoursData) {
-          if (structure.salary_type === 'monthly') {
-            totalHours = 160 // 默认月工时
-          } else {
-            // 时薪/佣金教师无工时数据：跳过，不生成 0 薪资记录（PB 必填校验会拒 0）
+          if (totalHours <= 0) {
             results.push({
               teacher_id: teacher.id,
               teacher_name: teacher.name,
               status: 'skipped',
-              message: '无工时数据，跳过薪资生成'
+              message: '本月没有排班，时薪工时算不出来（先补排班）',
             })
             continue
           }
+        } else {
+          totalHours = 160 // 月薪不按工时算钱，只作记录
         }
-
-        // 加班计算（超过 8 小时/天的部分）
-        overtimeHours = 0
-        for (const dateStr of Object.keys(scheduleHoursByDate)) {
-          const h = scheduleHoursByDate[dateStr]
-          if (h > 8) overtimeHours += h - 8
-        }
-        // 打卡日期也检查加班
-        const attendanceList2 = await pb.collection('teacher_attendance').getList(1, 500, {
-          filter: `teacher_id = "${teacher.id}" && date >= "${startDate}" && date < "${endExclusive}"`
-        })
-        const seenAttDates = new Set<string>()
-        attendanceList2.items.forEach(att => {
-          const attDate = (att.check_in || '').split('T')[0].split(' ')[0]
-          if (seenAttDates.has(attDate)) return
-          seenAttDates.add(attDate)
-          if (scheduledDates.has(attDate)) return // 排班日期已算过加班
-          const checkIn = att.check_in ? new Date(att.check_in) : null
-          const checkOut = att.check_out ? new Date(att.check_out) : null
-          if (!checkIn || !checkOut) return
-          const h = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60)
-          if (h > 8) overtimeHours += h - 8
-        })
 
         // 计算薪资
         const baseSalary = structure.base_salary || 0

@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
         total: records.totalItems
       })
     } else if (type === 'hours') {
-      // 按老师+年月计算工时（排班为主、打卡兜底，与 auto-generate 一致）
+      // 按老师+年月计算工时：只认排班（2026-11-17 起打卡不参与），与 auto-generate 一致
       const teacherId = searchParams.get('teacher_id')
       const year = parseInt(searchParams.get('year') || '0')
       const month = parseInt(searchParams.get('month') || '0')
@@ -68,7 +68,6 @@ export async function GET(request: NextRequest) {
       })
       let totalHours = 0
       let overtimeHours = 0
-      const scheduledDates = new Set<string>()
       const scheduleHoursByDate: Record<string, number> = {}
       const seenSlots = new Set<string>()
       schedules.items.forEach(schedule => {
@@ -82,30 +81,15 @@ export async function GET(request: NextRequest) {
           const slotKey = `${dateStr}|${schedule.start_time}|${schedule.end_time}`
           if (seenSlots.has(slotKey)) return
           seenSlots.add(slotKey)
-          scheduledDates.add(dateStr)
           scheduleHoursByDate[dateStr] = (scheduleHoursByDate[dateStr] || 0) + hours
-          if (hours > 8) overtimeHours += hours - 8
         }
       })
-      for (const dateStr of Object.keys(scheduleHoursByDate)) totalHours += scheduleHoursByDate[dateStr]
-      // 打卡兜底（无排班的日期）
-      if (schedules.items.length > 0 && scheduledDates.size > 0) {
-        const attendanceList = await pb.collection('teacher_attendance').getList(1, 500, {
-          // ⚠️ 必须按 date 字段做范围比较：原来用 check_in < "下月1日T23:59:59.999Z" 会把下月 1 号整天算进来
-          //   （GAN SOH YEE 2026-09 多算了 10/01 的 3.12h → 12h 变 15.12h）
-          filter: `teacher_id = "${teacherId}" && date >= "${startDate}" && date < "${endExclusive}"`
-        })
-        attendanceList.items.forEach(att => {
-          const attDate = (att.check_in || '').split('T')[0].split(' ')[0]
-          if (scheduledDates.has(attDate)) return
-          const checkIn = att.check_in ? new Date(att.check_in) : null
-          const checkOut = att.check_out ? new Date(att.check_out) : null
-          if (!checkIn || !checkOut) return
-          const h = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60)
-          if (h < 0 || h > 24) return
-          totalHours += h
-        })
+      for (const dateStr of Object.keys(scheduleHoursByDate)) {
+        const dayHours = scheduleHoursByDate[dateStr]
+        totalHours += dayHours
+        if (dayHours > 8) overtimeHours += dayHours - 8
       }
+      // 2026-11-17 起：时薪工时只认排班，打卡一律不参与（老板：不要算打卡的）
       return NextResponse.json({ success: true, data: { totalHours: Math.round(totalHours * 100) / 100, overtimeHours } })
     } else {
       // 获取薪资记录
