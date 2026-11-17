@@ -42,10 +42,22 @@ export default function ContributionManagementPage() {
   const [detailItem, setDetailItem] = useState<any>(null)
   const [targetDraft, setTargetDraft] = useState<string>("")
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch(`${API}/centers/records?perPage=50&sort=code`)
+        const d = await r.json()
+        setCenters((d?.items || []).map((c: any) => ({ id: c.id, code: c.code, name: c.name })))
+      } catch { /* 读不到就只剩「全部分行」 */ }
+    })()
+  }, [])
+
   // 新增表单
   const [iName, setIName] = useState("")
   const [iTarget, setITarget] = useState("")
   const [iCenter, setICenter] = useState("")
+  // 分行下拉：从 centers 表来，不让人手打（手打会打错，slideshow 就找不到对应分行）
+  const [centers, setCenters] = useState<{ id: string; code: string; name: string }[]>([])
   const [iDesc, setIDesc] = useState("")
   const [iImg, setIImg] = useState<File | null>(null)
   const [rName, setRName] = useState("")
@@ -683,7 +695,17 @@ export default function ContributionManagementPage() {
                     </div>
                     <div className="grid gap-1.5">
                       <Label>{t("中心")}</Label>
-                      <Input value={iCenter} onChange={(e) => setICenter(e.target.value)} placeholder="PU1 / BATU14" />
+                      <select
+                        value={iCenter}
+                        onChange={(e) => setICenter(e.target.value)}
+                        className="flex h-9 w-full rounded-md border border-gray-200 bg-white px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-gray-300"
+                      >
+                        <option value="">{t("全部分行")}</option>
+                        {centers.map((c) => (
+                          <option key={c.id} value={c.code}>{c.name} · {c.code}</option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-500">{t("只在这个分行的幻灯片显示")}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 gap-2 md:grid-cols-4">

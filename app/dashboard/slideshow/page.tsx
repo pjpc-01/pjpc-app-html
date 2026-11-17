@@ -330,28 +330,39 @@ function ContributionWidget({ centerCode }: { centerCode: string }) {
     const pb = Number(ranks[b.id]?.item?.current_points ?? b.current_points ?? 0)
     return pb - pa
   })
-  // 竖版卡：物品在上、名字和进度在中、贡献榜在下 —— 一个屏能读到「谁贡献了多少」
-  const cols = sortedItems.length <= 2 ? Math.max(1, sortedItems.length) : sortedItems.length <= 4 ? 2 : 3
-  const imgH = cols === 1 ? 420 : cols === 2 ? 320 : 220
-  const nameSize = cols === 1 ? 34 : cols === 2 ? 26 : 20
-  const subSize = cols === 1 ? 20 : cols === 2 ? 16 : 13
+  // 竖版卡：物品在上、名字和进度在中、贡献榜在下
+  // 行列按物品数量算死，保证一屏看得完（最多 12 个，再多就只显示前 12 个，按积分排）
+  const shown = sortedItems.slice(0, 12)
+  const n = shown.length
+  const cols = n <= 1 ? 1 : n === 2 ? 2 : n <= 4 ? 2 : n <= 6 ? 3 : 4
+  const rows = Math.max(1, Math.ceil(n / cols))
+  const oneRow = rows === 1
+  const nameSize = oneRow ? (cols === 1 ? 32 : 24) : 18
+  const subSize = oneRow ? (cols === 1 ? 19 : 15) : 13
+  const topN = oneRow ? 5 : 3
   return (
     <div className="h-full overflow-hidden"
-      style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: 16, alignItems: 'stretch' }}>
-      {sortedItems.map((it) => {
+      style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+        gridTemplateRows: `repeat(${rows}, minmax(0, ${oneRow ? '620px' : '1fr'}))`,
+        alignContent: oneRow ? 'center' : 'stretch',
+        gap: 12,
+      }}>
+      {shown.map((it) => {
         const rank = ranks[it.id]
         const cur = Number(rank?.item?.current_points ?? it.current_points ?? 0)
         const target = Number(rank?.item?.target_points ?? it.target_points ?? 0)
         const pct = target > 0 ? Math.min(100, Math.round((cur / target) * 100)) : 0
-        const top = (rank?.rows || []).slice(0, 5)
+        const top = (rank?.rows || []).slice(0, topN)
         const donors = Number(rank?.donors || 0)
         const img = it.image ? `/api/pocketbase-proxy/api/files/${it.collectionId}/${it.id}/${it.image}` : ''
         return (
-          <div key={it.id} className="flex h-full min-h-0 flex-col rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            {/* 图在上 */}
-            <div className="w-full min-h-0 flex-1 overflow-hidden rounded-2xl bg-gray-100" style={{ minHeight: imgH }}>
+          <div key={it.id} className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+            {/* 图在上：撑满剩余高度，卡片再小也不会把内容挤出去 */}
+            <div className="w-full min-h-0 flex-1 overflow-hidden rounded-xl bg-gray-100">
               {img
-                ? <img src={img} alt={it.name} className="h-full w-full object-cover" />
+                ? <img src={img} alt={it.name} className="h-full w-full object-contain" />
                 : <div className="flex h-full w-full items-center justify-center text-4xl">🎁</div>}
             </div>
 

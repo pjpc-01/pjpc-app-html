@@ -644,6 +644,7 @@ export const ZH_TO_EN: Record<string, string> = {
   "全选 / 取消全选": "Select All / Deselect All",
   "全部分类": "All Categories",
   "全部分行": "All Branches",
+  "只在这个分行的幻灯片显示": "Shown only on this branch's slideshow",
   "全部合计": "Grand Total",
   "全部员工": "All Staff",
   "全部季度": "All Quarters",
