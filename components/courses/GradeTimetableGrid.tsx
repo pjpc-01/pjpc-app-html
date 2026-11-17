@@ -29,7 +29,7 @@ const DAY_LABEL_KEYS: Record<string, string> = {
 // Tailwind 的 bg-xxx-300 有些压根没生成。所以底色一律写死 hex，走内联样式，保证跟纸质课表一个颜色。
 const GRADE_PALETTE = [
   { head: "#6ee7b7", cell: "#d1fae5", edge: "#34d399" },
-  { head: "#fcd34d", cell: "#fef3c7", edge: "#fbbf24" },
+  { head: "#fcd34d", cell: "#fef3c7", edge: "#f59e0b" },
   { head: "#fda4af", cell: "#ffe4e6", edge: "#fb7185" },
   { head: "#7dd3fc", cell: "#e0f2fe", edge: "#38bdf8" },
   { head: "#c4b5fd", cell: "#ede9fe", edge: "#a78bfa" },
@@ -157,62 +157,67 @@ export default function GradeTimetableGrid() {
         </div>
       </CardHeader>
       <CardContent className="overflow-x-auto">
-        <table className="w-full table-fixed min-w-[900px] border-collapse text-[13px] leading-tight">
-          <thead>
-            <tr>
-              <th className="w-[62px] border border-gray-200 bg-gray-100 px-1 py-1.5 text-[11px] font-semibold text-gray-600">
-                {t("星期")}
-              </th>
-              {grades.map((g, gi) => {
-                const st = styleFor(gi)
-                return (
-                  <th key={g} colSpan={3} className="border border-gray-200 px-2 py-1.5 text-[13px] font-bold text-gray-800"
-                      style={{ backgroundColor: st.head }}>
-                    {gradeLabel(g) || g}
-                  </th>
-                )
-              })}
-            </tr>
-          </thead>
-          <tbody>
-            {DAYS.map(day => {
-              const maxRows = Math.max(1, ...grades.map(g => grid[g][day].length))
-              return Array.from({ length: maxRows }).map((_, i) => (
-                <tr key={`${day}-${i}`} className="align-top">
-                  {i === 0 && (
-                    <td rowSpan={maxRows} className="border border-gray-200 bg-gray-50 px-2 py-2 text-center text-xs font-semibold text-gray-700">
-                      {t(DAY_LABEL_KEYS[day])}
-                    </td>
-                  )}
-                  {grades.map((g, gi) => {
-                    const st = styleFor(gi)
-                    const slot = grid[g][day][i]
-                    // 每个年级三列外框铺年级底色；没课就三个空格，不打 —
-                    if (!slot) {
+        <div className="overflow-hidden rounded-xl border border-gray-200">
+          <table className="w-full table-fixed min-w-[880px] border-collapse text-[13px] leading-tight">
+            <thead>
+              <tr>
+                <th className="w-[56px] border-b border-gray-200 bg-gray-50 py-2 text-[11px] font-semibold text-gray-500">
+                  {t("星期")}
+                </th>
+                {grades.map((g, gi) => {
+                  const st = styleFor(gi)
+                  return (
+                    <th key={g} colSpan={3} className="border-b border-gray-200 bg-gray-50 py-2 text-[13px] font-bold text-gray-900">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: st.edge }} />
+                        {gradeLabel(g) || g}
+                      </span>
+                    </th>
+                  )
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {DAYS.map(day => {
+                const maxRows = Math.max(1, ...grades.map(g => grid[g][day].length))
+                return Array.from({ length: maxRows }).map((_, i) => (
+                  <tr key={`${day}-${i}`}
+                    className={`align-top hover:bg-gray-50/70 ${i === 0 ? "border-t border-gray-300" : ""}`}>
+                    {i === 0 && (
+                      <td rowSpan={maxRows} className="border-r border-gray-100 bg-gray-50/60 px-1 py-2 text-center text-[11px] font-semibold text-gray-500">
+                        {t(DAY_LABEL_KEYS[day])}
+                      </td>
+                    )}
+                    {grades.map((g, gi) => {
+                      const st = styleFor(gi)
+                      const slot = grid[g][day][i]
+                      // 没课就三个空格，不打 —（打满了反而杂）
+                      if (!slot) {
+                        return (
+                          <Fragment key={`${g}-${day}-${i}`}>
+                            <td className="border-b border-gray-100" />
+                            <td className="border-b border-gray-100" />
+                            <td className="border-b border-r border-gray-100" />
+                          </Fragment>
+                        )
+                      }
                       return (
                         <Fragment key={`${g}-${day}-${i}`}>
-                          <td className="border border-gray-200 px-2 py-1.5" style={{ backgroundColor: st.cell }} />
-                          <td className="border border-gray-200" style={{ backgroundColor: st.cell }} />
-                          <td className="border border-gray-200" style={{ backgroundColor: st.cell }} />
+                          <td className="border-b border-gray-100 py-1.5 pl-3 pr-1 font-semibold text-gray-900"
+                            style={{ boxShadow: `inset 3px 0 0 ${st.edge}` }}>{t(slot.subject)}</td>
+                          <td className="whitespace-nowrap border-b border-gray-100 py-1.5 pr-1 text-[12px] tabular-nums text-gray-600">
+                            {slot.start}–{slot.end}{slot.room ? <span className="ml-1 text-[11px] text-gray-400">@{slot.room}</span> : null}
+                          </td>
+                          <td className="border-b border-r border-gray-100 py-1.5 pr-2 text-[12px] text-gray-700">{slot.teacher || ""}</td>
                         </Fragment>
                       )
-                    }
-                    return (
-                      <Fragment key={`${g}-${day}-${i}`}>
-                        <td className="border border-gray-200 px-2 py-1.5 font-bold uppercase tracking-wide text-gray-900"
-                          style={{ backgroundColor: st.cell, borderLeft: `2px solid ${st.edge}` }}>{t(slot.subject)}</td>
-                        <td className="border border-gray-200 whitespace-nowrap px-2 py-1.5 text-gray-700" style={{ backgroundColor: st.cell }}>
-                          {slot.start}–{slot.end}{slot.room ? <span className="ml-1 text-[11px] text-gray-500">@{slot.room}</span> : null}
-                        </td>
-                        <td className="border border-gray-200 px-2 py-1.5 text-gray-600" style={{ backgroundColor: st.cell }}>{slot.teacher || ""}</td>
-                      </Fragment>
-                    )
-                  })}
-                </tr>
-              ))
-            })}
-          </tbody>
-        </table>
+                    })}
+                  </tr>
+                ))
+              })}
+            </tbody>
+          </table>
+        </div>
       </CardContent>
     </Card>
   )
