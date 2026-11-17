@@ -121,16 +121,26 @@ export default function UnifiedAttendanceHub() {
 
   useEffect(() => { fetchRecords(); fetchReport() }, [fetchRecords, fetchReport])
 
-  // Auto-refresh on checkin event
+  // 只在真的有事发生时刷新（原来每 10 秒盲刷，一天白烧 1.7 万次请求）
+  //   ① 本机刷卡：GlobalCardScanner 派事件
+  //   ② 同一台机器别的标签页刷卡：storage 事件
+  //   ③ 切回这个页面 / 窗口重新获得焦点：补一次（换设备刷卡也能看到最新）
   useEffect(() => {
-    const handler = () => { fetchRecords(); fetchReport() }
-    window.addEventListener("pjpc:attendance-updated", handler)
-    return () => window.removeEventListener("pjpc:attendance-updated", handler)
-  }, [fetchRecords, fetchReport])
+    const refresh = () => { fetchRecords(); fetchReport() }
+    const onVisible = () => { if (document.visibilityState === "visible") refresh() }
 
-  useEffect(() => {
-    const interval = setInterval(() => { fetchRecords(); fetchReport() }, 10000)
-    return () => clearInterval(interval)
+    window.addEventListener("pjpc:attendance-updated", refresh)
+    window.addEventListener("focus", refresh)
+    document.addEventListener("visibilitychange", onVisible)
+    const onStorage = (e: StorageEvent) => { if (e.key === "pjpc:attendance-updated") refresh() }
+    window.addEventListener("storage", onStorage)
+
+    return () => {
+      window.removeEventListener("pjpc:attendance-updated", refresh)
+      window.removeEventListener("focus", refresh)
+      document.removeEventListener("visibilitychange", onVisible)
+      window.removeEventListener("storage", onStorage)
+    }
   }, [fetchRecords, fetchReport])
 
   const fmtTime = (iso: string | null) => {

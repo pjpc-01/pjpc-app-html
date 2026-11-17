@@ -116,6 +116,8 @@ export default function GlobalCardScanner() {
       show("success", `🎉 ${chkData.action}成功`, person.name)
       console.log(`💳 [考勤] ${chkData.action}成功: ${person.name}`)
       window.dispatchEvent(new CustomEvent("pjpc:attendance-updated"))
+      // 同机其他标签页收不到 window 事件，用 localStorage 戳一下（storage 事件只在别的标签页触发）
+      try { localStorage.setItem("pjpc:attendance-updated", String(Date.now())) } catch {}
     } catch (err: any) {
       show("error", `网络错误: ${err.message}`)
     }
