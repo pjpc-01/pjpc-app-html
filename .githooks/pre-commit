@@ -2,7 +2,7 @@
 # 挡住：凭据文件、数据库、学生数据导出、以及疑似写死的口令
 set -u
 
-bad=$(git diff --cached --name-only --diff-filter=ACM | grep -E '(^|/)\.env($|\.)|(^|/)pb_data/|\.db$|\.sqlite3?$|^data/|synorex.*\.json$|students.*backup.*\.json$' || true)
+bad=$(git diff --cached --name-only --diff-filter=ACM | grep -E '(^|/)\.env($|\.(local|production|development|test))|(^|/)pb_data/|\.db$|\.sqlite3?$|^data/|synorex.*\.json$|students.*backup.*\.json$' || true)
 if [ -n "$bad" ]; then
   echo "拒绝提交：以下文件不允许进仓库（凭据 / 数据库 / 学生数据）"
   echo "$bad"

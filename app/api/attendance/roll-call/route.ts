@@ -275,19 +275,18 @@ export async function PATCH(request: NextRequest) {
     const row = (existRes.items || [])[0]
 
     // 当天缺勤扣分净额（扣过的减掉已撤销的）
+    // 注意：自动扣分写的是「缺勤扣分 (日期)」，点名扣的是「点名缺勤 (日期)」，两种都要认，
+    // 否则老师把「来了但没打卡」的人改成出席时，自动扣的分退不回来。
     const netDeducted = async () => {
       const r = await fetch(
         `${PB_URL}/api/collections/point_logs/records?perPage=50&filter=${encodeURIComponent(
-          `student="${studentId}" && reason~"${date}" && (reason~"点名缺勤" || reason~"撤销点名缺勤")`,
+          `student="${studentId}" && reason~"${date}" && reason~"缺勤"`,
         )}`,
         { headers: { Authorization: token } },
       ).then(x => x.json())
-      let net = 0
-      for (const l of r.items || []) {
-        const amt = Math.abs(Number(l.amount || 0))
-        net += String(l.reason || '').includes('撤销') ? -amt : amt
-      }
-      return net
+      let sum = 0
+      for (const l of r.items || []) sum += Number(l.amount || 0)
+      return Math.max(0, -Math.round(sum))
     }
 
     const cfg = await settingsFor(token, s.center || '')

@@ -40,6 +40,8 @@ async function runAbsentOnce() {
 }
 
 export function startAbsentScheduler() {
+  // 启动时打一行，方便 journalctl 确认自动扣分到底是开还是只预演
+  console.log(`[ABSENT-SCHEDULER] armed=${process.env.ABSENT_AUTO_DEDUCT === '1' ? 'yes(自动扣分)' : 'no(只预演)'}`)
   // Check every 5 minutes
   const interval = setInterval(runAbsentOnce, 5 * 60 * 1000)
   // Also run once on startup (the API itself is idempotent via point_logs check)

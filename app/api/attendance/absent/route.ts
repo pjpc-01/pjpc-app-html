@@ -105,8 +105,20 @@ export async function POST(request: NextRequest) {
       for (const r of (leaves.items || [])) onLeave.add(r.student_id)
     } catch { /* ignore */ }
 
-    // 4. Find absent students（排除已签到 + 已批准请假）
-    const absentIds = targetStudents.filter((s: any) => !checkedInIds.has(s.id) && !onLeave.has(s.id)).map((s: any) => s.id)
+    // 3c. 老师今天已经点名「出席 / 请假」的人，不算缺勤（自动扣分要听点名的）
+    const markedPresent = new Set<string>()
+    try {
+      const rc = await pbGet(token, 'roll_call', {
+        perPage: '500', fields: 'student_id,status',
+        filter: `date >= "${today} 00:00:00.000Z" && date < "${today} 23:59:59.999Z" && (status="present" || status="leave")`,
+      })
+      for (const r of (rc.items || [])) markedPresent.add(r.student_id)
+    } catch { /* 表不存在也不影响 */ }
+
+    // 4. Find absent students（排除已签到 + 已批准请假 + 老师已点名出席/请假）
+    const absentIds = targetStudents
+      .filter((s: any) => !checkedInIds.has(s.id) && !onLeave.has(s.id) && !markedPresent.has(s.id))
+      .map((s: any) => s.id)
     const absentStudents = targetStudents.filter((s: any) => absentIds.includes(s.id))
 
     if (absentStudents.length === 0) {
