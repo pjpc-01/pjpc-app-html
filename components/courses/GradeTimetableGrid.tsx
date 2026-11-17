@@ -4,11 +4,11 @@
  * 各年级课表（表格视图）
  *
  * 跟甘特图不一样：甘特图是一条统一时间轴 + 年级开关；
- * 这个是把每个年级自己的课表并排放在一起看 —— 左列星期，右边每个年级三列
- * （科目 / 时间 / 老师），同一天有几节课就展开几行。
- * 老师/院长拿这张表打印出来发学生，所以带一个「打印」。
+ * 这个是把每个年级自己的课表并排放在一起看 —— 左列星期，右边每个年级一整栏
+ * （一个年级一种底色），格子里只放 科目 / 时间 / 老师 三行，不再写小表头。
+ * 同一天有几节课就展开几行，没课的格子留空。老师/院长会印出来发学生，所以带「打印」。
  */
-import { Fragment, useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, AlertCircle, RefreshCw, Printer, Table2 } from "lucide-react"
@@ -25,12 +25,14 @@ const DAY_LABEL_KEYS: Record<string, string> = {
 }
 
 // 年级底色：跟纸质课表一个习惯，一个年级一个颜色（按年级顺序取色，不写死中文键）
+// 注意：本项目把 amber 等颜色改成了品牌色变量（bg-amber-100 = hsl(var(--brand-100))），
+// Tailwind 的 bg-xxx-300 有些压根没生成。所以底色一律写死 hex，走内联样式，保证跟纸质课表一个颜色。
 const GRADE_PALETTE = [
-  { head: "bg-emerald-100 text-emerald-900", cell: "bg-emerald-50/40" },
-  { head: "bg-amber-100 text-amber-900", cell: "bg-amber-50/40" },
-  { head: "bg-rose-100 text-rose-900", cell: "bg-rose-50/40" },
-  { head: "bg-sky-100 text-sky-900", cell: "bg-sky-50/40" },
-  { head: "bg-violet-100 text-violet-900", cell: "bg-violet-50/40" },
+  { head: "#6ee7b7", cell: "#d1fae5", edge: "#34d399" },
+  { head: "#fcd34d", cell: "#fef3c7", edge: "#fbbf24" },
+  { head: "#fda4af", cell: "#ffe4e6", edge: "#fb7185" },
+  { head: "#7dd3fc", cell: "#e0f2fe", edge: "#38bdf8" },
+  { head: "#c4b5fd", cell: "#ede9fe", edge: "#a78bfa" },
 ]
 const styleFor = (idx: number) => GRADE_PALETTE[idx % GRADE_PALETTE.length]
 
@@ -155,29 +157,21 @@ export default function GradeTimetableGrid() {
         </div>
       </CardHeader>
       <CardContent className="overflow-x-auto">
-        <table className="w-full min-w-[760px] border-collapse text-sm">
+        <table className="w-full table-fixed border-collapse text-[13px] leading-tight">
           <thead>
             <tr>
-              <th rowSpan={2} className="w-16 border border-gray-200 bg-gray-50 px-2 py-2 text-xs font-semibold text-gray-600">
+              <th className="w-[62px] border border-gray-200 bg-gray-100 px-1 py-1.5 text-[11px] font-semibold text-gray-600">
                 {t("星期")}
               </th>
               {grades.map((g, gi) => {
                 const st = styleFor(gi)
                 return (
-                  <th key={g} colSpan={3} className={`border border-gray-200 px-2 py-2 text-sm font-bold ${st.head}`}>
+                  <th key={g} className="border border-gray-200 px-2 py-1.5 text-[13px] font-bold text-gray-800"
+                      style={{ backgroundColor: st.head }}>
                     {gradeLabel(g) || g}
                   </th>
                 )
               })}
-            </tr>
-            <tr>
-              {grades.map(g => (
-                <Fragment key={g}>
-                  <th className="border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-500">{t("科目")}</th>
-                  <th className="border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-500">{t("时间")}</th>
-                  <th className="border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-500">{t("老师")}</th>
-                </Fragment>
-              ))}
             </tr>
           </thead>
           <tbody>
@@ -193,24 +187,18 @@ export default function GradeTimetableGrid() {
                   {grades.map((g, gi) => {
                     const st = styleFor(gi)
                     const slot = grid[g][day][i]
+                    // 没课就留空，不打 —（打满了反而杂）
                     if (!slot) {
-                      return (
-                        <Fragment key={`${g}-${day}-${i}-empty`}>
-                          <td className={`border border-gray-100 ${st.cell} px-2 py-2 text-center text-gray-300`}>—</td>
-                          <td className={`border border-gray-100 ${st.cell}`} />
-                          <td className={`border border-gray-100 ${st.cell}`} />
-                        </Fragment>
-                      )
+                      return <td key={`${g}-${day}-${i}`} className="border border-gray-200 px-2 py-1.5"
+                        style={{ backgroundColor: st.cell }} />
                     }
                     return (
-                      <Fragment key={`${g}-${day}-${i}-slot`}>
-                        <td className={`border border-gray-100 ${st.cell} px-2 py-2 font-semibold text-gray-800`}>{t(slot.subject)}</td>
-                        <td className={`border border-gray-100 ${st.cell} whitespace-nowrap px-2 py-2 text-gray-600`}>
-                          {slot.start}–{slot.end}
-                          {slot.room ? <span className="ml-1 text-xs text-gray-400">@{slot.room}</span> : null}
-                        </td>
-                        <td className={`border border-gray-100 ${st.cell} px-2 py-2 text-gray-600`}>{slot.teacher || "—"}</td>
-                      </Fragment>
+                      <td key={`${g}-${day}-${i}`} className="border border-gray-200 px-2 py-1.5"
+                        style={{ backgroundColor: st.cell, borderLeft: `2px solid ${st.edge}` }}>
+                        <div className="font-bold uppercase tracking-wide text-gray-900">{t(slot.subject)}</div>
+                        <div className="text-[12px] text-gray-700">{slot.start}–{slot.end}{slot.room ? ` · ${slot.room}` : ""}</div>
+                        <div className="text-[12px] text-gray-500">{slot.teacher || "—"}</div>
+                      </td>
                     )
                   })}
                 </tr>
