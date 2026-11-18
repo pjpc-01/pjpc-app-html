@@ -66,7 +66,8 @@ const PLAN_OPTIONS = [
   "进行复习", "安排测验", "加强考试技巧",
 ]
 
-const PERFORMANCE_COLUMNS: { key: keyof StudentPerformance; label: string }[] = [
+type PerformanceKey = "focus" | "attitude" | "participation" | "homework" | "understanding" | "application"
+const PERFORMANCE_COLUMNS: { key: PerformanceKey; label: string }[] = [
   { key: "focus", label: "课堂专注力" },
   { key: "attitude", label: "学习态度" },
   { key: "participation", label: "课堂参与" },
@@ -77,8 +78,10 @@ const PERFORMANCE_COLUMNS: { key: keyof StudentPerformance; label: string }[] = 
 
 // ── Types ──
 interface StudentPerformance {
+  student_id?: string      // 2026-11-17：对报告用，旧资料可能只有名字
   student_name: string
   student_grade: string
+  comment?: string         // 每个学生一句话评语 ➜ 自动写进该学期学生报告的对应科目
   focus: Rating
   attitude: Rating
   participation: Rating
@@ -443,10 +446,11 @@ export default function TeacherTeachingReportPage() {
       student_performances: [
         ...prev.student_performances,
         {
+          student_id: student.id || "",
           student_name: name,
           student_grade: toGradeDisplay(student.grade || ""),
           focus: "", attitude: "", participation: "",
-          homework: "", understanding: "", application: "",
+          homework: "", understanding: "", application: "", comment: "",
         },
       ],
     }))
@@ -458,10 +462,11 @@ export default function TeacherTeachingReportPage() {
     const toAdd = students
       .filter((s: any) => !existing.has(s.name || s.student_name || ""))
       .map((s: any) => ({
+        student_id: s.id || "",
         student_name: s.name || s.student_name || "",
         student_grade: toGradeDisplay(s.grade || ""),
         focus: "", attitude: "", participation: "",
-        homework: "", understanding: "", application: "",
+        homework: "", understanding: "", application: "", comment: "",
       } as StudentPerformance))
     if (!toAdd.length) return
     setReport(prev => ({ ...prev, student_performances: [...prev.student_performances, ...toAdd] }))
@@ -524,6 +529,22 @@ export default function TeacherTeachingReportPage() {
       if (docFiles.length > 0) await uploadFiles(recordId, "documents", docFiles)
       setPhotoFiles([])
       setDocFiles([])
+      // 提交后：把每个学生的评语自动写进该学期学生报告的对应科目（2026-11-17 老板定）
+      if (submitStatus === "submitted") {
+        try {
+          const syncRes = await fetch("/api/reports/sync-evaluation", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reportId: recordId }),
+          })
+          const syncJson = await syncRes.json()
+          if (syncJson?.success && syncJson.updated > 0) {
+            toast.success(`${t("已同步到学生报告")} ${syncJson.updated} ${t("份")}`)
+          }
+        } catch {
+          // 同步失败不影响评估本身已保存
+        }
+      }
       toast.success(submitStatus === "submitted" ? t("报告已提交") : t("草稿已保存"))
       if (submitStatus === "submitted") {
         setViewMode("list")
@@ -1181,6 +1202,7 @@ export default function TeacherTeachingReportPage() {
                       {PERFORMANCE_COLUMNS.map(col => (
                         <TableHead key={col.key} className="text-center">{t(col.label)}</TableHead>
                       ))}
+                      <TableHead className="min-w-[220px]">{t("评语（自动进学生报告）")}</TableHead>
                       {!isView && <TableHead className="w-10"></TableHead>}
                     </TableRow>
                   </TableHeader>
@@ -1217,6 +1239,21 @@ export default function TeacherTeachingReportPage() {
                             )}
                           </TableCell>
                         ))}
+                        <TableCell className="align-top">
+                          {isView ? (
+                            <p className="whitespace-pre-line text-xs text-gray-700 max-w-[260px]">
+                              {perf.comment ? perf.comment : <span className="text-gray-300">—</span>}
+                            </p>
+                          ) : (
+                            <Textarea
+                              rows={2}
+                              value={perf.comment || ""}
+                              onChange={e => updatePerformance(idx, "comment", e.target.value)}
+                              placeholder={t("写一句评语，提交后自动写进该学期学生报告")}
+                              className="min-h-[52px] w-[240px] text-xs"
+                            />
+                          )}
+                        </TableCell>
                         {!isView && (
                           <TableCell>
                             <Button size="sm" variant="ghost" onClick={() => removePerformance(idx)}>
