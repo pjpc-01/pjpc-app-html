@@ -1061,15 +1061,16 @@ export default function TeacherTeachingReportPage() {
           </CardContent>
         </Card>
 
-        {/* ── SECTION 4: 学生整体学习表现 ── */}
+        {/* ── SECTION 4: 学生程度分析（打分 + 程度分类） ── */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Users className="h-4 w-4" />
-              {t("学生整体学习表现 Overall Class Performance")}
+              <Target className="h-4 w-4" />
+              {t("学生程度分析 Student Performance Analysis")}
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="space-y-4">
             {/* 选学生：下拉按年级分组排序；批量添加 = 年级打勾 + 单个打勾 */}
             {!isView && (() => {
               const notAdded = (list: any[]) => list.filter((s: any) =>
@@ -1190,101 +1191,9 @@ export default function TeacherTeachingReportPage() {
                 </div>
               )
             })()}
-
-            {report.student_performances.length === 0 ? (
-              <p className="text-gray-400 text-center py-4">{t("尚未添加学生")}</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-10">No</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>{t("年级")}</TableHead>
-                      {PERFORMANCE_COLUMNS.map(col => (
-                        <TableHead key={col.key} className="text-center">{t(col.label)}</TableHead>
-                      ))}
-                      <TableHead className="min-w-[220px]">{t("评语（自动进学生报告）")}</TableHead>
-                      {!isView && <TableHead className="w-10"></TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {report.student_performances.map((perf, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell>{idx + 1}</TableCell>
-                        <TableCell className="font-medium">{perf.student_name}</TableCell>
-                        <TableCell className="text-sm text-gray-500">{perf.student_grade}</TableCell>
-                        {PERFORMANCE_COLUMNS.map(col => (
-                          <TableCell key={col.key} className="text-center">
-                            {isView ? (
-                              perf[col.key] ? (
-                                <Badge variant={ratingVariant(perf[col.key])}>
-                                  {t(perf[col.key])}
-                                </Badge>
-                              ) : (
-                                <span className="text-xs text-gray-300">—</span>
-                              )
-                            ) : (
-                              <Select
-                                value={perf[col.key] || undefined}
-                                onValueChange={v => updatePerformance(idx, col.key, v)}
-                              >
-                                <SelectTrigger className="w-24 h-8 text-xs">
-                                  <SelectValue placeholder="—" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {RATING_OPTIONS.map(r => (
-                                    <SelectItem key={r} value={r}>{t(r)}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
-                          </TableCell>
-                        ))}
-                        <TableCell className="align-top">
-                          {isView ? (
-                            <p className="whitespace-pre-line text-xs text-gray-700 max-w-[260px]">
-                              {perf.comment ? perf.comment : <span className="text-gray-300">—</span>}
-                            </p>
-                          ) : (
-                            <Textarea
-                              rows={2}
-                              value={perf.comment || ""}
-                              onChange={e => updatePerformance(idx, "comment", e.target.value)}
-                              placeholder={t("写一句评语，提交后自动写进该学期学生报告")}
-                              className="min-h-[52px] w-[240px] text-xs"
-                            />
-                          )}
-                        </TableCell>
-                        {!isView && (
-                          <TableCell>
-                            <Button size="sm" variant="ghost" onClick={() => removePerformance(idx)}>
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* ── SECTION 5: 学生程度分析 (表格形式) ── */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Target className="h-4 w-4" />
-              {t("学生程度分析 Student Performance Analysis")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
               {/* 学生程度表格 */}
               {report.student_performances.length === 0 ? (
-                <p className="text-gray-400 text-center py-4">{t("请先在「学生整体学习表现」中添加学生")}</p>
+                <p className="text-gray-400 text-center py-4">{t("尚未添加学生")}</p>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
@@ -1307,12 +1216,28 @@ export default function TeacherTeachingReportPage() {
                           <TableCell className="text-sm text-gray-500">{perf.student_grade}</TableCell>
                           {PERFORMANCE_COLUMNS.map(col => (
                             <TableCell key={col.key} className="text-center">
-                              {perf[col.key] ? (
-                                <Badge variant={ratingVariant(perf[col.key])}>
-                                  {t(perf[col.key])}
-                                </Badge>
+                              {isView ? (
+                                perf[col.key] ? (
+                                  <Badge variant={ratingVariant(perf[col.key])}>
+                                    {t(perf[col.key])}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-xs text-gray-300">—</span>
+                                )
                               ) : (
-                                <span className="text-xs text-gray-300">—</span>
+                                <Select
+                                  value={perf[col.key] || undefined}
+                                  onValueChange={v => updatePerformance(idx, col.key, v)}
+                                >
+                                  <SelectTrigger className="w-24 h-8 text-xs">
+                                    <SelectValue placeholder="—" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {RATING_OPTIONS.map(r => (
+                                      <SelectItem key={r} value={r}>{t(r)}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                               )}
                             </TableCell>
                           ))}
@@ -1352,7 +1277,6 @@ export default function TeacherTeachingReportPage() {
                   </Table>
                 </div>
               )}
-
               <Separator />
 
               {/* 学生普遍遇到的问题 */}
@@ -1383,6 +1307,67 @@ export default function TeacherTeachingReportPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* ── SECTION 5: 学生整体学习表现（只留评语） ── */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Users className="h-4 w-4" />
+              {t("学生整体学习表现 Overall Class Performance")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {report.student_performances.length === 0 ? (
+              <p className="text-gray-400 text-center py-4">{t("尚未添加学生")}</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10">No</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>{t("年级")}</TableHead>
+                      <TableHead className="min-w-[240px]">{t("评语（自动进学生报告）")}</TableHead>
+                      {!isView && <TableHead className="w-10"></TableHead>}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {report.student_performances.map((perf, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell>{idx + 1}</TableCell>
+                        <TableCell className="font-medium">{perf.student_name}</TableCell>
+                        <TableCell className="text-sm text-gray-500">{perf.student_grade}</TableCell>
+                        <TableCell className="align-top">
+                          {isView ? (
+                            <p className="whitespace-pre-line text-xs text-gray-700 max-w-[260px]">
+                              {perf.comment ? perf.comment : <span className="text-gray-300">—</span>}
+                            </p>
+                          ) : (
+                            <Textarea
+                              rows={2}
+                              value={perf.comment || ""}
+                              onChange={e => updatePerformance(idx, "comment", e.target.value)}
+                              placeholder={t("写一句评语，提交后自动写进该学期学生报告")}
+                              className="min-h-[52px] w-[240px] text-xs"
+                            />
+                          )}
+                        </TableCell>
+                        {!isView && (
+                          <TableCell>
+                            <Button size="sm" variant="ghost" onClick={() => removePerformance(idx)}>
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
 
         {/* ── SECTION 6: 教学总结 ── */}
         <Card>
