@@ -6,6 +6,7 @@ export const ZH_TO_EN: Record<string, string> = {
   "请先选择教师": "Please Select a Teacher",
   "报告已提交": "Report Submitted",
   "已同步到学生报告": "Synced to Student Report",
+  "位学生该学期还没有学生报告，评语先存着": "students have no report for this term yet; comments are saved",
   "评语（自动进学生报告）": "Comment (auto into student report)",
   "写一句评语，提交后自动写进该学期学生报告": "Write one comment; it goes into this term's student report on submit",
   "草稿已保存": "Draft Saved",

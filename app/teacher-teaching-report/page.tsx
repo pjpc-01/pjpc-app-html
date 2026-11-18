@@ -540,6 +540,8 @@ export default function TeacherTeachingReportPage() {
           const syncJson = await syncRes.json()
           if (syncJson?.success && syncJson.updated > 0) {
             toast.success(`${t("已同步到学生报告")} ${syncJson.updated} ${t("份")}`)
+          } else if (syncJson?.success && syncJson.missingReports > 0) {
+            toast.warning(`${syncJson.missingReports} ${t("位学生该学期还没有学生报告，评语先存着")}`)
           }
         } catch {
           // 同步失败不影响评估本身已保存
