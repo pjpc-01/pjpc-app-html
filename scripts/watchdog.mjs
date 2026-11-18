@@ -93,6 +93,13 @@ async function main() {
   const problems = []
   const notes = []
 
+  // 构建锁：scripts/build-and-restart.sh 构建期间会停服务并换 .next，
+  // 这期间发现「服务不在」是正常的，不能拉起（拉起来起不动 → systemd crash loop）。
+  if (fs.existsSync('/home/pjpc/.pjpc-build.lock')) {
+    console.log(`[watchdog] ${new Date().toISOString()} 构建中，跳过本轮检查`)
+    return
+  }
+
   // 1. 服务：不在就自己拉起来（2026-11-17 加 —— 有任务停服构建失败后没起回来，站点 502 没人管）
   for (const svc of ['pjpc-nextjs', 'pjpc-pocketbase', 'pjpc-tunnel']) {
     const st = sh('systemctl', ['--user', 'is-active', svc])
