@@ -96,8 +96,19 @@ async function main() {
   // 构建锁：scripts/build-and-restart.sh 构建期间会停服务并换 .next，
   // 这期间发现「服务不在」是正常的，不能拉起（拉起来起不动 → systemd crash loop）。
   if (fs.existsSync('/home/pjpc/.pjpc-build.lock')) {
-    console.log(`[watchdog] ${new Date().toISOString()} 构建中，跳过本轮检查`)
-    return
+    // 构建失败时 postbuild 不会跑，锁会残留 → 超过 15 分钟当垃圾清掉，否则看门狗永远不动
+    let stale = false
+    try {
+      const info = JSON.parse(fs.readFileSync('/home/pjpc/.pjpc-build.lock', 'utf8'))
+      stale = Date.now() - Number(info.at || 0) > 15 * 60 * 1000
+    } catch { stale = true }
+    if (stale) {
+      try { fs.unlinkSync('/home/pjpc/.pjpc-build.lock') } catch {}
+      console.log(`[watchdog] 构建锁已超过 15 分钟，判定为残留，已清除`)
+    } else {
+      console.log(`[watchdog] ${new Date().toISOString()} 构建中，跳过本轮检查`)
+      return
+    }
   }
 
   // 1. 服务：不在就自己拉起来（2026-11-17 加 —— 有任务停服构建失败后没起回来，站点 502 没人管）

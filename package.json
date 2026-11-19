@@ -6,7 +6,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "prebuild": "node scripts/check-env.mjs && npm run check:i18n",
+    "prebuild": "node scripts/build-guard.mjs start && node scripts/check-env.mjs && npm run check:i18n",
     "build": "next build",
     "check:i18n": "node scripts/i18n-codemod.mjs --check && node scripts/i18n-verify.mjs",
     "build:static": "node scripts/build-static-simple.js",
@@ -16,7 +16,8 @@
     "export-pb-schema": "python3 scripts/export-pb-schema.py",
     "lint": "next lint",
     "pb:start": "pocketbase serve --http=0.0.0.0:8090",
-    "start": "next start -H 0.0.0.0 -p 3001"
+    "start": "next start -H 0.0.0.0 -p 3001",
+    "postbuild": "node scripts/build-guard.mjs end"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
