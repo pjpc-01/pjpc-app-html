@@ -29,6 +29,13 @@ async function runAbsentOnce() {
       },
       body: JSON.stringify({ dryRun: !autoOn }),
     })
+    // 不先看状态码就直接 res.json()，401/500 会变成一行「undefined absent」——
+    // 2026-10-22~11-16 缺勤扣分就是这么静默死了 18 个上课日没人发现
+    if (!res.ok) {
+      const body = await res.text().catch(() => '')
+      console.error(`[ABSENT-SCHEDULER] HTTP ${res.status} 扣分没跑成: ${body.slice(0, 200)}`)
+      return
+    }
     const data = await res.json()
     console.log(`[ABSENT-SCHEDULER] ${data.message || JSON.stringify(data).slice(0, 200)}`)
     if (Array.isArray(data.wouldDeduct) && data.wouldDeduct.length) {
