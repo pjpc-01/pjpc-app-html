@@ -159,7 +159,9 @@ export async function applyPoints(opts: ApplyPointsOptions): Promise<PointsResul
         method: 'POST',
         body: JSON.stringify({
           student: opts.studentId,
-          teacher: opts.teacherId || '',
+          // teacher 是 relation 字段：空字符串会被 PB 判成「找不到关联记录」(400)，
+          // 导致整条打卡积分写不进去、还被 checkin 的空 catch 吞掉（2026-08→11 打卡积分全丢）
+          ...(opts.teacherId ? { teacher: opts.teacherId } : {}),
           amount: applied,
           reason: String(opts.reason),
           points_before: before,

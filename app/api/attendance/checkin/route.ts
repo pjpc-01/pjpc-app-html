@@ -177,7 +177,11 @@ export async function POST(request: NextRequest) {
     if (!isTeacher) {
       try {
         pointsResult = await handlePointsIntegration(token, person_id, resolvedCenter, record, action)
-      } catch { /* points failure shouldn't block attendance */ }
+      } catch (e: any) {
+        // 以前这里是个空 catch —— 积分链坏了好几个月（2026-05→11 一条打卡流水都没有）都没人知道
+        console.error('[POINTS] 打卡积分失败:', e?.message || e)
+        pointsResult = { granted: false, error: String(e?.message || e) }
+      }
     }
 
     return NextResponse.json({
@@ -298,7 +302,8 @@ async function applyAttendancePoints(
       studentId,
       delta: Number(points),
       reason,
-      teacherId: 'system',
+      // teacher 是 relation 字段，传 'system' 这种假 id → PB 报 validation_missing_rel_records（400），
+      // 整条积分写不进去（2026-08 至 11 打卡积分全丢就是它）；没真实老师就干脆不传
       dedupeTerms: dedupTerms,
       token,
     })
