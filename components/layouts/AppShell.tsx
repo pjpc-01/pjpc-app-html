@@ -1048,7 +1048,7 @@ export default function AppShell({
           <div className="flex items-center justify-between px-3 py-2 border-t border-gray-200/30">
             {user ? (
               <>
-                <div className="flex items-center gap-2 min-w-0">
+                <Link href="/account" title={t("我的账号")} className="flex items-center gap-2 min-w-0 rounded-lg px-1 py-1 -mx-1 hover:bg-gray-100/40 transition-colors">
                   <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center text-[10px] font-bold text-gray-800 flex-shrink-0 shadow-sm shadow-gray-500/10">
                     {userAvatar || userName?.charAt(0)?.toUpperCase() || "A"}
                   </div>
@@ -1060,7 +1060,7 @@ export default function AppShell({
                       <span className="text-[9px] text-gray-500/50">{t('common.online')}</span>
                     </div>
                   </div>
-                </div>
+                </Link>
                 <div className="flex items-center gap-0.5">
                   <NotificationBell />
                   <Button

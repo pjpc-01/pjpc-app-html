@@ -293,6 +293,24 @@ const HELP: Record<string, PageHelp> = {
     steps: { zh: ['登记接送人姓名与关系', '异常（非授权人）要标记出来'], en: ['Record who picks up', 'Flag unauthorized pickups'] },
   },
 
+  '/account': {
+    summary: { zh: '我的账号：看自己的资料，改自己的登录密码', en: 'My account: your profile and password' },
+    chart: `flowchart TD
+  A["点左下角自己的名字"] --> B["我的账号"]
+  B --> C["看资料 姓名 角色 中心 账号"]
+  B --> D["改密码 旧密码 + 新密码"]
+  D --> E["成功 下次登录用新密码"]
+  D --> F["失败 看红字提示"]`,
+    steps: {
+      zh: ['这里只能改自己的密码，改不了别人的', '新密码至少 8 位，两次输一样', '改完以后当前不会掉线，下次登录才用新密码'],
+      en: ['You can only change your own password', 'At least 8 characters, typed twice', 'You stay logged in until next time'],
+    },
+    tips: {
+      zh: ['名字、中心、角色被写错了要找管理员改，这里改不了', '忘记旧密码就找管理员重置'],
+      en: ['Name/center/role changes need an admin', 'Forgot the old one? Ask an admin to reset'],
+    },
+  },
+
   '/settings': {
     summary: { zh: '设置：系统、权限、公司资料、费率', en: 'Settings: system, roles, company, rates' },
     chart: `flowchart TD
