@@ -4,6 +4,7 @@ import React from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
+import PageHelpButton from "@/components/help/PageHelpButton"
 
 export interface PageLayoutProps {
   title: string
@@ -51,7 +52,11 @@ export default function PageLayout({
             </Button>
           )}
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold text-gray-900 truncate">{title}</h2>
+            <div className="flex items-center gap-2 min-w-0">
+              <h2 className="text-lg font-semibold text-gray-900 truncate">{title}</h2>
+              {/* 「?」：这一页的说明 + mermaid 流程图（内容在 lib/page-help.ts，按路径自动匹配） */}
+              <PageHelpButton title={title} description={description} />
+            </div>
             <p className="text-sm text-gray-500 truncate">{description}</p>
           </div>
         </div>

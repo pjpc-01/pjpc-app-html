@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import PageHelpButton from "@/components/help/PageHelpButton"
 import { useLanguage } from "@/contexts/language-context"
 import {
   BarChart,
@@ -457,9 +458,12 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
       <div className="bg-gradient-to-br from-yellow-100 via-yellow-50 to-amber-50 rounded-2xl p-6 sm:p-8 relative overflow-hidden shadow-sm border border-yellow-200">
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">
-              {t("数据分析仪表板")}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">
+                {t("数据分析仪表板")}
+              </h2>
+              <PageHelpButton title={t("数据分析仪表板")} description={t("欢迎回来，")} />
+            </div>
             <p className="text-amber-700 text-sm sm:text-base">
               {t("欢迎回来，")}{userProfile?.name || "管理员"} {t("· 当前查看：")}
               <span className="font-semibold text-amber-900">{selectedCenterName}</span>
