@@ -45,13 +45,52 @@
 > ⚠️ 本清单未收录 2026-10-12 UX 巡检新抓的 2 条现网 bug（发票列表「年级」列恒空、仪表板「总收入」含已删收款 RM 4,337.00）——
 > 它们只存在于 `PRIORITY.md`「五、UX」，蓝图侧无对应条目（是否要在这里建 bug 清单待定）。
 
-| # | 事项 | 问题 | 现状 |
+> 🆕 **2026-11-19 复核（只读核实 + 当日修复）**
+> #1 NFC UID 统一 —— **代码已解决**：`normalizeCardUid()` + `getCardUidSearchTerms()`（`lib/utils.ts`）同时匹配十进制 / 十六进制 / 带分隔符三种写法，`/api/nfc/tap` 对 `card_uid` 与 `nfc_uid` 两个字段都查。`nfc_cards` 146 条里 `nfc_uid` 仍全空，但**已不影响刷卡**，只剩「用手机 Web NFC 新绑卡」时该填哪个字段的老问题。
+> #2 学生成绩报告 —— **仍待办**：`grades` 484 条，只覆盖 67 / 119 在读学生，而且**全部只有 `midterm` 一个学期**（10 个科目）。DataStudio 导入没继续拉 Form 1–5。
+> #3 Finance 全测试 —— 维持已完成。
+> #4 教师 agent profile —— **已完成**：teacher / points-agent / alicia-agent / ma-agent / joseph-agent / discord / principal-agent 共 7 个 profile 在线。
+> #5 考勤打卡积分 —— **已完成**：打卡 +2 曾用 `teacherId: 'system'`（relation 字段传假 id）→ `point_logs` 写入 400，又被空 `catch` 吞掉，2026-11-07 ~ 11-19 静默丢失；已修复并补发 **684 分（342 人次 / 85 人）**。缺勤扣分另有 10-22 ~ 11-16 因调度器不看状态码（401 变成一行 `undefined absent`）静默失败，11-17 起恢复，历史按老板决定**不追补**。
+
+### 🚚 2026-11-17 ~ 11-19 已交付（蓝图此前未回填）
+
+| 提交 | 内容 |
+|------|------|
+| `34e5159c` | 排班整月铺满（1 号到月末、已存在跳过、公假/请假排除）+ 时薪工时只认排班 + 每月 1/25 号自动生成 |
+| `075a7c50` | 看门狗会自己拉起挂掉的服务；`build-and-restart.sh` 失败回滚 `.next` |
+| `36cf4c1f` | 构建锁 + 看门狗跳锁 + systemd `StartLimitBurst`，构建与看门狗不再互相打架 |
+| `c1918de9` | 教学评估的「评语」列提交后自动写进该学期学生报告 |
+| `a9386c9e` | 评估同步三坑：同科多老师合并、清空只清 `source='eval'`、缺报告不丢 |
+| `f550c5be` | 教学评估去重：「学生程度分析」在前（打分 + 程度分类），「学生整体学习表现」在后只留评语 |
+| `7f102d89` | 打卡积分根因修复（`point_logs.teacher` 传假 id）+ 11-07~11-19 补发 684 分 |
+| `f0b5a0cb` | 缺勤扣分失败不再静默（401 直接打状态码 + 响应体） |
+| `eeb5e3ab` | 任何 `npm run build` 都自动上构建锁（prebuild/postbuild），不再只有 build-and-restart.sh 安全 |
+
+| # | 事项 | 问题 | 现状（2026-11-19） |
 |---|------|------|------|
-| 1 | **NFC UID 统一** | Card reader (USB) 和手机 Web NFC 扫出来的 uid 格式不同，没有 convert | `nfc_cards` 126条，`card_uid` 十进制有值但 `nfc_uid` hex 全空 |
-| 2 | **学生成绩报告** | DataStudio 导入只完成 PU1 不到一半，Form1-5 全没拉 | 92条成绩，13/32 PU1 成功。20人无/假 NRIC |
-| 3 | **Finance 全测试** | 薪资 SOCSO/EIS/PCB 修正，需全量重算验证 | SOCSO ✅、EIS ✅、Synorex ✅、PCB ✅、EPF ✅ |
-| 4 | **创建教师 agent profile** | Alicia 和马老师各一个 Hermes agent profile | 未开始 |
-| 5 | **考勤打卡积分验证** | 打卡有没有加分、有没有按设置时间判断缺勤 | 17点缺勤逻辑已有，待全查 |
+| 1 | **NFC UID 统一** | Card reader (USB) 和手机 Web NFC 扫出来的 uid 格式不同，没有 convert | **代码已解决**：`normalizeCardUid` 双格式匹配；146 张卡 `card_uid` 有值、`nfc_uid` 全空但不影响刷卡 |
+| 2 | **学生成绩报告** | DataStudio 导入只完成 PU1 不到一半，Form1-5 全没拉 | 484 条 / 67 人 / 只有 `midterm`；PU1 已拉，其余未拉，**仍待办** |
+| 3 | **Finance 全测试** | 薪资 SOCSO/EIS/PCB 修正，需全量重算验证 | SOCSO、EIS、Synorex、PCB、EPF 全过 —— 已完成 |
+| 4 | **创建教师 agent profile** | Alicia 和马老师各一个 Hermes agent profile | **已完成**：7 个 profile 在线 |
+| 5 | **考勤打卡积分验证** | 打卡有没有加分、有没有按设置时间判断缺勤 | **已修复**：打卡 +2 已补 684 分；缺勤扣分 11-17 起正常、历史不追补 |
+
+---
+
+## 📊 现况快照（2026-11-19 13:20 实测，只读）
+
+| 项目 | 数值 |
+|------|------|
+| 服务 | `pjpc-nextjs` / `pjpc-pocketbase` / `pjpc-tunnel` / `pjpc-watchdog.timer` 全 active |
+| 对外 | `https://pjpcapp.com/login` → 200；本地 `127.0.0.1:3001` → 200 |
+| 数据量 | `data.db` 33 MB；86 个集合；147 个学生（119 在读）|
+| 财务 | 发票 502 张（10 月 198、11 月 12）、收据 334 张 |
+| 排班 | `schedules` 835 条（10/11/12 月整月铺满，每月 1/25 号自动补）|
+| 教学 | 教学评估 93 份、学生报告 111 份、成绩 484 条 |
+| 积分 | 流水 8,000+ 条；打卡 +2 与缺勤 −3 两条链路均在跑 |
+| 代码 | 分支 `adrian-branch`，最新 `eeb5e3ab`；`main` / `stable` 停在 `4be6f2a9` |
+| 未提交 | `app/claim-form/page.tsx`（alicia-agent 正在改，非本助手改动）|
+
+**还挂着的**：成绩数据只有 midterm（67/119 人）· `daily_logs` 0 条 · `roll_call` 1 条（仍在用纸本点名）· 财务待办（材料费 RM180 漏收、8 张票状态未转、19 张收付不一致、7 笔抵扣 RM427.50）照旧由 principal-agent 报院长。
 
 ---
 
@@ -692,6 +731,8 @@
 
 **建议优先做：每日日志**
 
+> 📌 **2026-11-19 实测**：`daily_logs` 集合与 `/daily-logs` 页面（458 行）**都已建好**，但表里 **0 条记录** —— 功能在、没人用。接送 `pickup_records` 也只有 6 条，同样是有功能没落地。
+
 ```yaml
 daily_logs collection:
   studentId: relation→students
@@ -716,6 +757,9 @@ daily_logs collection:
 | 成绩分析 | ❌ 无 | 班级平均分、进步/退步趋势图 |
 | Report Card PDF | ✅ 已有基础 | 需接入真实成绩数据，生成正式成绩单 |
 | 家长查看成绩 | ⚠️ `/parent/grades` 页面已有但空 | 接真实数据 |
+
+> 📌 **2026-11-19 实测**：集合与 `/grades` 页面（484 行）都在，`grades` 有 **484 条 / 67 个学生 / 只有 `midterm` 一个学期 / 10 个科目** —— 数据不全，成绩分析和 Report Card 取不到完整数据。
+> 📌 **点名 `roll_call` 全库只有 1 条**（2026-11-17 一个学生）。老板 2026-11-19 说明：老师还有剩下的纸，所以仍在用**纸本点名**。这意味着缺勤扣分**拿不到「人来了但没刷卡」的豁免名单**，会误伤 —— 纸用完前不要放开自动扣分，或必须在系统里补点名。
 
 **新增 collection：`grades`**
 
