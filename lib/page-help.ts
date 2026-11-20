@@ -14,6 +14,8 @@ export type PageHelp = {
   summary: { zh: string; en: string }
   /** 流程图（mermaid flowchart / sequenceDiagram） */
   chart?: string
+  /** 追加的图（状态图等），弹窗里依次排下去 */
+  moreCharts?: string[]
   /** 怎么用：3–6 步 */
   steps: { zh: string[]; en: string[] }
   /** 注意事项 / 常见坑 */
@@ -51,8 +53,15 @@ const HELP: Record<string, PageHelp> = {
       zh: ['用上方筛选先缩到某个中心或年级', '点名字进详情，改完记得保存', '停课/毕业改的是「状态」，不是年级'],
       en: ['Filter by center or grade', 'Open a student to edit', 'Leaving is a status change, not grade'],
     },
+    moreCharts: [`stateDiagram-v2
+    [*] --> active: 注册 审核通过
+    active --> withdrawn: 停课或停学
+    active --> graduated: 毕业
+    withdrawn --> active: 复课
+    withdrawn --> deleted: 软删除
+    graduated --> deleted: 软删除`],
     tips: {
-      zh: ['状态 inactive 的学生不会出现在点名名册', '学号 MMA 开头的是拳班，不属于安亲班'],
+      zh: ['停课 withdrawn 和毕业 graduated 的学生不该出现在点名名册', '学号 MMA 开头的是拳班，不属于安亲班'],
       en: ['Inactive students are hidden from roll call', 'Student IDs starting with MMA are course-only'],
     },
   },
@@ -86,6 +95,14 @@ const HELP: Record<string, PageHelp> = {
   B --> D["批量弹窗记缺勤"]
   D --> E["按 points_absent 扣分"]
   C2 --> F["撤销会退回扣掉的分"]`,
+    moreCharts: [`stateDiagram-v2
+    [*] --> 未点名
+    未点名 --> present: 老师点圆圈记出席
+    未点名 --> absent: 批量弹窗记缺勤 扣分
+    未点名 --> leave: 请假单 不扣分
+    absent --> present: 改成出席 退回扣的分
+    present --> 未点名: 再点一下撤销
+    absent --> 未点名: 撤销 退回扣的分`],
     steps: {
       zh: ['先选分行 tab，只显示该中心在读学生', '一人一个圆按钮：勾 = 出席，再点变叉 = 未点名', '缺勤要在批量弹窗里处理，没勾的人才会被记缺勤'],
       en: ['Pick a center tab', 'One round button per student', 'Absence is recorded in the batch dialog'],
@@ -123,6 +140,12 @@ const HELP: Record<string, PageHelp> = {
   C --> D["够分就可标记已领取"]
   D --> E["下架 / 删除"]
   C --> F["电视看板幻灯片"]`,
+    moreCharts: [`stateDiagram-v2
+    [*] --> active: 建物品 填所需积分
+    active --> achieved: 贡献积分够了
+    achieved --> closed: 已领取或下架
+    active --> closed: 直接下架
+    closed --> [*]`],
     steps: {
       zh: ['先建物品并填所需积分', '贡献榜放照片下方，按捐分排序', '领取、下架、删除都在物品详情里'],
       en: ['Create the reward with a point cost', 'Ranking sits under the photo', 'Claim and archive live in the detail dialog'],
@@ -137,6 +160,16 @@ const HELP: Record<string, PageHelp> = {
   C --> D["对账"]
   D --> E["报表 / 催收"]
   F["支出 与 报销"] --> D`,
+    moreCharts: [`stateDiagram-v2
+    [*] --> issued: 开票
+    issued --> partially_paid: 收到部分款
+    issued --> paid: 一次付清
+    issued --> cancelled: 作废
+    issued --> carried_forward: 结转下月
+    partially_paid --> paid: 补齐余款
+    carried_forward --> paid: 下月付清
+    paid --> [*]
+    cancelled --> [*]`],
     steps: {
       zh: ['先看总览，再进具体分区', '开票金额来自学生费用配置，不在这里手改', '收款后发票状态会自动变'],
       en: ['Start from overview', 'Invoice amounts come from student fees', 'Receipts update invoice status'],
@@ -169,6 +202,12 @@ const HELP: Record<string, PageHelp> = {
   C --> D["EPF SOCSO EIS PCB 仅月薪"]
   D --> E["净薪 payslip"]
   F["补发 / 奖金"] --> C`,
+    moreCharts: [`stateDiagram-v2
+    [*] --> draft: 批量生成或手动建
+    draft --> approved: 院长审核
+    draft --> paid: 直接标记已发
+    approved --> paid: 发薪
+    paid --> [*]`],
     steps: {
       zh: ['时薪老师工时只认排班，不看打卡', '月薪固定按 160 小时', '补发请写在「补贴项」，会算进 gross'],
       en: ['Hourly pay uses schedules only', 'Monthly uses a fixed 160h', 'Back-pay belongs in allowance items'],
