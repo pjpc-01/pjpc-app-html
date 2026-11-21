@@ -11,6 +11,7 @@ import { Loader2, CheckCircle, AlertTriangle, UserPlus, Users, Key } from 'lucid
 import { useAuth } from '@/contexts/pocketbase-auth-context'
 import { useLanguage } from "@/contexts/language-context"
 import { computeUnreceived } from '@/lib/invoice-status'
+import PageHelpButton from "@/components/help/PageHelpButton"
 
 export default function AdminDashboard() {
   const { t } = useLanguage()
@@ -121,7 +122,10 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold text-amber-900">{t("管理中心")}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-amber-900">{t("管理中心")}</h1>
+          <PageHelpButton title={t("管理中心")} description={t("系统管理 · 用户管理 · 配置")} />
+        </div>
         <p className="text-amber-700/70">{t("系统管理 · 用户管理 · 配置")}</p>
       </div>
 

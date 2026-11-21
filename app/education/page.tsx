@@ -18,6 +18,7 @@ import { useCourses } from "@/hooks/useCourses"
 import { useStudents } from "@/hooks/useStudents"
 import { useTeachers } from "@/hooks/useTeachers"
 import { useLanguage } from "@/contexts/language-context"
+import PageHelpButton from "@/components/help/PageHelpButton"
 
 // ── Constants ──
 const WEEKDAYS_SHORT = ["日", "一", "二", "三", "四", "五", "六"]
@@ -398,7 +399,10 @@ export default function EducationOverviewPage() {
       <div>
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t("教育概览")}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-gray-900">{t("教育概览")}</h1>
+              <PageHelpButton title={t("教育概览")} description={t("课程表 · 班级总览 · 公告动态")} />
+            </div>
             <p className="text-gray-500 mt-1">{t("课程表 · 班级总览 · 公告动态")}</p>
           </div>
           <Link href="/activities">

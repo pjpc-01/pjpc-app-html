@@ -9,6 +9,8 @@
  * 写法约束：节点文字用双引号包住，不要用括号/冒号（mermaid 会解析失败）。
  */
 
+import { MORE_HELP } from './page-help-more'
+
 export type PageHelp = {
   /** 一句话：这页是干什么的 */
   summary: { zh: string; en: string }
@@ -23,6 +25,9 @@ export type PageHelp = {
 }
 
 const HELP: Record<string, PageHelp> = {
+  // 第二批（学生端 / 老师端 / 教务 / 行政）：见 lib/page-help-more.ts
+  ...MORE_HELP,
+
   '/': {
     summary: { zh: '总览：今天该看什么一眼就知道', en: 'Overview: what needs attention today' },
     chart: `flowchart TD
@@ -346,8 +351,22 @@ export function helpFor(pathname: string): PageHelp | null {
   if (!pathname) return null
   const clean = pathname.split('?')[0].replace(/\/$/, '') || '/'
   if (HELP[clean]) return HELP[clean]
+
+  // 动态路由：'/homework/5x9k' 要能命中 '/homework/[id]'
+  // 做法：段数相同、且每个非 [..] 段都对得上 → 算命中；段数多的键（更具体）优先
+  const segs = clean.split('/').filter(Boolean)
+  const wildcard = Object.keys(HELP)
+    .filter((k) => k.includes('['))
+    .filter((k) => {
+      const kSegs = k.split('/').filter(Boolean)
+      if (kSegs.length !== segs.length) return false
+      return kSegs.every((s, i) => (s.startsWith('[') ? true : s === segs[i]))
+    })
+    .sort((a, b) => b.length - a.length)
+  if (wildcard.length) return HELP[wildcard[0]]
+
   const keys = Object.keys(HELP)
-    .filter((k) => k !== '/' && clean.startsWith(k))
+    .filter((k) => k !== '/' && !k.includes('[') && clean.startsWith(k))
     .sort((a, b) => b.length - a.length)
   return keys.length ? HELP[keys[0]] : null
 }

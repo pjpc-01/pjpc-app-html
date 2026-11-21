@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { goBack } from "@/lib/back"
+import PageHelpButton from "@/components/help/PageHelpButton"
 
 export default function UserManagementPage() {
   const { t } = useLanguage()
@@ -199,7 +200,10 @@ export default function UserManagementPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t("用户与权限管理")}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight">{t("用户与权限管理")}</h1>
+            <PageHelpButton title={t("用户与权限管理")} description={t("管理用户账号、角色权限和档案绑定")} />
+          </div>
           <p className="text-sm text-muted-foreground">{t("管理用户账号、角色权限和档案绑定")}</p>
         </div>
         <div className="flex items-center gap-2">

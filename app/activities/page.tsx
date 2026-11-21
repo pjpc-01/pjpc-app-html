@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2, X } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
+import PageHelpButton from "@/components/help/PageHelpButton"
 
 const PROXY = "/api/pocketbase-proxy/api/collections/activities/records"
 
@@ -221,7 +222,10 @@ export default function ActivitiesPage() {
     <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("活动管理")}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900">{t("活动管理")}</h1>
+            <PageHelpButton title={t("活动管理")} description={t("按日历管理中心活动")} />
+          </div>
           <p className="text-gray-500 mt-1">{t("按日历管理中心活动")}</p>
         </div>
         <select

@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import PageHelpButton from "@/components/help/PageHelpButton"
 import { 
   Plus, Edit, Trash2, Building, MapPin, Phone, User, Users, FileText
 } from "lucide-react"
@@ -188,6 +189,7 @@ export default function CenterManagementPage() {
             <CardTitle className="flex items-center gap-2">
               <Building className="h-5 w-5" />
               {t("分行管理")}
+              <PageHelpButton title={t("分行管理")} description={t("管理所有分行信息，查看各分行学生人数")} />
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
               {t("管理所有分行信息，查看各分行学生人数")}
