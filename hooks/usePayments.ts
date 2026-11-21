@@ -77,6 +77,14 @@ export const usePayments = () => {
       else if (paid > 0) status = 'partially_paid'
       else if (['paid', 'partially_paid'].includes(inv.status)) status = 'issued'
       if (status !== inv.status) await updateRecord('invoices', invoiceId, { status })
+
+      // 多收的钱要有落点：超出票面部分记成 student_credits（下期自动抵扣）
+      // 幂等，服务端负责；失败不影响收款本身
+      fetch('/api/finance/overpay-credit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId }),
+      }).catch(() => {})
     } catch (err) {
       console.warn('[payments] 发票状态重算失败', err)
     }

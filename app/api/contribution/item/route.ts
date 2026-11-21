@@ -120,8 +120,8 @@ export async function PATCH(request: NextRequest) {
 
   if (type !== 'upgrade') return NextResponse.json({ success: false, error: '只有中心物品需要这个操作' }, { status: 400 })
   if (!id) return NextResponse.json({ success: false, error: '要指定物品' }, { status: 400 })
-  if (!['close', 'complete', 'received'].includes(action)) {
-    return NextResponse.json({ success: false, error: 'action 只能是 close / complete / received' }, { status: 400 })
+  if (!['close', 'complete', 'received', 'reopen'].includes(action)) {
+    return NextResponse.json({ success: false, error: 'action 只能是 close / complete / received / reopen' }, { status: 400 })
   }
 
   try {
@@ -154,6 +154,34 @@ export async function PATCH(request: NextRequest) {
       })
       if (!rr.ok) throw new Error(`记录领取失败（${rr.status}）`)
       return NextResponse.json({ success: true, action, received: payload })
+    }
+
+    // reopen：学生够了分又反悔 / 误按完成 → 退回「进行中」
+    // 安全线：已经领走过、或完成时已经把贡献分入账过 → 不许退（会重复发分）
+    if (action === 'reopen') {
+      if (String(item.status || '') !== 'achieved') {
+        return NextResponse.json({ success: false, error: '只有「已达成」的物品能退回进行中' }, { status: 400 })
+      }
+      if (item.received_at) {
+        return NextResponse.json({ success: false, error: '这个物品已经领走了，不能退回' }, { status: 400 })
+      }
+      const released = await pbGet(
+        token,
+        `contribution_logs/records?perPage=20&filter=${encodeURIComponent(`item="${id}" && kind="donate" && status != "pending"`)}`
+      )
+      if ((released.items || []).length > 0) {
+        return NextResponse.json({
+          success: false,
+          error: '这个物品完成时已经把贡献积分入账了，退回会重复发分。要重开请新建一个物品。',
+        }, { status: 409 })
+      }
+      const rr = await fetch(`${PB_URL}/api/collections/contribution_items/records/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: token },
+        body: JSON.stringify({ status: 'active' }),
+      })
+      if (!rr.ok) throw new Error(`退回失败（${rr.status}）`)
+      return NextResponse.json({ success: true, action, status: 'active' })
     }
 
     // complete

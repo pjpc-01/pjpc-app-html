@@ -433,6 +433,26 @@ export default function TeacherSalaryManagement() {
     }
   }, [filters.teacher_id])
 
+  // 薪资三步流程：草稿 → 已批准 → 已发薪；已发薪的金额由 pb_hooks/finance-guard.pb.js 锁死
+  const changeSalaryStatus = useCallback(async (record: any, action: 'approve' | 'pay' | 'revert') => {
+    const name = record.expand?.teacher_id?.name || ''
+    if (action === 'pay' && !window.confirm(`确认 ${name} ${record.year}年${record.month}月 已经发薪？发薪后金额就锁定了。`)) return
+    if (action === 'revert' && !window.confirm(`把 ${name} ${record.year}年${record.month}月 退回草稿？退回后金额可以改，但这次操作会留在审计记录里。`)) return
+    try {
+      const res = await fetch('/api/teacher-salary/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: record.id, action }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || !d?.success) throw new Error(d?.error || `操作失败（${res.status}）`)
+      toast.success(action === 'approve' ? '已批准' : action === 'pay' ? '已记录发薪' : '已退回草稿')
+      await fetchSalaryRecords()
+    } catch (e: any) {
+      toast.error(String(e?.message || e))
+    }
+  }, [])
+
   const fetchSalaryRecords = useCallback(async (page = 1) => {
     try {
       const params = new URLSearchParams()
@@ -1601,6 +1621,15 @@ export default function TeacherSalaryManagement() {
                             },
                           }}
                           actions={[
+                            ...(record.status === 'draft'
+                              ? [{ label: t("批准"), icon: CheckCircle, onClick: () => changeSalaryStatus(record, 'approve') }]
+                              : []),
+                            ...(record.status === 'approved' || record.status === 'draft'
+                              ? [{ label: t("发薪"), icon: CheckCircle, onClick: () => changeSalaryStatus(record, 'pay') }]
+                              : []),
+                            ...(record.status === 'paid' || record.status === 'approved'
+                              ? [{ label: t("退回草稿"), icon: Clock, onClick: () => changeSalaryStatus(record, 'revert') }]
+                              : []),
                             {
                               label: t("下载薪资单"), icon: FileDown,
                               onClick: () => {

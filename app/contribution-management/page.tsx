@@ -315,6 +315,22 @@ export default function ContributionManagementPage() {
     } catch (e: any) { setMsg(String(e?.message || e)) } finally { setBusy(false) }
   }
 
+  // 已达成但学生反悔 / 误按完成 → 退回进行中（已领取、已入账分的不许退）
+  const reopenItem = async (x: any) => {
+    setBusy(true); setMsg("")
+    try {
+      const r = await fetch(`/api/contribution/item?type=upgrade&id=${encodeURIComponent(x.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reopen" }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d?.success) throw new Error(d?.error || `退回失败（${r.status}）`)
+      setMsg(`${t("已退回进行中")}「${x.name}」`)
+      await load()
+    } catch (e: any) { setMsg(String(e?.message || e)) } finally { setBusy(false) }
+  }
+
   const addItem = async () => {
     if (!iName.trim()) { setMsg(t("先填物品名称")); return }
     setBusy(true); setMsg("")
@@ -1032,8 +1048,12 @@ export default function ContributionManagementPage() {
                   </>
                 )}
                 {detailItem.status === "achieved" && !detailItem.received_at && (
-                  <button className="rounded border border-green-300 px-3 py-1.5 text-xs text-green-700 hover:bg-green-50" disabled={busy}
-                    onClick={() => markReceived(detailItem)}>{t("标记已领取")}</button>
+                  <>
+                    <button className="rounded border border-green-300 px-3 py-1.5 text-xs text-green-700 hover:bg-green-50" disabled={busy}
+                      onClick={() => markReceived(detailItem)}>{t("标记已领取")}</button>
+                    <button className="rounded border px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50" disabled={busy}
+                      onClick={() => reopenItem(detailItem)}>{t("退回进行中")}</button>
+                  </>
                 )}
                 <button className="ml-auto rounded border border-red-200 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50" disabled={busy}
                   onClick={() => deleteItem("upgrade", detailItem)}>{t("删除")}</button>

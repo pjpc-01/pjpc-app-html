@@ -33,8 +33,11 @@ export function daysOverdue(inv: any, todayISO?: string): number {
 // ⚠️ 不要用「逐张 max(0, 票额 − 已收) 再求和」：某张多收的零头会被丢掉，
 //    总数会比真实值偏高（实测 +2.00 / +952 就是这么来的）。
 
-/** 不计入应收的发票状态（作废 / 草稿） */
-export const INVOICE_VOID_STATUSES = ["cancelled", "draft"]
+/** 不计入应收的发票状态
+ *  - cancelled / draft：没开出去
+ *  - carried_forward：余额已经并进下个月的新单，再算一次就是重复计（2026-11-21 定案）
+ */
+export const INVOICE_VOID_STATUSES = ["cancelled", "draft", "carried_forward"]
 
 /** 应收 = 开票总额（排除作废/草稿/已删） */
 export function invoiceReceivable(invoices: any[] = []): number {
