@@ -51,6 +51,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     // 学生账号只能看自己的，不能靠改参数看别人
     let studentId = searchParams.get('student_id')
+    // 刷卡机（免登录）只允许查「某一张卡的那个学生」，不许拉整张请假名单
+    if (kiosk && !studentId) {
+      return NextResponse.json({ success: false, error: '刷卡机查询必须带 student_id' }, { status: 400 })
+    }
     if (role === 'student') studentId = selfStudentId
     if (role === 'student' && !studentId) {
       return NextResponse.json({ success: true, data: [], total: 0, page: 1, totalPages: 0 })
@@ -72,9 +76,10 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50')
 
+    // 免登录的刷卡机不展开学生档案（里面有 NRIC / 地址 / 家长电话），只给请假字段
     const records = await pb.collection('student_leave_record').getList(page, limit, {
       filter,
-      expand: 'student_id',
+      expand: kiosk ? '' : 'student_id',
       sort: '-start_date',
     })
 
