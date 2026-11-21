@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, CreditCard, ArrowLeftRight, CheckCircle2, Clock, AlertTriangle } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import { useLanguage } from "@/contexts/language-context"
+import PageHelpButton from "@/components/help/PageHelpButton"
 
 const STATUS_MAP: Record<string, { label: string; color: "default" | "secondary" | "destructive" | "outline" }> = {
   paid: { label: "已付款", color: "default" },
@@ -65,7 +66,10 @@ export default function ParentPaymentsPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">{t('finance.payment_records')}</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-gray-900">{t('finance.payment_records')}</h1>
+        <PageHelpButton title={t('finance.payment_records')} description={t("查看孩子的学费缴纳情况")} />
+      </div>
       <p className="text-gray-500">{t("查看孩子的学费缴纳情况")}</p>
 
       {fetching ? (

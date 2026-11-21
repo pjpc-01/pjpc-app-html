@@ -1,6 +1,7 @@
 import { Cake, Gift } from "lucide-react"
 import { Student, ThemeColors } from "../types"
 import { getDobDate } from "../utils"
+import { withThumb } from "@/lib/utils"
 
 interface BirthdaysDisplayProps {
   data: Student[]
@@ -97,7 +98,7 @@ export default function BirthdaysDisplay({
                       <div className="text-center mb-4">
                         {s.avatar ? (
                           <img
-                            src={`/api/pocketbase-proxy/api/files/students/${s.id}/${s.avatar}`}
+                            src={withThumb(`/api/pocketbase-proxy/api/files/students/${s.id}/${s.avatar}`, '100x100')}
                             alt={s.student_name}
                             className="w-16 h-16 rounded-full mx-auto mb-2 object-cover border-2 border-white/30"
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
@@ -263,7 +264,7 @@ export default function BirthdaysDisplay({
                       <div className="text-center mb-4">
                         {s.avatar ? (
                           <img
-                            src={`/api/pocketbase-proxy/api/files/students/${s.id}/${s.avatar}`}
+                            src={withThumb(`/api/pocketbase-proxy/api/files/students/${s.id}/${s.avatar}`, '100x100')}
                             alt={s.student_name}
                             className="w-14 h-14 rounded-full mx-auto mb-2 object-cover border-2 border-white/30"
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}

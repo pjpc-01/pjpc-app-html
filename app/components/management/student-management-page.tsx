@@ -38,6 +38,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Checkbox } from "@/components/ui/checkbox"
+import { withThumb } from "@/lib/utils"
 import { 
   Search, 
   Filter, 
@@ -87,7 +88,8 @@ const studentAvatarUrl = (st: any): string | undefined => {
   const f = st?.avatar || st?.photo
   if (!f) return undefined
   if (String(f).startsWith('http')) return String(f)
-  return `/api/pocketbase-proxy/api/files/students/${st.id}/${f}`
+  // 列表只显示小头像：不加 thumb 就是原图（单张可能 2MB，120 人 = 20MB+）
+  return withThumb(`/api/pocketbase-proxy/api/files/students/${st.id}/${f}`, '100x100')
 }
 
 

@@ -25,6 +25,7 @@ import {
 } from "lucide-react"
 import { format } from "date-fns"
 import { zhCN } from "date-fns/locale"
+import PageHelpButton from "@/components/help/PageHelpButton"
 
 export default function ParentDailyLogsPage() {
   const searchParams = useSearchParams()
@@ -42,6 +43,9 @@ export default function ParentDailyLogsPage() {
           <CardContent className="py-12 text-center">
             <BookOpen className="h-12 w-12 mx-auto text-gray-300 mb-3" />
             <p className="text-gray-500">{t("请从家长首页选择孩子查看每日日志")}</p>
+            <div className="flex justify-center mt-2">
+              <PageHelpButton title={t("每日日志")} description={t("查看孩子在安亲班的学习和生活记录")} />
+            </div>
             <Button variant="outline" className="mt-4" onClick={() => router.push("/parent/dashboard")}>
               {t("返回首页")}
             </Button>
@@ -69,7 +73,10 @@ export default function ParentDailyLogsPage() {
           <ArrowLeft className="h-4 w-4 mr-1" /> {t("返回")}
         </Button>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">📓 {t("每日日志")}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-gray-900">📓 {t("每日日志")}</h1>
+            <PageHelpButton title={t("每日日志")} description={t("查看孩子在安亲班的学习和生活记录")} />
+          </div>
           <p className="text-sm text-gray-500">{t("查看孩子在安亲班的学习和生活记录")}</p>
         </div>
       </div>

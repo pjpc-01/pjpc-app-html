@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Bell, Megaphone, Calendar } from "lucide-react"
+import PageHelpButton from "@/components/help/PageHelpButton"
 
 export default function ParentNotificationsPage() {
   const { children, loading } = useParentPortal()
@@ -47,7 +48,10 @@ export default function ParentNotificationsPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">{t("通知消息")}</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-gray-900">{t("通知消息")}</h1>
+        <PageHelpButton title={t("通知消息")} description={t("来自安亲班的公告与通知")} />
+      </div>
       <p className="text-gray-500">{t("来自安亲班的公告与通知")}</p>
 
       {fetching ? (

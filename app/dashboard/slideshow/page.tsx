@@ -11,6 +11,7 @@ import { Loader2, Plus, Trash2, GripVertical, Play, Pause, Settings2, ChevronLef
 import { LeaderboardList, type LeaderboardStudent } from "@/components/shared/LeaderboardList"
 import ExamTargetsWidget from "@/components/dashboard/ExamTargetsWidget"
 import { useLanguage } from "@/contexts/language-context"
+import { withThumb } from "@/lib/utils"
 
 // ─── Types ──────────────────────────────────────────────────────────
 interface Student {
@@ -356,7 +357,7 @@ function ContributionWidget({ centerCode }: { centerCode: string }) {
         const pct = target > 0 ? Math.min(100, Math.round((cur / target) * 100)) : 0
         const top = (rank?.rows || []).slice(0, topN)
         const donors = Number(rank?.donors || 0)
-        const img = it.image ? `/api/pocketbase-proxy/api/files/${it.collectionId}/${it.id}/${it.image}` : ''
+        const img = it.image ? withThumb(`/api/pocketbase-proxy/api/files/${it.collectionId}/${it.id}/${it.image}`, '400x400') || '' : ''
         return (
           <div key={it.id} className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
             {/* 图在上：撑满剩余高度，卡片再小也不会把内容挤出去 */}

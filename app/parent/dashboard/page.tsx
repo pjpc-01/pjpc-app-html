@@ -1,7 +1,7 @@
 "use client"
 
 import { formatGrade } from "@/lib/utils"
-import React from "react"
+import React, { useEffect, useState } from "react"
 import { useParentPortal } from "@/hooks/useParentPortal"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -22,9 +22,30 @@ import {
 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import Link from "next/link"
+import PageHelpButton from "@/components/help/PageHelpButton"
 
 function ChildCard({ child }: { child: any }) {
   const { t } = useLanguage()
+
+  // 出勤率：原来这里写死 "95%"，家长看到的是假数字。
+  // 现在按最近 30 条真实签到算；没记录就显示 —（不是 0%，避免误会成都没来）。
+  const [rate, setRate] = useState<string>("—")
+  useEffect(() => {
+    let alive = true
+    fetch(
+      `/api/pocketbase-proxy/api/collections/student_attendance/records?perPage=30&sort=-date&filter=${encodeURIComponent(`student_id="${child.id}"`)}`
+    )
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive) return
+        const rows: any[] = d?.items || []
+        if (!rows.length) { setRate("—"); return }
+        const present = rows.filter((x) => x.status === "present").length
+        setRate(`${Math.round((present / rows.length) * 100)}%`)
+      })
+      .catch(() => { if (alive) setRate("—") })
+    return () => { alive = false }
+  }, [child.id])
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
@@ -51,7 +72,7 @@ function ChildCard({ child }: { child: any }) {
           <QuickStat
             icon={<UserCheck className="h-4 w-4" />}
             label={t('attendance.present')}
-            value="95%"
+            value={rate}
             color="text-green-600"
           />
           <QuickStat
@@ -161,9 +182,12 @@ export default function ParentDashboardPage() {
     <div className="p-4 sm:p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {parentName ? `${parentName}，您好 👋` : "家长门户"}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {parentName ? `${parentName}，您好 👋` : "家长门户"}
+            </h1>
+            <PageHelpButton title={t("家长门户")} description={t("查看孩子在安亲班的学习与生活情况")} />
+          </div>
           <p className="text-gray-500 mt-1">{t("查看孩子在安亲班的学习与生活情况")}</p>
         </div>
       </div>

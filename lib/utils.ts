@@ -652,3 +652,32 @@ export function studentAvatarUrl(
   if (!student.id) return undefined
   return `/api/pocketbase-proxy/api/files/students/${student.id}/${a}`
 }
+
+/**
+ * 给 PB 文件地址加缩略图参数。
+ *
+ * 为什么必须加：PB 只有在「字段设置了 thumbs」时才按 ?thumb=WxH 生成缩略图，
+ * 没设置的字段会原图返回。学生头像是手机拍的原图，单张能到 2MB，
+ * 一个列表 100 多人 = 20MB+，页面就卡成几秒（2026-11-22 实测 15.8 秒）。
+ *
+ * 尺寸必须落在字段 thumbs 名单里（students.avatar: 100/300/600，
+ * contribution_items.image: 100/400/800），否则 PB 还是吐原图。
+ */
+export function withThumb(url?: string | null, size = '100x100'): string | undefined {
+  if (!url) return undefined
+  if (!url.includes('/api/files/')) return url
+  if (/[?&]thumb=/.test(url)) return url
+  return `${url}${url.includes('?') ? '&' : '?'}thumb=${size}`
+}
+
+/**
+ * 晚接判定：超过 7:05pm 接走就算迟。
+ * 政策：7:05pm 起算，RM5/小时，首小时后叠加 RM5。
+ */
+export function isLatePickup(time?: string | null): boolean {
+  if (!time) return false
+  const m = String(time).trim().match(/^(\d{1,2}):(\d{2})/)
+  if (!m) return false
+  const mins = Number(m[1]) * 60 + Number(m[2])
+  return mins > 19 * 60 + 5   // 19:05
+}

@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { toast } from "sonner"
 import { CalendarDays, Loader2, Plane, UserRoundPlus } from "lucide-react"
+import PageHelpButton from "@/components/help/PageHelpButton"
 
 const LEAVE_TYPES = [
   { value: "sick", label: "病假" },
@@ -109,6 +110,7 @@ export default function ParentLeavePage() {
       <h1 className="text-xl font-bold text-gray-900 flex flex-wrap items-center gap-2">
         <CalendarDays className="h-5 w-5 text-indigo-600" />
         {t("家长请假申请")}
+        <PageHelpButton title={t("家长请假申请")} description={t("为孩子提交请假申请，提交后将等待老师审核")} />
       </h1>
       <p className="text-sm text-gray-500">{t("为孩子提交请假申请，提交后将等待老师审核")}</p>
 

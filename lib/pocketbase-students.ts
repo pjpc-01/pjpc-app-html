@@ -9,9 +9,9 @@ const getAvatarUrl = (record: any): string | undefined => {
   const avatar = record.photo || record.avatar
   if (!avatar) return undefined
   if (avatar.startsWith('http')) return avatar
-  const url = `/api/pocketbase-proxy/api/files/${record.collectionName || record.collectionId || 'students'}/${record.id}/${avatar}`
-  console.log(`[getAvatarUrl] ${record.id?.slice(0,10)}... => ${url}`)
-  return url
+  // ?thumb=100x100：列表头像只要小图。不加就是原图，单张能到 2MB（2026-11-22 实测列表卡 15.8 秒）
+  // 顺手去掉每个学生一条 console.log —— 120 个学生就是 120 条日志
+  return `/api/pocketbase-proxy/api/files/${record.collectionName || record.collectionId || 'students'}/${record.id}/${avatar}?thumb=100x100`
 }
 
 // 统一的学生数据接口 - 所有数据来自 students 集合
@@ -23,6 +23,8 @@ export interface Student {
   student_name?: string
   name?: string
   grade?: string
+  /** 班级（如 1H / 5B）——2026-11 新增 PB 字段 class_name */
+  class_name?: string
   is_peralihan?: boolean
   dob?: string
   fatherName?: string
@@ -236,6 +238,7 @@ export const getAllStudents = async (): Promise<Student[]> => {
       register_form_url: student.registrationLink,
       standard: student.grade,
       grade: student.grade,
+      class_name: (student as any).class_name || '',
       level: student.level,
       center: student.expand?.centerId?.code || student.center || '',
       centerId: student.centerId || '',
@@ -311,6 +314,7 @@ export const addStudent = async (studentData: any): Promise<Student> => {
       name: studentData.student_name || studentData.name || '未命名学生',
       student_id: studentData.student_id || '',
       grade: studentData.standard || studentData.grade || '',
+      class_name: studentData.class_name || '',
       fatherName: studentData.fatherName || studentData.father_name || '',
       motherName: studentData.motherName || studentData.mother_name || '',
       fatherPhone: studentData.fatherPhone || studentData.father_phone || '',
@@ -452,6 +456,7 @@ export const updateStudent = async (id: string, studentData: any): Promise<Stude
     if (get('student_name', 'name') !== undefined) pbData.name = get('student_name', 'name')
     if (get('student_id') !== undefined) pbData.student_id = get('student_id')
     if (get('standard', 'grade') !== undefined) pbData.grade = get('standard', 'grade')
+    if (get('class_name', 'className', 'class') !== undefined) pbData.class_name = get('class_name', 'className', 'class')
     
     // Parent fields — form sends camelCase, but also support snake_case
     if (get('fatherName', 'father_name') !== undefined) pbData.fatherName = get('fatherName', 'father_name')

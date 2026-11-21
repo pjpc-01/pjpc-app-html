@@ -15,7 +15,7 @@ import { FileText, Eye, Settings, Plus, Search, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useStudents } from "@/hooks/useStudents"
-import { formatGrade } from "@/lib/utils"
+import { formatGrade, withThumb } from "@/lib/utils"
 import { GRADE_CANON_ALL, GRADE_LABEL } from "@/lib/grades"
 import ReportSettingsManager, { type ReportSettingsPreset } from "@/app/components/report/ReportSettingsManager"
 import { REPORT_EN_DEFAULT } from "@/lib/pdf-generator"
@@ -147,7 +147,7 @@ export default function StudentReportsPage() {
     if (!av) return undefined
     if (String(av).startsWith('http')) return av
     const cid = stu?.collectionId || 'students'
-    return `/api/pocketbase-proxy/api/files/${cid}/${r.studentId}/${av}`
+    return withThumb(`/api/pocketbase-proxy/api/files/${cid}/${r.studentId}/${av}`, '100x100')
   }
 
   useEffect(() => {

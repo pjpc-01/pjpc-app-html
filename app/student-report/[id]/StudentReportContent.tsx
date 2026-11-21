@@ -15,7 +15,7 @@ import { useStudentReports, StudentReport, ReportSubject } from "@/hooks/useStud
 import { useStudents } from "@/hooks/useStudents"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useCurrentTeacher } from "@/hooks/useCurrentTeacher"
-import { scoreToGrade, gradeColorClass, formatGrade } from "@/lib/utils"
+import { scoreToGrade, gradeColorClass, formatGrade, withThumb } from "@/lib/utils"
 import {
   ArrowLeft, Printer, Download, Save, Edit3, FileText,
   Loader2, Settings, X, PlusCircle, Trash2,
@@ -275,7 +275,8 @@ export default function StudentReportContent() {
     if (!av) return ''
     if (String(av).startsWith('http')) return av
     const cid = (student as any)?.collectionId || 'students'
-    return `/api/pocketbase-proxy/api/files/${cid}/${report?.studentId}/${av}`
+    // 报告里头像显示得大，用 600 的缩略图就够（原图可能 2MB，进 PDF 会拖慢生成）
+    return withThumb(`/api/pocketbase-proxy/api/files/${cid}/${report?.studentId}/${av}`, '600x600')
   })()
 
   // Handle save

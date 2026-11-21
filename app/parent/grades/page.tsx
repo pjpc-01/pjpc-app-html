@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { AlertCircle, BarChart3, BookOpen, TrendingUp } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import { useLanguage } from "@/contexts/language-context"
+import PageHelpButton from "@/components/help/PageHelpButton"
 
 const gradeColor = (letter: string) => {
   switch (letter) {
@@ -83,7 +84,10 @@ export default function ParentGradesPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">{t('parent.grades_query')}</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-gray-900">{t('parent.grades_query')}</h1>
+        <PageHelpButton title={t('parent.grades_query')} description={t("查看孩子的考试成绩与学习进度")} />
+      </div>
       <p className="text-gray-500">{t("查看孩子的考试成绩与学习进度")}</p>
 
       {filtered.length === 0 ? (

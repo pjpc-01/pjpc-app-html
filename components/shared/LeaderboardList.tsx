@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Trophy, Star, Building, RefreshCw, Maximize2, Loader2 } from "lucide-react"
 import { gradeLabel } from "@/lib/grades"
 import { useLanguage } from "@/contexts/language-context";
+import { withThumb } from "@/lib/utils"
 
 export interface LeaderboardStudent {
   id: string
@@ -95,7 +96,7 @@ export function LeaderboardList({
   const getAvatarUrl = (s: LeaderboardStudent) => {
     if (!s.avatar) return null
     if (s.avatar.startsWith("http")) return s.avatar
-    return `/api/pocketbase-proxy/api/files/students/${s.id}/${s.avatar}`
+    return withThumb(`/api/pocketbase-proxy/api/files/students/${s.id}/${s.avatar}`, "100x100")
   }
 
   const avatarEl = (s: LeaderboardStudent, r: number) => {

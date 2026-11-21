@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useLanguage } from "@/contexts/language-context"
+import { withThumb } from "@/lib/utils"
 import { AlertCircle, Gift, Heart, CheckCircle2, ImagePlus, Trophy,
   Percent,
   SlidersHorizontal,
@@ -755,7 +756,7 @@ export default function ContributionManagementPage() {
                           onClick={() => openDetail(x)}
                         >
                           {x.image
-                            ? <img src={`/api/pocketbase-proxy/api/files/${x.collectionId}/${x.id}/${x.image}`} alt={x.name} className="h-full w-full object-cover" />
+                            ? <img src={withThumb(`/api/pocketbase-proxy/api/files/${x.collectionId}/${x.id}/${x.image}`, '400x400')} alt={x.name} loading="lazy" className="h-full w-full object-cover" />
                             : <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-xs text-gray-400"><ImagePlus className="h-5 w-5" />{t("无图")}</div>}
                         </button>
 
@@ -862,7 +863,7 @@ export default function ContributionManagementPage() {
                       <div key={x.id} className="flex flex-col overflow-hidden rounded-xl border bg-white">
                         <div className="relative aspect-square w-full bg-gray-100">
                           {x.image
-                            ? <img src={`/api/pocketbase-proxy/api/files/${x.collectionId}/${x.id}/${x.image}`} alt={x.name} className="h-full w-full object-cover" />
+                            ? <img src={withThumb(`/api/pocketbase-proxy/api/files/${x.collectionId}/${x.id}/${x.image}`, '400x400')} alt={x.name} loading="lazy" className="h-full w-full object-cover" />
                             : <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-xs text-gray-400"><ImagePlus className="h-5 w-5" />{t("无图")}</div>}
                         </div>
                         <div className="flex flex-1 flex-col gap-2 p-3">
@@ -958,7 +959,7 @@ export default function ContributionManagementPage() {
           <div className="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
             <div className="group relative aspect-video w-full bg-gray-100">
               {detailItem.image
-                ? <img src={`/api/pocketbase-proxy/api/files/${detailItem.collectionId}/${detailItem.id}/${detailItem.image}`} alt={detailItem.name} className="h-full w-full object-cover" />
+                ? <img src={withThumb(`/api/pocketbase-proxy/api/files/${detailItem.collectionId}/${detailItem.id}/${detailItem.image}`, '800x800')} alt={detailItem.name} className="h-full w-full object-cover" />
                 : <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-sm text-gray-400"><ImagePlus className="h-6 w-6" />{t("无图")}</div>}
               <button className="absolute left-2 top-2 z-20 rounded-full bg-black/70 p-2 text-white shadow hover:bg-black/85"
                 onClick={() => setDetailItem(null)} aria-label={t("关闭")} title={t("关闭")}>

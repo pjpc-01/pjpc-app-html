@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, ClipboardCheck, CheckCircle2, XCircle, Clock } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import { useLanguage } from "@/contexts/language-context"
+import PageHelpButton from "@/components/help/PageHelpButton"
 
 export default function ParentAttendancePage() {
   const { t } = useLanguage()
@@ -31,7 +32,9 @@ export default function ParentAttendancePage() {
         const results: Record<string, any[]> = {}
         for (const child of filteredChildren) {
           const res = await fetch(
-            `/api/pocketbase-proxy/api/collections/attendance/records?perPage=20&sort=-created&filter=${encodeURIComponent(`studentId='${child.id}'`)}`
+            // 2026-11-22 修：原来打的 attendance 集合根本不存在，家长端出勤永远是空的。
+            // 真实集合是 student_attendance，字段 student_id / date / status。
+            `/api/pocketbase-proxy/api/collections/student_attendance/records?perPage=20&sort=-date&filter=${encodeURIComponent(`student_id="${child.id}"`)}`
           )
           const data = await res.json()
           results[child.id] = data?.items || []
@@ -58,7 +61,10 @@ export default function ParentAttendancePage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">{t('attendance.attendance_records')}</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-gray-900">{t('attendance.attendance_records')}</h1>
+        <PageHelpButton title={t('attendance.attendance_records')} description={t("查看孩子的每日签到情况")} />
+      </div>
       <p className="text-gray-500">{t("查看孩子的每日签到情况")}</p>
 
       {filteredChildren.length === 0 ? (

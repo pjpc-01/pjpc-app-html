@@ -17,6 +17,7 @@ import {
   CalendarClock,
 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context";
+import { withThumb } from "@/lib/utils"
 
 // 无操作自动回待机的时间（毫秒）
 const IDLE_MS = 45000
@@ -372,7 +373,7 @@ export default function StudentKioskPage() {
 
   // ───────────────────────── 学生态 ─────────────────────────
   const avatarUrl = view.avatar
-    ? `/api/pocketbase-proxy/api/files/students/${view.person.id}/${view.avatar}`
+    ? withThumb(`/api/pocketbase-proxy/api/files/students/${view.person.id}/${view.avatar}`, '300x300')
     : null
 
   return (

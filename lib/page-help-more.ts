@@ -607,4 +607,113 @@ export const MORE_HELP: Record<string, PageHelp> = {
       en: ['Completed items are hidden from the loop'],
     },
   },
+
+  // ───────────────────────── 家长端 ─────────────────────────
+  '/parent/dashboard': {
+    summary: { zh: '家长门户：孩子今天怎么样、有没有欠费、有没有通知', en: 'Parent portal overview' },
+    chart: `flowchart TD
+  A["家长登录"] --> B["孩子卡片"]
+  B --> C["出勤率 按最近签到算"]
+  B --> D["成绩 查看"]
+  B --> E["缴费 查看"]
+  B --> F["作业 与 每日日志"]`,
+    steps: {
+      zh: ['一张卡片一个孩子，几个孩子就几张卡', '出勤率按最近 30 次签到算，没记录会显示「—」', '点任何一格都会进对应明细'],
+      en: ['One card per child', 'Attendance is the last 30 taps', 'Tap a tile to open the detail'],
+    },
+    tips: {
+      zh: ['看不到孩子表示还没绑定，找办公室关联', '家长端只能看自己孩子，看不到别家的资料'],
+      en: ['No child means not linked yet', 'Parents only see their own children'],
+    },
+  },
+
+  '/parent/attendance': {
+    summary: { zh: '出勤记录：孩子每天几点到、几点走', en: 'Child attendance records' },
+    chart: `flowchart LR
+  A["刷卡签到"] --> B["student_attendance"]
+  B --> C["家长端出勤列表"]
+  C --> D["已签到 或 缺勤"]`,
+    steps: {
+      zh: ['按日期从新到旧排', '这里只显示最近 10 条，多的去报表看'],
+      en: ['Newest first', 'Shows the latest 10 rows'],
+    },
+    tips: {
+      zh: ['没刷卡不等于没来，老师点名也会记录', '请假批准的那天不会算缺勤'],
+      en: ['No tap does not always mean absent', 'Approved leave is not an absence'],
+    },
+  },
+
+  '/parent/grades': {
+    summary: { zh: '成绩查询：孩子的考试成绩与进度', en: 'Child grades' },
+    chart: `flowchart TD
+  A["老师录入成绩"] --> B["按科目汇总"]
+  B --> C["家长端成绩表"]
+  C --> D["等级 与 分数"]`,
+    steps: {
+      zh: ['按科目看，别只看总分', '空白表示那科还没录，不是 0 分'],
+      en: ['Look per subject', 'Blank means not entered yet'],
+    },
+  },
+
+  '/parent/payments': {
+    summary: { zh: '缴费记录：每张发票收了没、还差多少', en: 'Child payment records' },
+    chart: `flowchart LR
+  A["每月发票"] --> B["已还 或 未还"]
+  B --> C["家长端缴费列表"]
+  C --> D["点开看明细"]`,
+    steps: {
+      zh: ['未还的会排前面', '金额跟办公室开的发票一致，有疑问拿发票号去问'],
+      en: ['Unpaid first', 'Amounts match the issued invoice'],
+    },
+    tips: {
+      zh: ['多付的钱会转成下期抵扣，下个月自动扣掉'],
+      en: ['Overpayment becomes a credit next month'],
+    },
+  },
+
+  '/parent/leave': {
+    summary: { zh: '请假申请：给孩子请假、看审批结果', en: 'Parent leave requests' },
+    chart: `flowchart TD
+  A["填日期 原因"] --> B["提交"]
+  B --> C["待老师审批"]
+  C --> D["批准 当天不算缺勤"]
+  C --> E["驳回 可改再交"]`,
+    steps: {
+      zh: ['日期要选对，跨天就选范围', '提交后等老师批，批准了当天不扣分'],
+      en: ['Pick the right dates', 'Approved days are not deducted'],
+    },
+    tips: {
+      zh: ['当天临时不来也请补交，否则会被记缺勤'],
+      en: ['Submit even for same-day absence'],
+    },
+  },
+
+  '/parent/notifications': {
+    summary: { zh: '通知消息：安亲班发给家长的公告', en: 'Notices for parents' },
+    chart: `flowchart LR
+  A["办公室发公告"] --> B["家长端通知"]
+  B --> C["未读红点"]
+  C --> D["点开变已读"]`,
+    steps: {
+      zh: ['未读的带红点，点开就消', '通知只发公告，不会发财务催款'],
+      en: ['Unread has a red dot', 'Finance reminders are not sent here'],
+    },
+  },
+
+  '/parent/dailylogs': {
+    summary: { zh: '每日日志：孩子当天功课、午睡、用餐、心情', en: 'Child daily log' },
+    chart: `flowchart TD
+  A["老师当天记录"] --> B["每日日志"]
+  B --> C["功课完成 与 午睡"]
+  B --> D["用餐 与 心情"]
+  C --> E["家长端按日期看"]`,
+    steps: {
+      zh: ['从家长首页选孩子进来', '一天一张卡，点开看细节'],
+      en: ['Enter from the parent home', 'One card per day'],
+    },
+    tips: {
+      zh: ['空白表示老师那天还没记，不是孩子没来'],
+      en: ['Blank means not recorded yet'],
+    },
+  },
 }
