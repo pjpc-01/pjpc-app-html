@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { participatesInPoints } from '@/lib/enrollment'
 import { applyPoints } from '@/lib/points'
 import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
@@ -73,15 +74,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: '缺勤扣分为0或正数，跳过', absent: 0 })
     }
 
-    // 2. Get all active students with points enabled
+    // 2. 选人：在读 + 参与积分，且排除「只上拳课」和「明年新生」
+    //    只看 points_enabled 不够 —— 明年新生 许宸嫣 的 points_enabled 是 true，
+    //    结果连扣 4 天 −3，人还没入学（2026-11-20 事故）。
     const allStudents = await pbGet(token, 'students', {
       perPage: '500',
-      fields: 'id,name,points,center,points_enabled',
+      fields: 'id,name,points,center,points_enabled,grade,student_id,status',
       filter: 'status="active"&&points_enabled=true',
     })
-    const targetStudents = center
-      ? (allStudents.items || []).filter((s: any) => s.center === center)
-      : (allStudents.items || [])
+    const targetStudents = (allStudents.items || [])
+      .filter((s: any) => participatesInPoints(s))
+      .filter((s: any) => !center || s.center === center)
 
     if (targetStudents.length === 0) {
       return NextResponse.json({ success: true, message: '无学生', absent: 0 })
