@@ -168,6 +168,7 @@ const EDU_TEACHERS_GROUP: NavItem[] = [
   { label: "教师排班", href: "/teacher-attendance-reports", icon: CalendarCheck },
   { label: "教学评估", href: "/teacher-teaching-report", icon: ClipboardCheck },
   { label: "绩效管理", href: "/teacher-performance", icon: Award },
+  { label: "老师报销单", href: "/claim-form", icon: Wallet },
 ]
 
 const EDU_RESOURCES_GROUP: NavItem[] = [
@@ -296,6 +297,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
           { label: "我的课程", href: "/teacher-workspace/courses", icon: BookOpen },
           { label: "我的考勤与积分", href: "/teacher-workspace/attendance", icon: UserCheck },
           { label: "请假", href: "/teacher-workspace/leave", icon: CalendarCheck },
+          { label: "报销单", href: "/teacher-workspace/claim", icon: Wallet },
         ],
       },
       {
@@ -639,6 +641,7 @@ export default function AppShell({
     "/teacher-workspace": "education.workspace",
     "/teacher-workspace/students": "education.workspace", "/teacher-workspace/courses": "education.workspace",
     "/teacher-workspace/attendance": "education.workspace", "/teacher-workspace/leave": "education.workspace",
+    "/teacher-workspace/claim": "education.workspace",
     "/contribution-management": "education.contribution",
     "/achievement-management": "system.achievements",
     "/teacher-teaching-report": "education.teaching_report",
@@ -701,6 +704,11 @@ export default function AppShell({
   const pathBlocked = (() => {
     if (userRole === 'admin') return false
     if (Object.keys(rolePerms).length === 0) return false
+    // 首页不放行权限判断：/ 是个分发页（学生→/my、家长→/parent/dashboard、
+    // 教师→/teacher-workspace，都在 app/page.tsx 里各自跳走）。
+    // 一旦在这里拦掉 children，分发页根本没被挂载，跳转永远不会发生 ——
+    // 学生登录后就卡在「没有权限」出不去（2026-11-22 修）。
+    if (pathname === '/') return false
     const key = CHILD_PERM[pathname]
     if (!key) return false
     return rolePerms[key] !== true
