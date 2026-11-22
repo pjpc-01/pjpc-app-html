@@ -55,7 +55,8 @@ export async function GET(request: NextRequest) {
       const teacherId = searchParams.get('teacher_id')
       const year = parseInt(searchParams.get('year') || '0')
       const month = parseInt(searchParams.get('month') || '0')
-      if (!teacherId || !year || !month) {
+      // teacher_id 可以不传：不传就一次算整月所有老师（页面批量用，省掉 11 个来回）
+      if (!year || !month) {
         return NextResponse.json({ success: false, error: '缺少必要参数' }, { status: 400 })
       }
       const startDate = `${year}-${month.toString().padStart(2, '0')}-01`
@@ -63,34 +64,50 @@ export async function GET(request: NextRequest) {
       const nextMonth = month === 12 ? 1 : month + 1
       const nextYear = month === 12 ? year + 1 : year
       const endExclusive = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`
-      const schedules = await pb.collection('schedules').getList(1, 500, {
-        filter: `teacher_id = "${teacherId}" && date >= "${startDate}" && date < "${endExclusive}"`
+      const schedules = await pb.collection('schedules').getList(1, 2000, {
+        filter:
+          `date >= "${startDate}" && date < "${endExclusive}"` +
+          (teacherId ? ` && teacher_id = "${teacherId}"` : '')
       })
-      let totalHours = 0
-      let overtimeHours = 0
-      const scheduleHoursByDate: Record<string, number> = {}
-      const seenSlots = new Set<string>()
-      schedules.items.forEach(schedule => {
-        if (schedule.start_time && schedule.end_time) {
-          const start = new Date(`2000-01-01T${schedule.start_time}`)
-          const end = new Date(`2000-01-01T${schedule.end_time}`)
-          const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-          if (hours < 0 || hours > 24) return
-          const dateStr = (schedule.date || '').split(' ')[0]
-          // 同一老师同一天同时段重复排班(如两条不同课程撞时段)只算一次，避免双算
-          const slotKey = `${dateStr}|${schedule.start_time}|${schedule.end_time}`
-          if (seenSlots.has(slotKey)) return
-          seenSlots.add(slotKey)
-          scheduleHoursByDate[dateStr] = (scheduleHoursByDate[dateStr] || 0) + hours
+
+      // 同一老师同一天同时段重复排班（两条不同课程撞时段）只算一次，避免双算 —— slotKey 必须带老师
+      const perTeacher: Record<string, { byDate: Record<string, number>; seen: Set<string> }> = {}
+      schedules.items.forEach((schedule: any) => {
+        const tid = String(schedule.teacher_id || '')
+        if (!tid) return
+        if (!(schedule.start_time && schedule.end_time)) return
+        const start = new Date(`2000-01-01T${schedule.start_time}`)
+        const end = new Date(`2000-01-01T${schedule.end_time}`)
+        const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+        if (hours < 0 || hours > 24) return
+        const dateStr = String(schedule.date || '').split(' ')[0]
+        const bucket = perTeacher[tid] || { byDate: {}, seen: new Set<string>() }
+        perTeacher[tid] = bucket
+        const slotKey = `${dateStr}|${schedule.start_time}|${schedule.end_time}`
+        if (bucket.seen.has(slotKey)) return
+        bucket.seen.add(slotKey)
+        bucket.byDate[dateStr] = (bucket.byDate[dateStr] || 0) + hours
+      })
+
+      const summarize = (byDate: Record<string, number>) => {
+        let totalHours = 0
+        let overtimeHours = 0
+        for (const dateStr of Object.keys(byDate)) {
+          const dayHours = byDate[dateStr]
+          totalHours += dayHours
+          if (dayHours > 8) overtimeHours += dayHours - 8
         }
-      })
-      for (const dateStr of Object.keys(scheduleHoursByDate)) {
-        const dayHours = scheduleHoursByDate[dateStr]
-        totalHours += dayHours
-        if (dayHours > 8) overtimeHours += dayHours - 8
+        return { totalHours: Math.round(totalHours * 100) / 100, overtimeHours: Math.round(overtimeHours * 100) / 100 }
       }
+
       // 2026-11-17 起：时薪工时只认排班，打卡一律不参与（老板：不要算打卡的）
-      return NextResponse.json({ success: true, data: { totalHours: Math.round(totalHours * 100) / 100, overtimeHours } })
+      if (teacherId) {
+        const bucket = perTeacher[teacherId]
+        return NextResponse.json({ success: true, data: summarize(bucket?.byDate || {}) })
+      }
+      const byTeacher: Record<string, { totalHours: number; overtimeHours: number }> = {}
+      for (const tid of Object.keys(perTeacher)) byTeacher[tid] = summarize(perTeacher[tid].byDate)
+      return NextResponse.json({ success: true, data: { byTeacher } })
     } else {
       // 获取薪资记录
       let filter = 'deleted != true'

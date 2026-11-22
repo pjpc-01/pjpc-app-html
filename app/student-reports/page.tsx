@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import PageLayout from "@/components/layouts/PageLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -127,6 +127,7 @@ export default function StudentReportsPage() {
   // 切换年级 → 写回 URL（这样返回/刷新时年级不丢）
   const handleListGradeChange = (g: string) => {
     setListGrade(g)
+    setPage(1)
     const url = g ? `/student-reports?grade=${encodeURIComponent(g)}` : "/student-reports"
     window.history.replaceState(null, "", url)
   }
@@ -150,33 +151,57 @@ export default function StudentReportsPage() {
     return withThumb(`/api/pocketbase-proxy/api/files/${cid}/${r.studentId}/${av}`, '100x100')
   }
 
-  useEffect(() => {
-    // ⚠️ 这里原来没有任何错误处理：取数一失败，d.items 不存在 → 列表设成空数组
-    //    → 界面就是一张空表、一句提示都没有，看起来像「报告全部不见了」。
-    //    现在失败要在页面上说清楚（401 = 登录过期，不是数据没了）。
-    fetch("/api/pocketbase-proxy/api/collections/student_reports/records?sort=-created&perPage=200&expand=studentId")
-      .then(async r => {
-        if (!r.ok) {
-          let msg = `取数失败（HTTP ${r.status}）`
-          try {
-            const e = await r.json()
-            msg = e?.error || e?.message || msg
-          } catch { /* 不是 JSON 就用默认文案 */ }
-          if (r.status === 401) msg = "登录已过期，请重新登录后刷新这页"
-          throw new Error(msg)
+  // ── 分页（2026-11-22）──────────────────────────────────────────────
+  // 原来一次拉 200 条并 expand 学生档案（每行重复学生资料，整包 ~1.5MB），
+  // 首屏要等一秒多。现在每页 24 条；年级筛选也交给服务端做（按该年级学生 id 组 filter），
+  // 不然翻页会把「不是这年级」的报告也算进页数。
+  const PER_PAGE = 24
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+
+  const loadReports = useCallback(async (targetPage: number) => {
+    // ⚠️ 取数失败要说清楚：401 = 登录过期，不是数据没了
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({
+        sort: "-created",
+        perPage: String(PER_PAGE),
+        page: String(targetPage),
+        expand: "studentId",
+      })
+      if (listGrade) {
+        const ids = (students || [])
+          .filter((s: any) => (formatGrade((s as any).grade, (s as any).is_peralihan) || (s as any).grade || "") === listGrade)
+          .map((s: any) => s.id)
+        if (ids.length === 0) {
+          setReports([]); setTotal(0); setTotalPages(0); setLoadError(""); setLoading(false); return
         }
-        return r.json()
-      })
-      .then(d => {
-        setReports(d.items || [])
-        setLoadError("")
-        setLoading(false)
-      })
-      .catch((e: any) => {
-        setLoadError(String(e?.message || e))
-        setLoading(false)
-      })
-  }, [])
+        params.set("filter", ids.map((id: string) => `studentId="${id}"`).join(" || "))
+      }
+      const r = await fetch(`/api/pocketbase-proxy/api/collections/student_reports/records?${params.toString()}`)
+      if (!r.ok) {
+        let msg = `取数失败（HTTP ${r.status}）`
+        try {
+          const e = await r.json()
+          msg = e?.error || e?.message || msg
+        } catch { /* 不是 JSON 就用默认文案 */ }
+        if (r.status === 401) msg = "登录已过期，请重新登录后刷新这页"
+        throw new Error(msg)
+      }
+      const d = await r.json()
+      setReports(d.items || [])
+      setTotal(Number(d.totalItems) || 0)
+      setTotalPages(Number(d.totalPages) || 0)
+      setLoadError("")
+    } catch (e: any) {
+      setLoadError(String(e?.message || e))
+    } finally {
+      setLoading(false)
+    }
+  }, [listGrade, students])
+
+  useEffect(() => { loadReports(page) }, [page, loadReports])
 
   const statusMap: Record<string, string> = {
     draft: "草稿",
@@ -351,7 +376,9 @@ export default function StudentReportsPage() {
                 {listGrade && (
                   <Button size="sm" variant="ghost" onClick={() => setListGrade("")} className="text-xs">{t("清除")}</Button>
                 )}
-                <span className="text-xs text-gray-400 ml-auto">{filteredReports.length} {t("份报告")}</span>
+                <span className="text-xs text-gray-400 ml-auto">
+                  {listGrade ? `${filteredReports.length} ${t("份报告")}` : `${total} ${t("份报告")}`}
+                </span>
               </div>
               <Table>
                 <TableHeader>
@@ -411,6 +438,23 @@ export default function StudentReportsPage() {
                   })}
                 </TableBody>
               </Table>
+
+              {/* 分页：每页 24 条，避免一次拉 200 条把整包撑到 1.5MB */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between gap-3 pt-3 mt-2 border-t">
+                  <span className="text-xs text-gray-500">
+                    {t("第")} {page} / {totalPages} {t("页")} · {t("共")} {total} {t("份")}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" disabled={page <= 1 || loading} onClick={() => setPage((x) => Math.max(1, x - 1))}>
+                      {t("上一页")}
+                    </Button>
+                    <Button size="sm" variant="outline" disabled={page >= totalPages || loading} onClick={() => setPage((x) => Math.min(totalPages, x + 1))}>
+                      {t("下一页")}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </CardContent>

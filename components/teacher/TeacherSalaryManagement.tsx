@@ -557,14 +557,18 @@ export default function TeacherSalaryManagement() {
       const monthlyTotal = monthlyList.reduce((sum, s) => sum + (Number(s.base_salary) || 0) + structGross(s), 0)
 
       // 时薪老师：按当月排班工时 × 时薪
-      const hourlyAmounts = await Promise.all(hourlyList.map(async (s) => {
-        try {
-          const r = await fetch(`/api/teacher-salary?type=hours&teacher_id=${s.teacher_id}&year=${y}&month=${m}`)
-          const d = await r.json()
-          const hrs = Number(d?.data?.totalHours) || 0
-          return hrs * (Number(s.hourly_rate) || 0) + structGross(s)
-        } catch { return 0 }
-      }))
+      // 2026-11-22：原来每个老师发一个请求（11 个来回），改成一次拿整月所有老师的工时
+      let byTeacher: Record<string, { totalHours?: number }> = {}
+      try {
+        const hr = await fetch(`/api/teacher-salary?type=hours&year=${y}&month=${m}`)
+        const hd = await hr.json()
+        byTeacher = hd?.data?.byTeacher || {}
+      } catch { byTeacher = {} }
+
+      const hourlyAmounts = hourlyList.map((s) => {
+        const hrs = Number(byTeacher[s.teacher_id]?.totalHours) || 0
+        return hrs * (Number(s.hourly_rate) || 0) + structGross(s)
+      })
       const hourlyTotal = hourlyAmounts.reduce((a, b) => a + b, 0)
 
       setMonthlyExpected({
