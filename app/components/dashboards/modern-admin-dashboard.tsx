@@ -34,6 +34,7 @@ import {
 } from "recharts"
 import {
   Users,
+  UserCheck,
   Shield,
   TrendingUp,
   TrendingDown,
@@ -141,7 +142,7 @@ const AMBER_COLORS = [
 ]
 
 const INCOME_COLOR = "#f59e0b" // amber-500
-const EXPENSE_COLOR = "#ea580c" // orange-600
+const EXPENSE_COLOR = "#64748b" // slate-500：支出用中性色，跟收入橙区分开
 
 // ─── Helper: group-by + count ────────────────────────────────────────────────
 
@@ -188,6 +189,44 @@ function formatMonthLabel(monthKey: string): string {
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────────
+
+
+// ─── 概览指标块 ─────────────────────────────────────────────────────────────
+
+const KPI_TONES: Record<string, string> = {
+  amber: "bg-amber-50 text-amber-600",
+  green: "bg-emerald-50 text-emerald-600",
+  rose: "bg-rose-50 text-rose-600",
+}
+
+function KpiTile({
+  label,
+  value,
+  sub,
+  icon: Icon,
+  tone = "amber",
+}: {
+  label: string
+  value: string
+  sub: string
+  icon: React.ComponentType<{ className?: string }>
+  tone?: "amber" | "green" | "rose"
+}) {
+  return (
+    <div className="group rounded-2xl border border-amber-100/80 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-5">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${KPI_TONES[tone]}`}>
+          <Icon className="h-4 w-4" />
+        </span>
+      </div>
+      <p className="mt-2 whitespace-nowrap text-xl font-bold leading-none tracking-tight tabular-nums text-foreground sm:text-[26px]">
+        {value}
+      </p>
+      <p className="mt-1.5 text-xs text-muted-foreground">{sub}</p>
+    </div>
+  )
+}
 
 export default function ModernAdminDashboard({ activeTab, setActiveTab }: ModernAdminDashboardProps) {
   const { t } = useLanguage()
@@ -317,6 +356,64 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
     () => filteredExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0),
     [filteredExpenses]
   )
+
+  // ─── 概览只看四件必要的事：在读 / 今日出席 / 本月收款 / 本月支出 ──────────
+
+  const activeStudents = useMemo(
+    () => filteredStudents.filter((s) => s.status === "active").length,
+    [filteredStudents]
+  )
+
+  const monthKey = useMemo(
+    () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" }).slice(0, 7),
+    []
+  )
+
+  const monthPayments = useMemo(
+    () => filteredPayments.filter((p) => String(p.date || "").startsWith(monthKey)),
+    [filteredPayments, monthKey]
+  )
+  const monthExpensesList = useMemo(
+    () => filteredExpenses.filter((e) => String(e.date || "").startsWith(monthKey)),
+    [filteredExpenses, monthKey]
+  )
+  const monthIncome = useMemo(
+    () => monthPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0),
+    [monthPayments]
+  )
+  const monthExpense = useMemo(
+    () => monthExpensesList.reduce((sum, e) => sum + (Number(e.amount) || 0), 0),
+    [monthExpensesList]
+  )
+
+  // 今日出席：直接问考勤接口（PB 里 student_attendance 才是真实打卡记录）
+  const [todayPresent, setTodayPresent] = useState<number | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" })
+    const code = selectedCenter === "all" ? "" : centers.find((c) => c.id === selectedCenter)?.code || ""
+    const qs = new URLSearchParams({ date: today, type: "student", pageSize: "200" })
+    if (code) qs.set("center", code)
+    fetch(`/api/student-attendance?${qs.toString()}`)
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((d) => {
+        if (cancelled) return
+        const ids = new Set(
+          (d.items || []).filter((i: any) => i.check_in).map((i: any) => i.person_id)
+        )
+        setTodayPresent(ids.size)
+      })
+      .catch(() => {
+        if (!cancelled) setTodayPresent(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [selectedCenter, centers])
+
+  const attendanceRate = activeStudents > 0 && todayPresent !== null
+    ? Math.round((todayPresent / activeStudents) * 100)
+    : null
 
   // ─── Student analytics ───────────────────────────────────────────────────
 
@@ -460,13 +557,16 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">
-                {t("数据分析仪表板")}
+                {t("概览")}
               </h2>
               <PageHelpButton title={t("数据分析仪表板")} description={t("欢迎回来，")} />
             </div>
             <p className="text-amber-700 text-sm sm:text-base">
-              {t("欢迎回来，")}{userProfile?.name || "管理员"} {t("· 当前查看：")}
-              <span className="font-semibold text-amber-900">{selectedCenterName}</span>
+              {t("欢迎回来，")}{userProfile?.name || "管理员"}
+              <span className="mx-1.5 text-amber-400">·</span>
+              <span className="tabular-nums">
+                {new Date().toLocaleDateString("zh-CN", { timeZone: "Asia/Kuala_Lumpur", month: "long", day: "numeric", weekday: "long" })}
+              </span>
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -493,98 +593,43 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
         <div className="absolute bottom-0 left-0 w-40 h-40 bg-amber-200/30 rounded-full -ml-10 -mb-10 blur-2xl" />
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        {/* Total Students */}
-        <Card className="border-amber-100 shadow-sm hover:shadow-md transition-all overflow-hidden relative group">
-          <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-muted-foreground text-xs sm:text-sm font-medium truncate">{t('dashboard.total_students')}</p>
-                <p className="text-2xl sm:text-3xl font-bold text-foreground">
-                  {loading ? "—" : totalStudents}
-                </p>
-                <p className="text-xs text-amber-600 mt-1">
-                  {t("在读")} {filteredStudents.filter((s) => s.status === "active").length} {t("人")}
-                </p>
-              </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all flex-shrink-0">
-                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Total Teachers */}
-        <Card className="border-amber-100 shadow-sm hover:shadow-md transition-all overflow-hidden relative group">
-          <div className="absolute top-0 left-0 w-1 h-full bg-orange-500" />
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-muted-foreground text-xs sm:text-sm font-medium truncate">{t('teacher.total_teachers')}</p>
-                <p className="text-2xl sm:text-3xl font-bold text-foreground">
-                  {loading ? "—" : totalTeachers}
-                </p>
-                <p className="text-xs text-orange-600 mt-1">
-                  {t("在职")} {filteredTeachers.filter((t) => t.status === "active").length} {t("人")}
-                </p>
-              </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all flex-shrink-0">
-                <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Total Income */}
-        <Card className="border-amber-100 shadow-sm hover:shadow-md transition-all overflow-hidden relative group">
-          <div className="absolute top-0 left-0 w-1 h-full bg-yellow-500" />
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-muted-foreground text-xs sm:text-sm font-medium truncate">{t('finance.total_income')}</p>
-                <p className="text-2xl sm:text-3xl font-bold text-foreground">
-                  {loading ? "—" : `RM ${totalIncome.toLocaleString()}`}
-                </p>
-                <div className="flex items-center mt-1">
-                  <TrendingUp className="h-3 w-3 text-emerald-500 mr-1" />
-                  <span className="text-xs text-emerald-600">
-                    {filteredPayments.length} {t("笔收款")}
-                  </span>
-                </div>
-              </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all flex-shrink-0">
-                <Wallet className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Total Expenses */}
-        <Card className="border-amber-100 shadow-sm hover:shadow-md transition-all overflow-hidden relative group">
-          <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-muted-foreground text-xs sm:text-sm font-medium truncate">{t('finance.total_expenses')}</p>
-                <p className="text-2xl sm:text-3xl font-bold text-foreground">
-                  {loading ? "—" : `RM ${totalExpenses.toLocaleString()}`}
-                </p>
-                <div className="flex items-center mt-1">
-                  <TrendingDown className="h-3 w-3 text-red-500 mr-1" />
-                  <span className="text-xs text-red-600">
-                    {filteredExpenses.length} {t("笔支出")}
-                  </span>
-                </div>
-              </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all flex-shrink-0">
-                <TrendingDown className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* KPI —— 只留四件必要的事 */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <KpiTile
+          label={t("在读学生")}
+          value={loading ? "—" : String(activeStudents)}
+          sub={`${t("共")} ${totalStudents} ${t("人")}`}
+          icon={Users}
+          tone="amber"
+        />
+        <KpiTile
+          label={t("今日出席")}
+          value={loading || !todayPresent ? "—" : String(todayPresent)}
+          sub={
+            todayPresent === null || todayPresent === 0
+              ? t("今日还没有打卡记录")
+              : `${attendanceRate}% · ${t("未到")} ${Math.max(0, activeStudents - todayPresent)} ${t("人")}`
+          }
+          icon={UserCheck}
+          tone="green"
+        />
+        <KpiTile
+          label={t("本月收款")}
+          value={loading ? "—" : `RM ${monthIncome.toLocaleString()}`}
+          sub={`${monthKey} · ${monthPayments.length} ${t("笔")}`}
+          icon={Wallet}
+          tone="amber"
+        />
+        <KpiTile
+          label={t("本月支出")}
+          value={loading ? "—" : `RM ${monthExpense.toLocaleString()}`}
+          sub={`${monthKey} · ${monthExpensesList.length} ${t("笔")}`}
+          icon={TrendingDown}
+          tone="rose"
+        />
       </div>
+
 
       {/* Birthday Card */}
       {birthdayStudents.length > 0 && (
@@ -609,384 +654,78 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
           </CardContent>
         </Card>
       )}
-
-      {/* Student Dimension Charts */}
-      <div>
-        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-          <GraduationCap className="h-5 w-5 text-amber-600" />
-          {t("学生维度")}
-        </h3>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Grade Distribution — BarChart */}
-          <ChartCard
-            title={t("年级分布")}
-            description={t("各年级学生人数")}
-            icon={BarChart3}
-            isEmpty={gradeDistribution.length === 0}
-            loading={loading}
-          >
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={gradeDistribution} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#fde68a" />
-                <XAxis
-                  dataKey="name"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#92400e", fontSize: 11 }}
-                  angle={-20}
-                  textAnchor="end"
-                  height={50}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#92400e", fontSize: 11 }}
-                  allowDecimals={false}
-                />
-                <Tooltip
-                  cursor={{ fill: "#fef3c7" }}
-                  contentStyle={{
-                    borderRadius: "8px",
-                    border: "1px solid #fde68a",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                    fontSize: "12px",
-                  }}
-                />
-                <Bar dataKey="value" name="学生数" radius={[4, 4, 0, 0]} barSize={30}>
-                  {gradeDistribution.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={AMBER_COLORS[index % AMBER_COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartCard>
-
-          {/* Gender Distribution — PieChart */}
-          <ChartCard
-            title={t("性别分布")}
-            description={t("学生男女比例")}
-            icon={PieChartIcon}
-            isEmpty={genderDistribution.length === 0}
-            loading={loading}
-          >
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={genderDistribution}
-                  cx="50%"
-                  cy="45%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={4}
-                  dataKey="value"
-                  label={({ name, value, cx, cy, midAngle, innerRadius, outerRadius }) => {
-                    const RADIAN = Math.PI / 180
-                    const radius = outerRadius * 1.35
-                    const ang = midAngle ?? 0
-                    const x = cx + radius * Math.cos(-ang * RADIAN)
-                    const y = cy + radius * Math.sin(-ang * RADIAN)
-                    return (
-                      <text
-                        x={x}
-                        y={y}
-                        fill="#1e293b"
-                        textAnchor={x > cx ? "start" : "end"}
-                        dominantBaseline="central"
-                        fontSize={12}
-                        fontWeight={600}
-                      >
-                        {`${name} ${value ?? 0}人`}
-                      </text>
-                    )
-                  }}
-                  labelLine={true}
-                  >
-                  {genderDistribution.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={AMBER_COLORS[index % AMBER_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: "8px",
-                    border: "1px solid #fde68a",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                    fontSize: "12px",
-                  }}
-                />
-                <Legend
-                  verticalAlign="bottom"
-                  height={36}
-                  iconType="circle"
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </ChartCard>
-
-          {/* Student Status — PieChart */}
-          <ChartCard
-            title={t("学生状态")}
-            description={t("在读 / 离校分布")}
-            icon={Activity}
-            isEmpty={statusDistribution.length === 0}
-            loading={loading}
-          >
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={statusDistribution}
-                  cx="50%"
-                  cy="45%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={4}
-                  dataKey="value"
-                  label={(entry: { name?: string; value?: number }) => `${entry.name}: ${entry.value ?? 0}`}
-                  labelLine={false}
-                  >
-                  {statusDistribution.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={entry.name === "在读" ? "#10b981" : "#f59e0b"}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: "8px",
-                    border: "1px solid #fde68a",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                    fontSize: "12px",
-                  }}
-                />
-                <Legend
-                  verticalAlign="bottom"
-                  height={36}
-                  iconType="circle"
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </ChartCard>
-        </div>
-      </div>
-
-      {/* Teacher + Financial Dimension Charts */}
-      <div>
-        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-          <School className="h-5 w-5 text-amber-600" />
-          {t("教师 & 财务维度")}
-        </h3>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Teacher Department Distribution — BarChart */}
-          <ChartCard
-            title={t("教师部门分布")}
-            description={t("各部门教师人数")}
-            icon={Shield}
-            isEmpty={departmentDistribution.length === 0}
-            loading={loading}
-          >
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={departmentDistribution}
-                layout="vertical"
-                margin={{ top: 10, right: 20, left: 10, bottom: 10 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#fde68a" />
-                <XAxis
-                  type="number"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#92400e", fontSize: 11 }}
-                  allowDecimals={false}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#92400e", fontSize: 11 }}
-                  width={80}
-                />
-                <Tooltip
-                  cursor={{ fill: "#fef3c7" }}
-                  contentStyle={{
-                    borderRadius: "8px",
-                    border: "1px solid #fde68a",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                    fontSize: "12px",
-                  }}
-                />
-                <Bar dataKey="value" name="教师数" radius={[0, 4, 4, 0]} barSize={20}>
-                  {departmentDistribution.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={AMBER_COLORS[index % AMBER_COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartCard>
-
-          {/* Revenue / Expense Trend — AreaChart */}
-          <ChartCard
-            title={t("收支趋势")}
-            description={t("近12个月收入与支出")}
-            icon={TrendingUp}
-            isEmpty={revenueExpenseTrend.length === 0}
-            loading={loading}
-            className="lg:col-span-2"
-          >
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={revenueExpenseTrend} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
-                <defs>
-                  <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={INCOME_COLOR} stopOpacity={0.4} />
-                    <stop offset="100%" stopColor={INCOME_COLOR} stopOpacity={0.05} />
-                  </linearGradient>
-                  <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={EXPENSE_COLOR} stopOpacity={0.4} />
-                    <stop offset="100%" stopColor={EXPENSE_COLOR} stopOpacity={0.05} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#fde68a" />
-                <XAxis
-                  dataKey="month"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#92400e", fontSize: 11 }}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#92400e", fontSize: 11 }}
-                  tickFormatter={(v) => `RM${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: "8px",
-                    border: "1px solid #fde68a",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                    fontSize: "12px",
-                  }}
-                  formatter={(value: number, name: string) => [`RM ${value.toLocaleString()}`, name === "income" ? t("收入") : t("支出")]}
-                />
-                <Legend
-                  verticalAlign="top"
-                  height={28}
-                  iconType="circle"
-                  formatter={(value) => (value === "income" ? t("收入") : t("支出"))}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="income"
-                  stroke={INCOME_COLOR}
-                  strokeWidth={2}
-                  fill="url(#incomeGradient)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="expense"
-                  stroke={EXPENSE_COLOR}
-                  strokeWidth={2}
-                  fill="url(#expenseGradient)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </ChartCard>
-        </div>
-      </div>
-
-      {/* Fee Item Category Distribution — PieChart (full row) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <ChartCard
-          title={t("收费项类别分布")}
-          description={t("各类收费项金额占比")}
-          icon={Layers}
-          isEmpty={feeItemDistribution.length === 0}
-          loading={loading}
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={feeItemDistribution}
-                cx="50%"
-                cy="45%"
-                innerRadius={50}
-                outerRadius={80}
-                paddingAngle={4}
-                dataKey="value"
-                label={(entry: { name?: string; value?: number }) => (entry.value ?? 0) > 0 ? `${entry.name}: RM${entry.value}` : ""}
-                labelLine={false}
-              >
-                {feeItemDistribution.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={AMBER_COLORS[index % AMBER_COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  borderRadius: "8px",
-                  border: "1px solid #fde68a",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                  fontSize: "12px",
-                }}
-                formatter={(value: number) => `RM ${value.toLocaleString()}`}
-              />
-              <Legend
-                verticalAlign="bottom"
-                height={36}
-                iconType="circle"
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        {/* Center Student Comparison — Horizontal BarChart */}
-        <ChartCard
-          title={t("分行学生数对比")}
-          description={t("PU1 vs BATU14 学生数量")}
-          icon={Building2}
-          isEmpty={centerStudentComparison.length === 0}
-          loading={loading}
-          className="lg:col-span-2"
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={centerStudentComparison}
-              layout="vertical"
-              margin={{ top: 10, right: 30, left: 20, bottom: 10 }}
+      {/* 收支趋势 —— 财务看这一张就够 */}
+      <section>
+            <ChartCard
+              title={t("收支趋势")}
+              description={t("按月收入与支出")}
+              icon={TrendingUp}
+              isEmpty={revenueExpenseTrend.length === 0}
+              loading={loading}
+              className=""
             >
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#fde68a" />
-              <XAxis
-                type="number"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#92400e", fontSize: 11 }}
-                allowDecimals={false}
-              />
-              <YAxis
-                type="category"
-                dataKey="name"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#92400e", fontSize: 13, fontWeight: 600 }}
-                width={80}
-              />
-              <Tooltip
-                cursor={{ fill: "#fef3c7" }}
-                contentStyle={{
-                  borderRadius: "8px",
-                  border: "1px solid #fde68a",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                  fontSize: "12px",
-                }}
-                formatter={(value: number) => [`${value} 人`, "学生数"]}
-              />
-              <Bar dataKey="students" name="学生数" radius={[0, 6, 6, 0]} barSize={40}>
-                {centerStudentComparison.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={AMBER_COLORS[index % AMBER_COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </div>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={revenueExpenseTrend} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                  <defs>
+                    <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={INCOME_COLOR} stopOpacity={0.4} />
+                      <stop offset="100%" stopColor={INCOME_COLOR} stopOpacity={0.05} />
+                    </linearGradient>
+                    <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={EXPENSE_COLOR} stopOpacity={0.4} />
+                      <stop offset="100%" stopColor={EXPENSE_COLOR} stopOpacity={0.05} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#fde68a" />
+                  <XAxis
+                    dataKey="month"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#92400e", fontSize: 11 }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#92400e", fontSize: 11 }}
+                    tickFormatter={(v) => `RM${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "1px solid #fde68a",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                      fontSize: "12px",
+                    }}
+                    formatter={(value: number, name: string) => [`RM ${value.toLocaleString()}`, name === "income" ? t("收入") : t("支出")]}
+                  />
+                  <Legend
+                    verticalAlign="top"
+                    height={28}
+                    iconType="circle"
+                    formatter={(value) => (value === "income" ? t("收入") : t("支出"))}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="income"
+                    stroke={INCOME_COLOR}
+                    strokeWidth={2}
+                    fill="url(#incomeGradient)"
+                    dot={{ r: 2.5, fill: INCOME_COLOR, strokeWidth: 0 }}
+                    activeDot={{ r: 5 }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="expense"
+                    stroke={EXPENSE_COLOR}
+                    strokeWidth={2}
+                    fill="url(#expenseGradient)"
+                    dot={{ r: 2.5, fill: EXPENSE_COLOR, strokeWidth: 0 }}
+                    activeDot={{ r: 5 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </ChartCard>
+      </section>
 
       {/* Center Comparison Table */}
       <Card className="border-amber-200/60 shadow-sm">
@@ -995,7 +734,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
             <Building2 className="h-5 w-5 text-amber-600" />
             {t("分行数据对比")}
           </h3>
-          <p className="text-xs text-muted-foreground mt-1">{t("各分行核心指标对比")}</p>
+          <p className="text-xs text-muted-foreground mt-1">{t("各分行核心指标对比（累计，不受月份影响）")}</p>
         </div>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
