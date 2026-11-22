@@ -9,6 +9,14 @@
 }
 
 @layer base {
+  /* 原生勾选框跟随主题色：浏览器默认是蓝色，在暖色界面里很跳 */
+  input[type='checkbox'],
+  input[type='radio'] {
+    accent-color: hsl(var(--primary));
+  }
+}
+
+@layer base {
   /* =========================================
      DEFAULT THEME: 🪟 Phantom Glass
      Neutral grey-white glassmorphism
@@ -20,8 +28,8 @@
     --card-foreground: 0 0% 18%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 18%;
-    --primary: 0 0% 18%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 24 92% 38%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 94%;
     --secondary-foreground: 0 0% 18%;
     --muted: 0 0% 94%;
@@ -30,9 +38,9 @@
     --accent-foreground: 0 0% 25%;
     --destructive: 0 65% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 88%;
+    --border: 30 12% 85%;
     --input: 0 0% 88%;
-    --ring: 0 0% 45%;
+    --ring: 27 90% 52%;
     --chart-1: 220 16% 40%;
     --chart-2: 150 14% 38%;
     --chart-3: 210 14% 32%;
@@ -48,18 +56,18 @@
     --sidebar-border: 0 0% 88%;
     --sidebar-ring: 0 0% 18%;
 
-    /* Brand palette — neutral grey */
-    --brand-50: 0 0% 96%;
-    --brand-100: 0 0% 90%;
-    --brand-200: 0 0% 80%;
-    --brand-300: 0 0% 70%;
-    --brand-400: 0 0% 55%;
-    --brand-500: 0 0% 45%;
-    --brand-600: 0 0% 35%;
-    --brand-700: 0 0% 28%;
-    --brand-800: 0 0% 20%;
-    --brand-900: 0 0% 14%;
-    --brand-950: 0 0% 8%;
+    /* Brand palette — 暖橙（跟登录页的 amber→orange 一致；原来是全灰阶，所以整体看着平） */
+    --brand-50: 38 100% 97%;
+    --brand-100: 36 96% 92%;
+    --brand-200: 34 95% 84%;
+    --brand-300: 32 94% 73%;
+    --brand-400: 30 92% 62%;
+    --brand-500: 27 90% 52%;
+    --brand-600: 24 88% 45%;
+    --brand-700: 21 82% 38%;
+    --brand-800: 19 72% 31%;
+    --brand-900: 17 62% 25%;
+    --brand-950: 15 55% 15%;
     --brand-secondary-50: 0 0% 96%;
     --brand-secondary-100: 0 0% 90%;
     --brand-secondary-200: 0 0% 80%;

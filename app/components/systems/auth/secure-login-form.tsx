@@ -2,6 +2,7 @@
 
 import React from "react"
 import { useState, useEffect } from "react"
+import { markWelcome } from "@/lib/welcome-flag"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -96,6 +97,7 @@ export default function SecureLoginForm() {
         const result = await loginWithCard(directCardUid)
         if (result.success) {
           setNfcStatus({ ok: true, msg: "✅ 登入成功，跳转中..." })
+          markWelcome()
           setTimeout(() => router.push("/"), 800)
         } else {
           setNfcStatus({ ok: false, msg: result.error || "登入失败" })
@@ -181,6 +183,7 @@ export default function SecureLoginForm() {
         setNfcStatus({ ok: true, msg: "✅ 登入成功，跳转中..." })
         setNfcScanning(false)
         
+        markWelcome()
         setTimeout(() => {
           router.push("/")
         }, 500)
@@ -219,7 +222,8 @@ export default function SecureLoginForm() {
         }
       }
 
-      // 登录成功后跳转到首页
+      // 登录成功后跳转到首页（打标记 → layout 里的 WelcomeGate 播一次欢迎动效）
+      markWelcome()
       router.push('/')
 
     } catch (error: any) {

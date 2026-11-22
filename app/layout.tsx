@@ -10,6 +10,7 @@ import DashboardLayout from "@/components/layouts/DashboardLayout"
 import { NfcAuthProvider } from "@/contexts/nfc-auth-context"
 import { LanguageProvider } from "@/contexts/language-context"
 import GlobalCardScanner from "@/components/attendance/GlobalCardScanner"
+import WelcomeGate from "@/components/motion/WelcomeGate"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -40,6 +41,8 @@ export default function RootLayout({
                   {children}
                 </DashboardLayout>
                 <GlobalCardScanner />
+                {/* 登录后的一次性欢迎动效（只在这个标签页的这次登录播一次） */}
+                <WelcomeGate />
               </NfcAuthProvider>
             </AuthProvider>
           </LanguageProvider>
