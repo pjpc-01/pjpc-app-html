@@ -917,6 +917,11 @@ export const ZH_TO_EN: Record<string, string> = {
   "在线设备": "Online Devices",
   "在职": "Active",
   "在读": "Enrolled",
+  "完成后预计": "Projected after completion",
+  "待发放": "pending release",
+  "我已投": "I contributed",
+  "完成后可得": "earn on completion",
+
   "各分行核心指标对比（累计，不受月份影响）": "Core metrics by branch (all-time, not affected by month)",
   "按月收入与支出": "Monthly income and expenses",
   "本月支出": "Spent This Month",

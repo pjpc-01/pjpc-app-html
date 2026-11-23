@@ -173,6 +173,14 @@ export default function MyContributionPage() {
   }
 
   const b = data.balance || { contributed: 0, spent: 0, available: 0, points_now: 0 }
+  // 还在进行中的贡献：投进去的分已从总积分扣掉并锁着，物品完成才发贡献积分。
+  // 学生看不到这段，会以为「我投了怎么没多积分」，所以这里给个「完成后预计」。
+  const willEarn = Number((b as Any_).locked?.willEarn || 0)
+  const estTotal = Number(b.available || 0) + willEarn
+  // 我对每个物品投了多少（含锁定/已发放），用于物品卡上的「完成后 +N」
+  const myDonation = new Map<string, Any_>(
+    ((data as Any_).my_donations || []).map((d: Any_) => [String(d.itemId || ''), d])
+  )
   const items = (data.items || []).filter((x: Any_) => x.status === "active")
   const achieved = (data.items || []).filter((x: Any_) => x.status === "achieved")
   const rewards = (data.rewards || []).filter((x: Any_) => x.status === "active")
@@ -180,10 +188,18 @@ export default function MyContributionPage() {
   return shell(
     <>
       {/* 余额条 */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-xl border bg-white px-4 py-3">
           <p className="text-xs text-gray-500">{t("可用贡献积分")}</p>
           <p className="mt-1 text-2xl font-semibold text-orange-600">{b.available}</p>
+        </div>
+        <div className="rounded-xl border bg-orange-50 px-4 py-3">
+          <p className="text-xs text-gray-500">{t("完成后预计")}</p>
+          <p className="mt-1 text-2xl font-semibold text-orange-600">{estTotal}</p>
+          <p className="mt-1 text-[11px] text-gray-500">
+            {t("现在")} {b.available}
+            {willEarn > 0 ? <>{" + "}{t("待发放")} {willEarn}</> : null}
+          </p>
         </div>
         <div className="rounded-xl border bg-white px-4 py-3">
           <p className="text-xs text-gray-500">{t("累计贡献")}</p>
@@ -229,6 +245,15 @@ export default function MyContributionPage() {
                     <div className="mt-1 h-1.5 w-full overflow-hidden rounded bg-gray-100">
                       <div className="h-full bg-orange-500" style={{ width: `${x.progress}%` }} />
                     </div>
+                    {(() => {
+                      const d = myDonation.get(String(x.id))
+                      if (!d || d.status !== "pending") return null
+                      return (
+                        <p className="mt-1 text-[11px] text-orange-600">
+                          {t("我已投")} {d.points} {t("分")} · {t("完成后可得")} +{d.earned}
+                        </p>
+                      )
+                    })()}
                   </div>
                   <div className="mt-auto flex gap-2">
                     <button
