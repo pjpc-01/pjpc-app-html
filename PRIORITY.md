@@ -22,6 +22,40 @@
 
 ## 🚦 总表（唯一可信：现在还剩什么）
 
+### 📱 2026-11-23 新方向一：App 化（Android 已出包，可装）
+
+**报告**：`/home/sacrafix/PJPC 活动/研究/01-PJPC-App化研究报告.md`（含 GitHub 发行、跟 web 更新、卖别人的三种架构）
+
+**已完成**：
+- 工具链 JDK 21 + Android SDK 35（`~/.hermes/tools`，无 sudo）
+- `mobile/` Capacitor 壳，`server.url=https://pjpcapp.com` → 网页改完全端立刻生效
+- `/api/app-version` 版本握手 + 维护窗口（01:00–06:15）
+- 临时图标 + 正式签名 keystore（`mobile/android/pjpc-release.jks`，密码在 `.env.local`）
+- **GitHub Release `v0.1.0`（3.0MB，公开可下载）**：https://github.com/pjpc-01/pjpc-app-html/releases/tag/v0.1.0
+
+**还没做（按顺序）**：
+1. **keystore 离线备份到 D 盘** —— 现在只在 `/home/pjpc/backups/mobile/`，丢了就不能覆盖升级（最急，5 分钟）
+2. 壳里接上 `minNativeVersion` 检查（接口有了，壳还没读，网页大改时旧包不会提示升级）
+3. 正式图标 / 名字（现在是临时「PJPC」+ 临时图标）
+4. iPhone 家长 PWA（manifest + 图标 + service worker，未做）
+5. NFC 打卡原生插件（Web NFC 在壳里不一定可用，要用真的要插件）
+6. 下载入口页 `pjpcapp.com/app`（放不放公开入口，等你说）
+
+### 🏛 2026-11-23 新方向二：PU1 中学部学生会实验（28 人）
+
+**报告**：`/home/sacrafix/PJPC 活动/研究/02-学生会自治团-现状与可行性调查.md`（全景 mermaid 图 + 8 个职位 + 学到什么 + 12 周流程）
+
+**已定**：只 PU1 中学部（Form 1 · 18、Form 2 · 7、Form 3 · 2、Peralihan · 1；MMA 拳班不计）｜职位走自荐或老师推荐｜活动经费先不定、实报实销｜不做系统投票（举手或纸票）｜不注册法人、不改牌照
+
+**还没做**：
+1. **定说明会日期**（唯一卡住的事，第一周）
+2. 8 个职位「一句话」打印贴墙
+3. 写一页章程（成人红线：安全/接送/看护/处罚权/学生数据不可碰；单笔超 RM100 成人联签）
+4. 选举管理小组 3 人 + 职位人选登记表
+5. 第一次学生总会的议程与记录模板
+
+**提醒**：每日 09:10 cron「PU1 中学部学生会实验提醒」；App 每日 09:00 cron
+
 ### 🔒 2026-10-21 安全堵洞（第一步·已完成）
 **问题**：`/api/pocketbase-proxy` 对所有请求一律套 superuser token，且集合权限全空 → **公网不带任何登录**就能读工资表、学生名册、发票、付款（实测 `pjpcapp.com/.../teacher_salary_records` 返回 200 + base_salary）。
 **已做**：
