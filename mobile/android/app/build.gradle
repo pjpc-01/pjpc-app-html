@@ -8,7 +8,7 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0"
+        versionName "0.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,10 +16,33 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            // 密码不放仓库：从项目根的 .env.local 读（PJPC_KEYSTORE_PASS）
+            def ksPass = System.getenv('PJPC_KEYSTORE_PASS')
+            if (!ksPass) {
+                def envFile = rootProject.file('../../.env.local')
+                if (envFile.exists()) {
+                    envFile.eachLine { line ->
+                        if (line.startsWith('PJPC_KEYSTORE_PASS=')) ksPass = line.substring('PJPC_KEYSTORE_PASS='.length()).trim()
+                    }
+                }
+            }
+            if (ksPass) {
+                storeFile file('../pjpc-release.jks')
+                storePassword ksPass
+                keyAlias 'pjpc'
+                keyPassword ksPass
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (signingConfigs.release.storeFile != null) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

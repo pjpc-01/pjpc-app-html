@@ -36,13 +36,31 @@
   <script>
     // 这里只是兜底页 —— 正常情况根本看不到它，App 会直接加载 pjpcapp.com。
     (function () {
-      var onLine = navigator.onLine;
-      if (!onLine) {
-        document.getElementById('title').textContent = '手机没有联网';
-        document.getElementById('msg').textContent = '连上 Wi-Fi 或移动数据后点「重试」。';
-        document.getElementById('dot').style.background = '#ef4444';
+      var title = document.getElementById('title');
+      var msg = document.getElementById('msg');
+      var dot = document.getElementById('dot');
+      var hint = document.getElementById('hint');
+
+      var now = new Date();
+      var mins = now.getHours() * 60 + now.getMinutes();
+      // 每天 01:00–06:15 维护（WSL 关机时段）
+      var inWindow = mins >= 60 && mins < 375;
+
+      if (!navigator.onLine) {
+        title.textContent = '手机没有联网';
+        msg.textContent = '连上 Wi-Fi 或移动数据后点「重试」。';
+        dot.style.background = '#ef4444';
+        hint.textContent = 'PJPC App · 离线';
+      } else if (inWindow) {
+        title.textContent = '系统维护中';
+        msg.textContent = '每天 01:00–06:15 做例行维护，早上 06:15 之后自动恢复，不用做任何操作。';
+        dot.style.background = '#38bdf8';
+        hint.textContent = 'PJPC App · 维护窗口 01:00–06:15';
+      } else {
+        title.textContent = '连不上服务器';
+        msg.textContent = '检查一下网络，或者过几分钟再点「重试」。';
+        hint.textContent = 'PJPC App · 网络正常，服务器无响应';
       }
-      document.getElementById('hint').textContent = 'PJPC App · ' + (navigator.onLine ? '网络正常，服务器无响应' : '离线');
     })();
   </script>
 </body>
