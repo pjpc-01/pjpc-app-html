@@ -182,6 +182,29 @@
     ③ 2 门课程标题尾随空格 → 已 trim（`'Form 2 BC '`→`Form 2 BC`、`'STANDARD 3 BC '`→`STANDARD 3 BC`）
 - ✅ 已解决：凭证编号体系、资产负债表简版、26 张发票补账期、票号重复已重编 + 唯一索引
 
+### 🆕 2026-11-23 每周体检新发现（待处理）
+
+**只读全站体检（dev-check + 45 页真浏览器 + Back/筛选 + 智能会计师 + 死代码 + 用法扫描）**
+
+- 🔴 **11-22 生产站又断 5 分 24 秒（17:20:11 → 17:25:35）**
+  - 现象：`pjpc-nextjs` 在 17:22:31~17:22:49 连 5 次 `Could not find a production build in the '.next' directory`，每次退出即被 systemd 拉起，循环到 build 完成才恢复。
+  - 成因：同 11-15 —— build 没先停服务，`.next` 在运行中被清空。`scripts/build-and-restart.sh` 已经修好这个顺序（停 watchdog → 上锁 → 停 3001 → `.next` 改名 → build → 起服务），这次显然没走脚本。
+  - 建议：把 `npm run build` 从日常操作里拿掉，统一 `bash scripts/build-and-restart.sh`；或给 `npm run build` 包一层检测锁（有 `pjpc-build.lock` 就拒绝）。
+- 🟡 **多收抵扣累积到 10 笔 RM1,075.50，一笔都没被用过**（上周 7 笔 RM427.50）
+  - `student_credits` 全库 `usedAmount` 合计 0，10 笔全 `unused`；本周新增 4 笔（188/189 各 180、202611-001 180、202611-003 110）。
+  - 说明「开票时自动抵扣」闭环还是没通；钱在账上挂着，家长下期还是按全款被开票。先跑通 `credits/apply`，再谈对账。
+- 🟡 **11-21 09:31 两张发票被删，开票总额少 RM1,913，审计追不到人**
+  - `audit_logs` 两条 `delete:invoices` 的 `user_name` 都是空；同一时段 `update:invoices` 也有 73% 无名（542 条里 400 条）。
+  - 建议：删除类动作必须写 `user_id/user_name`（PB hook 里从 request header 取），否则财务数据被删永远查不到人。
+- 🟡 **在发薪的老师里 7 名没 EPF 号、3 名没银行账号**
+  - 没 EPF：Foo Mue Fong / SITI NUR MAULIDIYAH / GAN CHUAN TECK / GAN SOH YEE / YAP SHIEN JIN / Josephine Pooi Yin Lee / Ho Siak Boon。
+  - 没银行账号：SITI NUR MAULIDIYAH / Ng Kar Jin / Josephine Pooi Yin Lee。
+  - 这 14 人是 9 月后有薪资记录的；本月出 EPF/SOCSO 报单和银行转账会卡在这 10 个缺字段上。
+- 🟡 **11-22 新增的两个动效组件零引用**：`components/motion/ScrambleText.tsx`、`components/motion/FlipCounter.tsx`（commit e2971505 一起加的，全库没人 import）→ 要么接到页面，要么删；旧死文件 `components/ui/use-toast.ts`、`components/ui/tooltip.tsx` 仍在。
+- 🟡 **学生档案改动 98% 没记操作人**：近 30 天 `update:students` 3,157 条，3,123 条 `user_name` 空；`point_logs` / `student_attendance` / `notifications` 写入 100% 无名。系统自动写的可以放过，但学生资料是人工改的，得能追。
+- ℹ️ **未动（沿用上周）**：材料费 RM180 仍 5 张挂着（`057/062/066/073/180`，共 RM900，状态停在 `issued`）、`teacher_salary_records` `centerId` 全空、`monthly_closings` / `debt_payments` 0 条、6 个零数据页面（接送/兑换物品/建议箱/报销单/教师绩效/作业提交）、银行流水 0 条 / 无现金账户。
+- 账务：开票 199,338.25 / 实收 194,218.25 / **未收 5,120.00**（上周 11,233.50，本周回款 RM4,200）；收付不一致 19 → 18 张；退款 1 笔 RM870 已在 `overpay-credit` 里排除（`account-audit` 的「收付不一致」仍把 `refunded` 收款算进去，`INV-202610-070` 因此显示多 RM930，是脚本口径不是数据错）。
+
 ### 🆕 2026-11-16 每周体检新发现（待处理）
 
 **只读全站体检（dev-check + 45 页真浏览器 + Back/筛选 + 智能会计师 + 死代码 + 用法扫描）**
