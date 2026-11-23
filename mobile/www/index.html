@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>PJPC</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: #0d0d11; color: #f8fafc;
+      font-family: -apple-system, "Noto Sans CJK SC", "WenQuanYi Zen Hei", system-ui, sans-serif; }
+    .wrap { min-height: 100%; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 28px; text-align: center; gap: 14px; }
+    .dot { width: 10px; height: 10px; border-radius: 999px; background: #f59e0b;
+      box-shadow: 0 0 0 6px rgba(245,158,11,.15); }
+    h1 { font-size: 18px; margin: 0; font-weight: 700; letter-spacing: .02em; }
+    p { margin: 0; font-size: 13px; line-height: 1.7; color: #94a3b8; max-width: 30em; }
+    .row { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; justify-content: center; }
+    button, a.btn { appearance: none; border: 1px solid #334155; background: #1e293b; color: #e2e8f0;
+      padding: 10px 16px; border-radius: 10px; font-size: 13px; text-decoration: none; }
+    button.primary, a.primary { background: #f59e0b; border-color: #d97706; color: #1f1300; font-weight: 600; }
+    .hint { font-size: 11px; color: #64748b; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="dot" id="dot"></div>
+    <h1 id="title">连不上服务器</h1>
+    <p id="msg">检查一下网络，或者稍后再试。系统每天 01:00–06:15 会做维护，那段时间打不开是正常的。</p>
+    <div class="row">
+      <button class="primary" onclick="location.href='https://pjpcapp.com/login'">重试</button>
+      <a class="btn" href="https://pjpcapp.com/login" id="browser">用浏览器打开</a>
+    </div>
+    <p class="hint" id="hint"></p>
+  </div>
+  <script>
+    // 这里只是兜底页 —— 正常情况根本看不到它，App 会直接加载 pjpcapp.com。
+    (function () {
+      var onLine = navigator.onLine;
+      if (!onLine) {
+        document.getElementById('title').textContent = '手机没有联网';
+        document.getElementById('msg').textContent = '连上 Wi-Fi 或移动数据后点「重试」。';
+        document.getElementById('dot').style.background = '#ef4444';
+      }
+      document.getElementById('hint').textContent = 'PJPC App · ' + (navigator.onLine ? '网络正常，服务器无响应' : '离线');
+    })();
+  </script>
+</body>
+</html>

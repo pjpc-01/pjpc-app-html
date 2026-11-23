@@ -1,0 +1,13 @@
+# Capacitor 手机壳 —— 这里只有壳，没有业务代码
+# 业务代码在上一层的 Next.js；这个壳只是包住 https://pjpcapp.com
+
+node_modules/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+*.apk
+*.aab
+*.jks
+*.keystore
