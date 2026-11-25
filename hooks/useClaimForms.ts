@@ -21,6 +21,7 @@ export interface ClaimForm {
   fill_date: string
   period: string
   items: ClaimItem[]
+  receipts?: string[]
   total: number
   notes: string
   status: ClaimStatus

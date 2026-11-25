@@ -15,7 +15,7 @@ import { gradeLabel, gradeRank } from "@/lib/grades"
  * 手动点名 —— 跟刷卡打卡是两套记录，互不改写。
  *
  *  · 打卡 = 学生自己刷 NFC（student_attendance），刷不刷看学生愿不愿意
- *  · 点名 = 老师实际看到谁来了（roll_call），没来的按缺勤扣分
+ *  · 点名 = 老师实际看到谁来了（roll_call），只记录，不动积分
  *
  * 页面按纸质点名表排：一人一行，横着一整月，绿=点名出席 红=点名缺勤 蓝=请假。
  */
@@ -254,7 +254,7 @@ export default function ManualAttendanceView() {
     const absent = markAbsentRest ? absentScope.map((s: any) => s.id) : []
     if (!present.length && !absent.length) return
     if (absent.length) {
-      const ok = window.confirm(`这次会把 ${absent.length} 人记为缺勤并按规则扣分，确定吗？`)
+      const ok = window.confirm(`这次会把 ${absent.length} 人记为缺勤，确定吗？`)
       if (!ok) return
     }
     setSaving(true)
@@ -268,8 +268,6 @@ export default function ManualAttendanceView() {
       if (json?.success) {
         setResult(
           `${t("点名完成：出席")} ${json.present} ${t("人，缺勤")} ${json.absent} ${t("人")}` +
-            (json.deducted ? t("，扣分") + ` ${json.deducted} ` + t("人") : "") +
-            (json.deduct_skipped ? t("，已扣过跳过") + ` ${json.deduct_skipped} ` + t("人") : "") +
             (json.errors?.length ? t("，失败") + ` ${json.errors.length} ` + t("人") : ""),
         )
         setPicked(new Set())
@@ -597,7 +595,7 @@ export default function ManualAttendanceView() {
 
             <label className="flex items-center gap-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">
               <input type="checkbox" className="h-4 w-4" checked={markAbsentRest} onChange={(e) => setMarkAbsentRest(e.target.checked)} />
-              {t("没勾的人记为缺勤，并按规则扣分")}
+              {t("没勾的人记为缺勤")}
               {t("（")}{t("本次范围")} {scope.length} {t("人")}
               {todayDone.size ? `，${t("今天已点过名")} ${todayDone.size} ${t("人不重复算")}` : ""}{t("）")}
             </label>

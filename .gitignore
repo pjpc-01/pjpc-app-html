@@ -147,3 +147,6 @@ backups/
 *.db
 *.sqlite
 *.sqlite3
+
+# Hermes agent 工作区（不是产品代码）
+.hermes/

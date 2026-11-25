@@ -55,6 +55,22 @@ export function generateClaimFormHTML(c: ClaimForm, company: ClaimCompanyInfo = 
   const total = (typeof c.total === 'number' ? c.total : 0).toFixed(2)
   const status = CLAIM_STATUS_TEXT[c.status] || c.status
 
+  // 收据附件：图片直接嵌入打印页，PDF 留链接
+  // 用绝对网址，否则 iframe(srcDoc) 里相对路径抓不到图
+  const receipts = (Array.isArray((c as any).receipts) ? (c as any).receipts : []) as string[]
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const receiptSection = receipts.length === 0 ? '' : `
+    <div class="rcsTitle">收据附件 RECEIPTS（${receipts.length}）</div>
+    <div class="rcs">
+      ${receipts.map((fn, i) => {
+        const url = `${origin}/api/pocketbase-proxy/api/files/claim_forms/${c.id}/${encodeURIComponent(fn)}`
+        const isPdf = /\.pdf$/i.test(fn)
+        return isPdf
+          ? `<div class="rc"><div class="rcn">收据 ${i + 1}（PDF）</div><a href="${url}" style="font-size:9px;word-break:break-all;color:#1e40af;">${esc(fn)}</a></div>`
+          : `<div class="rc"><img src="${url}" alt="receipt ${i + 1}"><div class="rcn">收据 ${i + 1}</div></div>`
+      }).join('')}
+    </div>`
+
   return `<!doctype html><html><head><meta charset="utf-8"><style>
     *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI','Microsoft YaHei',Arial,sans-serif;color:#11151f;}
     body{padding:24px;}
@@ -76,6 +92,11 @@ export function generateClaimFormHTML(c: ClaimForm, company: ClaimCompanyInfo = 
     .sig{width:100%;border-collapse:collapse;margin-top:14px;}
     .sig td{border:1px solid #8b98b8;padding:8px;font-size:9px;height:70px;vertical-align:top;}
     .foot{text-align:center;font-size:9px;color:#5a606b;margin-top:16px;}
+    .rcsTitle{font-size:10px;font-weight:700;color:#1e40af;margin:10px 0 4px;border-top:1px dashed #8b98b8;padding-top:8px;}
+    .rcs{display:flex;flex-wrap:wrap;gap:8px;}
+    .rc{width:48%;border:1px solid #8b98b8;padding:4px;text-align:center;page-break-inside:avoid;}
+    .rc img{width:100%;max-height:230px;object-fit:contain;display:block;}
+    .rcn{font-size:8px;color:#5a606b;margin-top:2px;}
   </style></head><body>
     <div class="head">
       <div><div class="org">${esc(co.name)}</div><div class="en">${esc(co.name_en)}</div><div class="slogan">${esc(co.slogan)}</div></div>
@@ -93,6 +114,7 @@ export function generateClaimFormHTML(c: ClaimForm, company: ClaimCompanyInfo = 
       ${rows}
       <tr><td colspan="3" style="text-align:right;font-weight:700;color:#1e40af;">合计 TOTAL</td><td style="text-align:right;font-weight:700;color:#1e40af;">${total}</td><td colspan="2"></td></tr>
     </table>
+    ${receiptSection}
     <div class="notes"><b>附注 Notes：</b><br>1) 所有报销项目必须附上正式收据 / 单据。 2) 报销范围：交通费、打印/考卷费用、教学材料费及其他工作相关开销。 3) 经主管及财务审批通过后发放。</div>
     <table class="sig">
       <tr>

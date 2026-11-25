@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/contexts/language-context"
 import {
-  Zap, ClipboardCheck, FileText, BookOpen, Star, UserCheck, CalendarCheck, MessageSquarePlus,
+  Zap, ClipboardCheck, FileText, BookOpen, Star, UserCheck, CalendarCheck, MessageSquarePlus, Wallet,
 } from "lucide-react"
 
 /**
@@ -20,6 +20,7 @@ const ACTIONS = [
   { href: "/points", key: "积分", icon: Star },
   { href: "/attendance/manual", key: "点名", icon: UserCheck },
   { href: "/teacher-workspace/leave", key: "请假", icon: CalendarCheck },
+  { href: "/teacher-workspace/claim", key: "报销单", icon: Wallet },
   { href: "/suggestions", key: "建议箱", icon: MessageSquarePlus },
 ]
 

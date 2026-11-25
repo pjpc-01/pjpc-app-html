@@ -193,6 +193,9 @@ export default function StudentList({
                 <Badge variant="outline" className="bg-amber-50/60 text-amber-700 border-amber-200 font-normal">
                   {convertGradeToChinese(student.standard || '')}
                 </Badge>
+                {(student as any).class_name ? (
+                  <span className="ml-1.5 text-xs font-medium text-muted-foreground">{(student as any).class_name}</span>
+                ) : null}
               </TableCell>
               <TableCell className="text-muted-foreground">{student.father_name || '-'}</TableCell>
               <TableCell className="text-muted-foreground">{student.mother_name || '-'}</TableCell>

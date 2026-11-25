@@ -199,6 +199,9 @@ export default function StudentDetails({
                 <DetailSection title={t("学习状态")}>
                   <DetailRow label={t('student.school')} value={student.school || '-'} icon={<School className="h-3 w-3" />} />
                   <DetailRow label={t('student.grade')} value={convertGradeToChinese(student.standard || student.grade || '') || '-'} icon={<GraduationCap className="h-3 w-3" />} />
+                  {(student as any).class_name ? (
+                    <DetailRow label={t("班级 Class")} value={(student as any).class_name} icon={<School className="h-3 w-3" />} />
+                  ) : null}
                 </DetailSection>
 
                 <DetailSection title={t("中心服务")}>

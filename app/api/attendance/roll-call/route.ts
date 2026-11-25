@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
-import { applyPoints } from '@/lib/points'
 
 /**
  * 点名（roll_call）—— 跟刷卡打卡（student_attendance）是两套东西。
  *
- * 打卡 = 学生自己刷 NFC，愿不愿意刷取决于学生；
- * 点名 = 老师/院长实际看到谁来了，写这里，谁没来就扣分。
+ * 打卡 = 学生自己刷 NFC，没刷由 /api/attendance/absent 晚上统一扣分；
+ * 点名 = 老师/院长实际看到谁来了，**只写记录，完全不碰积分**。
  *
+ * 老板 2026-11-23 原话：「就算点名了依然扣，因为没打卡，点名只是记录真实出勤，没有影响积分的」。
  * 所以：
  *  · 从不写 student_attendance，也不读写它的签到状态
- *  · 出席不挪积分；缺勤按 attendance_settings 的 points_absent 扣
- *  · 扣分带「缺勤」字样，现有 /api/attendance/absent 的防重复守卫会认（reason~"缺勤"）
+ *  · present / absent / leave / 撤销 都不改 point_logs，也不改 students.points
  */
 
 const PB_URL = 'http://127.0.0.1:8090'
@@ -61,19 +60,6 @@ async function pbUpdate(token: string, collection: string, id: string, data: any
   })
   if (!res.ok) throw new Error(`更新 ${collection} 失败: ${res.status} ${await res.text()}`)
   return res.json()
-}
-
-async function settingsFor(token: string, center: string) {
-  const tries = [center, 'default'].filter(Boolean)
-  for (const c of tries) {
-    const r = await pbList(token, 'attendance_settings', {
-      perPage: '1',
-      filter: `center="${c}"`,
-    })
-    const cfg = r.items?.[0]?.config
-    if (cfg) return cfg
-  }
-  return null
 }
 
 // ── GET：某段日期的点名记录 ────────────────────
@@ -152,14 +138,7 @@ export async function POST(request: NextRequest) {
     const existing: Record<string, any> = {}
     for (const r of existingRes.items || []) existing[r.student_id] = r
 
-    const cfg = await settingsFor(token, center)
-    const pointsAbsent: number = cfg?.points_absent ?? -3
-    const pointsOn: boolean = cfg?.enable_points !== false
-
     let saved = 0
-    let skippedAbsent = 0
-    let deducted = 0
-    let deductSkipped = 0
     const errors: string[] = []
 
     const write = async (studentId: string, status: 'present' | 'absent') => {
@@ -182,39 +161,13 @@ export async function POST(request: NextRequest) {
       return true
     }
 
-    // 出席：只记录，不挪积分
+    // 点名只记录「谁来了谁没来」，**不动积分**。
+    // 积分只认打卡：没刷卡由 /api/attendance/absent 在晚上统一扣，跟点名是两套。
     for (const id of present) {
       try { await write(id, 'present') } catch (e: any) { errors.push(e.message) }
     }
-
-    // 缺勤：记录 + 扣分（当天已扣过「缺勤」类的不再扣）
     for (const id of absent) {
-      try {
-        const ok = await write(id, 'absent')
-        if (!ok) continue
-        const s = byId[id]
-        if (!pointsOn || pointsAbsent >= 0) { deductSkipped++; skippedAbsent++; continue }
-        if (s?.points_enabled === false) { deductSkipped++; skippedAbsent++; continue }
-
-        // 当天已经因为缺勤扣过（刷卡那套或之前点过名）→ 不再扣
-        const already = await fetch(
-          `${PB_URL}/api/collections/point_logs/records?perPage=1&filter=${encodeURIComponent(
-            `student="${id}"&&reason~"缺勤"&&created>="${date} 00:00:00"`,
-          )}`,
-          { headers: { Authorization: token } },
-        ).then(r => r.json())
-        if ((already.items || []).length) { deductSkipped++; skippedAbsent++; continue }
-
-        await applyPoints({
-          studentId: id,
-          delta: pointsAbsent,
-          reason: `点名缺勤 (${date})`,
-          dedupeTerms: ['缺勤'],
-        })
-        deducted++
-      } catch (e: any) {
-        errors.push(`${id}: ${e.message}`)
-      }
+      try { await write(id, 'absent') } catch (e: any) { errors.push(e.message) }
     }
 
     return NextResponse.json({
@@ -223,9 +176,9 @@ export async function POST(request: NextRequest) {
       present: present.length,
       absent: absent.length,
       saved,
-      deducted,
-      deduct_skipped: deductSkipped,
-      points_absent: pointsAbsent,
+      deducted: 0,
+      deduct_skipped: absent.length,
+      points_absent: 0,
       errors,
     })
   } catch (error: any) {
@@ -274,40 +227,14 @@ export async function PATCH(request: NextRequest) {
     ).then(r => r.json())
     const row = (existRes.items || [])[0]
 
-    // 当天缺勤扣分净额（扣过的减掉已撤销的）
-    // 注意：自动扣分写的是「缺勤扣分 (日期)」，点名扣的是「点名缺勤 (日期)」，两种都要认，
-    // 否则老师把「来了但没打卡」的人改成出席时，自动扣的分退不回来。
-    const netDeducted = async () => {
-      const r = await fetch(
-        `${PB_URL}/api/collections/point_logs/records?perPage=50&filter=${encodeURIComponent(
-          `student="${studentId}" && reason~"${date}" && reason~"缺勤"`,
-        )}`,
-        { headers: { Authorization: token } },
-      ).then(x => x.json())
-      let sum = 0
-      for (const l of r.items || []) sum += Number(l.amount || 0)
-      return Math.max(0, -Math.round(sum))
-    }
+    // 点名只记录出勤，**完全不碰积分**。
+    // 积分只认打卡：没刷卡由 /api/attendance/absent 晚上统一扣，跟老师点名是两套，
+    // 老师点「出席」也不会把没打卡的扣分退回来（老板 2026-11-23：「就算点名了依然扣，因为没打卡」）。
 
-    const cfg = await settingsFor(token, s.center || '')
-    const pointsAbsent: number = cfg?.points_absent ?? -3
-    const pointsOn: boolean = cfg?.enable_points !== false
-    let refunded = 0
-    let deducted = 0
-
-    // 撤销：删记录 + 把扣的分加回去
+    // 撤销：只删当天这条点名记录
     if (status === 'none') {
-      const net = await netDeducted()
-      if (net > 0) {
-        await applyPoints({
-          studentId,
-          delta: net,
-          reason: `撤销点名缺勤 (${date})`,
-        })
-        refunded = net
-      }
       if (row) await pbDelete(token, 'roll_call', row.id)
-      return NextResponse.json({ success: true, status: 'none', refunded, deleted: !!row })
+      return NextResponse.json({ success: true, status: 'none', refunded: 0, deleted: !!row })
     }
 
     const payload = {
@@ -324,34 +251,13 @@ export async function PATCH(request: NextRequest) {
       ? await pbUpdate(token, 'roll_call', row.id, payload)
       : await pbCreate(token, 'roll_call', payload)
 
-    // 积分：只有缺勤扣，出席/请假不扣
-    const net = await netDeducted()
-    if (status === 'absent') {
-      if (net <= 0 && pointsOn && pointsAbsent < 0 && s?.points_enabled !== false) {
-        await applyPoints({
-          studentId,
-          delta: pointsAbsent,
-          reason: `点名缺勤 (${date})`,
-          dedupeTerms: ['缺勤'],
-        })
-        deducted = pointsAbsent
-      }
-    } else if (net > 0) {
-      await applyPoints({
-        studentId,
-        delta: net,
-        reason: `撤销点名缺勤 (${date})`,
-      })
-      refunded = net
-    }
-
     return NextResponse.json({
       success: true,
       status,
       record: saved,
-      deducted,
-      refunded,
-      points_absent: pointsAbsent,
+      deducted: 0,
+      refunded: 0,
+      points_absent: 0,
     })
   } catch (error: any) {
     console.error('改点名状态失败:', error)

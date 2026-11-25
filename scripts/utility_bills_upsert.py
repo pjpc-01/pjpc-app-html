@@ -25,6 +25,16 @@ def parse_period(provider: str, bill: dict) -> str:
     return ''
 
 
+def _norm_date(value: str) -> str:
+    """'09-Dec-2026' / '21 Sep 2026' / '2026-12-09' -> '2026-12-09' (else '')."""
+    for fmt in ('%d-%b-%Y', '%d %b %Y', '%Y-%m-%d'):
+        try:
+            return datetime.datetime.strptime(str(value).strip(), fmt).strftime('%Y-%m-%d')
+        except (ValueError, AttributeError):
+            continue
+    return ''
+
+
 def _already(cur, provider, acc_num, ymd, amount):
     """同账号 + 同一个月 + 金额相同 → 认为这期已在库里。
     门户历史表用真实开单日、脚本按 21 号记，差两三天属同一个月，不能按日死比。"""
@@ -98,7 +108,10 @@ def main():
             except (ValueError, AttributeError):
                 bill_date = ''
         else:
-            bill_date, due_date = period, ''
+            bill_date = period
+            # TNB stores the portal's own Due Date now that the scraper reads it
+            # (older rows have '' — do not derive one, the portal date is truth).
+            due_date = _norm_date(a.get('due_date', ''))
         # Dedupe on the key actually written (bill_date), never on the raw scraped
         # period — otherwise Air rows never match and every run duplicates them.
         # 注意两点：

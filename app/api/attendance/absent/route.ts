@@ -108,19 +108,12 @@ export async function POST(request: NextRequest) {
       for (const r of (leaves.items || [])) onLeave.add(r.student_id)
     } catch { /* ignore */ }
 
-    // 3c. 老师今天已经点名「出席 / 请假」的人，不算缺勤（自动扣分要听点名的）
-    const markedPresent = new Set<string>()
-    try {
-      const rc = await pbGet(token, 'roll_call', {
-        perPage: '500', fields: 'student_id,status',
-        filter: `date >= "${today} 00:00:00.000Z" && date < "${today} 23:59:59.999Z" && (status="present" || status="leave")`,
-      })
-      for (const r of (rc.items || [])) markedPresent.add(r.student_id)
-    } catch { /* 表不存在也不影响 */ }
+    // 3c. 点名不算豁免：老板 2026-11-23「就算点名了依然扣，因为没打卡，点名只是记录真实出勤」
+    //     → 没刷卡就扣，老师点没点「出席」都不影响。
 
-    // 4. Find absent students（排除已签到 + 已批准请假 + 老师已点名出席/请假）
+    // 4. Find absent students（只排除已签到 + 已批准请假）
     const absentIds = targetStudents
-      .filter((s: any) => !checkedInIds.has(s.id) && !onLeave.has(s.id) && !markedPresent.has(s.id))
+      .filter((s: any) => !checkedInIds.has(s.id) && !onLeave.has(s.id))
       .map((s: any) => s.id)
     const absentStudents = targetStudents.filter((s: any) => absentIds.includes(s.id))
 

@@ -22,6 +22,8 @@ const DEFAULT_RULES: Omit<PointRule, "id">[] = [
   { label: "帮助同学", amount: 2, type: "add", enabled: true },
   { label: "课堂表现好", amount: 1, type: "add", enabled: true },
   { label: "完成额外功课", amount: 3, type: "add", enabled: true },
+  { label: "没有丢食物残渣", amount: 2, type: "add", enabled: true },
+  { label: "上完课后叠椅子", amount: 2, type: "add", enabled: true },
   { label: "迟到", amount: -1, type: "subtract", enabled: true },
   { label: "没做功课", amount: -2, type: "subtract", enabled: true },
   { label: "扰乱课堂", amount: -3, type: "subtract", enabled: true },
@@ -77,7 +79,15 @@ export default function RulesPage() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
-        setRules(JSON.parse(saved))
+        const parsed: PointRule[] = JSON.parse(saved)
+        // 补上后来新增的默认项（老浏览器已存过规则，否则看不到新加的）
+        const have = new Set(parsed.filter(r => r.enabled).map(r => r.label))
+        const missing = DEFAULT_RULES
+          .filter(r => !have.has(r.label))
+          .map((r, i) => ({ ...r, id: `rule_new_${i}` }))
+        const merged = [...parsed, ...missing]
+        if (missing.length) localStorage.setItem(STORAGE_KEY, JSON.stringify(merged))
+        setRules(merged)
       } else {
         setRules(DEFAULT_RULES.map((r, i) => ({ ...r, id: `rule_${i}` })))
       }

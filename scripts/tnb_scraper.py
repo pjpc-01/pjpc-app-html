@@ -77,6 +77,15 @@ async def extract_billing_from_body(page):
     if bill_date_match:
         bill['bill_date'] = bill_date_match.group(1)
 
+    # Billing Summary also carries the payable total + due date — keep them,
+    # the payment reminder reads due_date and it is not derivable from bill_date.
+    due_match = re.search(r'Due\s*Date\s*(\d{1,2}[-/]\w{3}[-/]\d{2,4})', body, re.IGNORECASE)
+    if due_match:
+        bill['due_date'] = due_match.group(1)
+    amt_due = re.search(r'Amount\s+Due\s*RM\s*([\d,.]+)', body, re.IGNORECASE)
+    if amt_due:
+        bill['amount_due'] = float(amt_due.group(1).replace(',', ''))
+
     prev_bal = re.search(r'Previous\s+Balance\s*RM\s*([\d,.]+)', body)
     if prev_bal:
         bill['previous_balance'] = float(prev_bal.group(1).replace(',', ''))

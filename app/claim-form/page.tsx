@@ -32,7 +32,7 @@ export default function ClaimFormPage() {
   const { t } = useLanguage()
   const role = userProfile?.role || ""
   const isMgmt = ["admin", "accountant", "supervisor"].includes(role)
-  const { claims, loading, error, create, update, remove, setStatus } = useClaimForms()
+  const { claims, loading, error, create, update, remove, setStatus, fetchClaims } = useClaimForms()
   const visible = isMgmt ? claims : claims.filter(c => c.created_by === (user?.id || ""))
 
   const [open, setOpen] = useState(false)
@@ -44,6 +44,8 @@ export default function ClaimFormPage() {
     supervisor_comment: "", finance_comment: "", supervisor_at: "", finance_at: "",
   })
   const [saving, setSaving] = useState(false)
+  const [files, setFiles] = useState<File[]>([])
+  const [uploading, setUploading] = useState(false)
 
   const [view, setView] = useState<ClaimForm | null>(null)
   const [printHtml, setPrintHtml] = useState("")
@@ -59,10 +61,12 @@ export default function ClaimFormPage() {
   const openNew = () => {
     setEditId(null)
     setForm({ claimant: userProfile?.name || "", position: "", center: "", claim_no: "", fill_date: new Date().toISOString().split("T")[0], period: "", items: [emptyItem()], total: 0, notes: "", status: "draft", created_by: user?.id || "", created_by_name: userProfile?.name || "", supervisor_comment: "", finance_comment: "", supervisor_at: "", finance_at: "" })
+    setFiles([])
     setOpen(true)
   }
   const openEdit = (c: ClaimForm) => {
     setEditId(c.id)
+    setFiles([])
     setForm({ ...c, items: (Array.isArray(c.items) && c.items.length ? c.items : [emptyItem()]) })
     setOpen(true)
   }
@@ -74,21 +78,64 @@ export default function ClaimFormPage() {
   const addItem = () => upd({ items: [...form.items, emptyItem()] })
   const delItem = (i: number) => upd({ items: form.items.filter((_, idx) => idx !== i) })
 
+  /** 依 B21 要求：编号/No. 自动生成，收据可直接上传图片或 PDF */
   const save = async (submit: boolean) => {
     setSaving(true)
     try {
-      const payload = { ...form, items: form.items, total: tot, status: submit ? ("submitted" as ClaimStatus) : form.status }
-      if (editId) await update(editId, payload as any)
-      else await create(payload as any)
+      // No. 自动 1,2,3…
+      const items = (form.items || []).map((it, i) => ({ ...it, no: String(i + 1) }))
+
+      // 报销编号自动生成：CLM-YYYYMM-流水
+      let claim_no = form.claim_no
+      if (!editId && !claim_no) {
+        const ym = String(form.fill_date || new Date().toISOString().split("T")[0]).slice(0, 7).replace("-", "")
+        const used = claims
+          .filter(c => String(c.claim_no || "").startsWith(`CLM-${ym}-`))
+          .map(c => Number(String(c.claim_no).split("-").pop()) || 0)
+        const seq = (used.length ? Math.max(...used) : 0) + 1
+        claim_no = `CLM-${ym}-${String(seq).padStart(3, "0")}`
+      }
+
+      const payload = { ...form, items, claim_no, total: tot, status: submit ? ("submitted" as ClaimStatus) : form.status }
+      const rec: any = editId ? await update(editId, payload as any) : await create(payload as any)
+
+      // 收据上传（有选文件才做）
+      if (files.length && rec?.id) {
+        setUploading(true)
+        const fd = new FormData()
+        fd.append("id", rec.id)
+        files.forEach(f => fd.append("files", f, f.name))
+        const ur = await fetch("/api/teacher-claim/upload", { method: "POST", body: fd })
+        const ud = await ur.json().catch(() => ({}))
+        if (!ur.ok || ud?.success === false) {
+          alert(t("单子已保存，但收据上传失败") + "：" + (ud?.error || ur.status))
+        }
+        setFiles([])
+        // 关键：重新拉一次列表，否则「查看」还是上传前的旧数据（看不到收据）
+        await fetchClaims()
+      }
+      await fetchClaims()
       setOpen(false)
-    } catch (e: any) { alert(t("保存失败") + ": " + (e?.message || e)) } finally { setSaving(false) }
+    } catch (e: any) { alert(t("保存失败") + ": " + (e?.message || e)) } finally { setSaving(false); setUploading(false) }
   }
 
   const openView = (c: ClaimForm) => { setView(c); setComment(""); setMemoId(null) }
   const print = () => {
     const iframe = printRef.current
-    if (iframe?.contentWindow) iframe.contentWindow.print()
-    else window.print()
+    try {
+      if (iframe?.contentWindow) {
+        iframe.contentWindow.focus()
+        iframe.contentWindow.print()
+        return
+      }
+    } catch { /* 落到下面的兜底 */ }
+    // 兜底：开新窗口打印（iframe 被浏览器挡时用）
+    const w = window.open("", "_blank")
+    if (!w) { alert(t("浏览器拦了弹窗，请允许后再按一次")); return }
+    w.document.write(printHtml)
+    w.document.close()
+    w.focus()
+    setTimeout(() => w.print(), 300)
   }
   const doApprove = async (status: ClaimStatus, role2: "supervisor" | "finance") => {
     if (!view) return
@@ -153,11 +200,33 @@ export default function ClaimFormPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{t("报销人")}</Label><Input value={form.claimant} onChange={e => upd({ claimant: e.target.value })} /></div>
-              <div><Label>{t("职位")}</Label><Input value={form.position} onChange={e => upd({ position: e.target.value })} /></div>
-              <div><Label>{t("中心 / 部门")}</Label><Input value={form.center} onChange={e => upd({ center: e.target.value })} /></div>
-              <div><Label>{t("报销编号")}</Label><Input value={form.claim_no} onChange={e => upd({ claim_no: e.target.value })} placeholder={t("如 CL-0001")} /></div>
+              <div>
+                <Label>{t("职位")}</Label>
+                <select className="h-9 w-full rounded-md border px-2 text-sm" value={form.position} onChange={e => upd({ position: e.target.value })}>
+                  <option value="">{t("选择职位")}</option>
+                  {["院长", "主任", "老师", "行政", "会计", "其他"].map(x => <option key={x} value={x}>{t(x)}</option>)}
+                </select>
+              </div>
+              <div>
+                <Label>{t("中心 / 部门")}</Label>
+                <select className="h-9 w-full rounded-md border px-2 text-sm" value={form.center} onChange={e => upd({ center: e.target.value })}>
+                  <option value="">{t("选择中心")}</option>
+                  <option value="PU1">PU1</option>
+                  <option value="BATU14">BATU14</option>
+                  <option value="办公室">{t("办公室")}</option>
+                </select>
+              </div>
+              <div>
+                <Label>{t("报销编号")}</Label>
+                <Input value={form.claim_no} readOnly className="bg-gray-50" placeholder={t("提交时自动生成")} />
+                <p className="mt-1 text-[11px] text-muted-foreground">{t("系统自动给号，不用自己填")}</p>
+              </div>
               <div><Label>{t("填表日期")}</Label><Input type="date" value={form.fill_date} onChange={e => upd({ fill_date: e.target.value })} /></div>
-              <div><Label>{t("报销期间")}</Label><Input value={form.period} onChange={e => upd({ period: e.target.value })} placeholder={t("如 2026年9月")} /></div>
+              <div>
+                <Label>{t("报销期间")}</Label>
+                <Input value={form.period} onChange={e => upd({ period: e.target.value })} placeholder="7-10/2026" />
+                <p className="mt-1 text-[11px] text-muted-foreground">{t("这张单涵盖哪段时间的支出。例：7-10/2026 = 7 月到 10 月")}</p>
+              </div>
             </div>
 
             <div>
@@ -172,7 +241,7 @@ export default function ClaimFormPage() {
                   <TableBody>
                     {(form.items || []).map((it, i) => (
                       <TableRow key={i}>
-                        <TableCell><Input className="h-8" value={it.no} onChange={e => setItem(i, { no: e.target.value })} /></TableCell>
+                        <TableCell className="text-center text-sm text-muted-foreground">{i + 1}</TableCell>
                         <TableCell><Input className="h-8" type="date" value={it.date} onChange={e => setItem(i, { date: e.target.value })} /></TableCell>
                         <TableCell><Input className="h-8" value={it.desc} onChange={e => setItem(i, { desc: e.target.value })} /></TableCell>
                         <TableCell><Input className="h-8" type="number" step="0.01" value={it.amount} onChange={e => setItem(i, { amount: Number(e.target.value) })} /></TableCell>
@@ -185,6 +254,32 @@ export default function ClaimFormPage() {
               </div>
               <Button size="sm" variant="outline" className="mt-2" onClick={addItem}><Plus className="h-3.5 w-3.5 mr-1" />{t("加一行")}</Button>
               <div className="mt-2 text-right font-semibold text-blue-700">{t("合计")}{t("：RM")} {tot.toFixed(2)}</div>
+
+              <div className="mt-3 rounded-lg border p-3">
+                <Label className="mb-1 block">{t("收据照片 / PDF（最多 10 个，单个 ≤50MB）")}</Label>
+                <input
+                  type="file" multiple accept="image/*,application/pdf"
+                  className="text-xs file:mr-2 file:rounded-md file:border file:bg-white file:px-3 file:py-1.5 file:text-xs"
+                  onChange={e => {
+                    const picked = Array.from(e.target.files || [])
+                    const big = picked.find(f => f.size > 50 * 1024 * 1024)
+                    if (big) { alert(big.name + " " + t("超过 50MB")); return }
+                    setFiles(prev => [...prev, ...picked].slice(0, 10))
+                    e.target.value = ""
+                  }}
+                />
+                {files.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {files.map((f, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 rounded border bg-gray-50 px-2 py-1 text-xs">
+                        {f.name.length > 26 ? f.name.slice(0, 24) + "…" : f.name}
+                        <button type="button" className="text-gray-500 hover:text-red-600" onClick={() => setFiles(prev => prev.filter((_, k) => k !== i))}>×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {uploading && <div className="mt-1 text-xs text-blue-600">{t("上传中…")}</div>}
+              </div>
             </div>
 
             <div><Label>{t("备注 / 附注")}</Label><Textarea value={form.notes} onChange={e => upd({ notes: e.target.value })} rows={2} /></div>
@@ -208,7 +303,26 @@ export default function ClaimFormPage() {
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <Button size="sm" onClick={print}><Printer className="h-3.5 w-3.5 mr-1" />{t("打印 / 存 PDF")}</Button>
           </div>
-          <iframe ref={printRef as any} srcDoc={printHtml} className="w-full border rounded-lg bg-white" style={{ minHeight: "700px", height: "auto" }} title={t("报销单")} sandbox="allow-same-origin" />
+          <iframe ref={printRef as any} srcDoc={printHtml} className="w-full border rounded-lg bg-white" style={{ minHeight: "700px", height: "auto" }} title={t("报销单")} sandbox="allow-same-origin allow-modals" />
+
+          {view && Array.isArray((view as any).receipts) && (view as any).receipts.length > 0 && (
+            <div className="mt-3 rounded-lg border p-3">
+              <Label className="mb-2 block">{t("收据")} ({(view as any).receipts.length})</Label>
+              <div className="flex flex-wrap gap-2">
+                {((view as any).receipts as string[]).map((fn: string) => {
+                  const url = `/api/pocketbase-proxy/api/files/claim_forms/${view.id}/${encodeURIComponent(fn)}`
+                  const isPdf = fn.toLowerCase().endsWith(".pdf")
+                  return isPdf ? (
+                    <a key={fn} href={url} target="_blank" rel="noreferrer" className="text-xs text-blue-600 underline break-all">{fn}</a>
+                  ) : (
+                    <a key={fn} href={url} target="_blank" rel="noreferrer" title={fn}>
+                      <img src={url} alt={fn} className="h-24 w-24 rounded border object-cover" />
+                    </a>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {isMgmt && view && (
             <div className="mt-4 rounded-lg border p-3 space-y-2">

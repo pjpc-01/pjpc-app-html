@@ -1,6 +1,6 @@
 "use client"
 
-import { formatGrade } from "@/lib/utils"
+import { formatGrade, isLatePickup } from "@/lib/utils"
 import { useState, useEffect, useCallback } from "react"
 import PageLayout from "@/components/layouts/PageLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { usePickup, PickupRecord } from "@/hooks/usePickup"
+import PickupCalendar from "@/components/pickup/PickupCalendar"
 import { useStudents } from "@/hooks/useStudents"
 import { Truck, User, Phone, Car, Clock, CheckCircle, AlertCircle, Plus, Search, Users } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
@@ -28,10 +29,12 @@ const RELATIONSHIPS = [
   { value: "other", label: "其他" },
 ]
 
-const statusBadge = (status: string) => {
+const statusBadge = (status: string, late = false) => {
   const { t } = useLanguage()
   switch (status) {
-    case "picked_up": return <Badge className="bg-emerald-100 text-emerald-700">{t("已接走")}</Badge>
+    case "picked_up": return late
+      ? <Badge className="bg-red-100 text-red-700">{t("已接走")}</Badge>
+      : <Badge className="bg-emerald-100 text-emerald-700">{t("已接走")}</Badge>
     case "scheduled": return <Badge className="bg-blue-100 text-blue-700">{t('exam.scheduled')}</Badge>
     case "delayed": return <Badge className="bg-amber-100 text-amber-700">{t("延迟")}</Badge>
     case "cancelled": return <Badge className="bg-slate-100 text-slate-500">{t('report.cancel')}</Badge>
@@ -52,6 +55,15 @@ export default function PickupManagementPage() {
 
   // New pickup form
   const [selectedStudent, setSelectedStudent] = useState("")
+  const [gradeFilter, setGradeFilter] = useState("all")
+  const [pickupDate, setPickupDate] = useState(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+  })
+  const [pickupTime, setPickupTime] = useState(() => {
+    const d = new Date()
+    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+  })
   const [pickupBy, setPickupBy] = useState("")
   const [relationship, setRelationship] = useState("other")
   const [phone, setPhone] = useState("")
@@ -67,14 +79,20 @@ export default function PickupManagementPage() {
 
   useEffect(() => { loadPickups() }, [loadPickups])
 
+  const openDialog = () => {
+    const d = new Date()
+    setPickupDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`)
+    setPickupTime(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`)
+    setGradeFilter("all"); setSelectedStudent("")
+    setDialogOpen(true)
+  }
+
   const handleRecord = async () => {
     if (!selectedStudent || !pickupBy) return
-    const now = new Date()
-    const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
     await recordPickup({
       studentId: selectedStudent,
-      pickup_date: now.toISOString().split('T')[0],
-      pickup_time: time,
+      pickup_date: pickupDate,
+      pickup_time: pickupTime,
       pickup_by: pickupBy,
       relationship,
       phone,
@@ -110,6 +128,9 @@ export default function PickupManagementPage() {
           {t("学生迟回家（家长晚来接）超过")} <b>{t("5 分钟")}</b>{t("即计费：")}<b>{t("7:05pm 之后")}</b>{t("开始，每个不足一小时按一小时计")} <b>{t("RM5 / 小时")}</b>{t("；首小时后每再多一小时")}<b>{t("再叠加 RM5")}</b>{t("。")}
         </div>
       </div>
+      {/* 接送日历：按月看 + 选年级 */}
+      <PickupCalendar />
+
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <Card><CardContent className="p-4 text-center">
@@ -136,7 +157,7 @@ export default function PickupManagementPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input className="pl-9" placeholder={t("搜索学生...")} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
-        <Button onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-2" />{t("登记接送")}</Button>
+        <Button onClick={openDialog}><Plus className="h-4 w-4 mr-2" />{t("登记接送")}</Button>
       </div>
 
       {/* Pickup List */}
@@ -146,7 +167,7 @@ export default function PickupManagementPage() {
         <Card><CardContent className="p-12 text-center text-slate-400">
           <Truck className="h-12 w-12 mx-auto mb-3 opacity-30" />
           <p>{t("今日暂无接送记录")}</p>
-          <Button variant="outline" className="mt-4" onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-2" />{t("登记第一条接送")}</Button>
+          <Button variant="outline" className="mt-4" onClick={openDialog}><Plus className="h-4 w-4 mr-2" />{t("登记第一条接送")}</Button>
         </CardContent></Card>
       ) : (
         <Card>
@@ -173,12 +194,12 @@ export default function PickupManagementPage() {
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">{p.expand?.studentId?.name || p.studentId}</TableCell>
                     <TableCell className="text-xs text-slate-500">{formatGrade(p.expand?.studentId?.grade)}</TableCell>
-                    <TableCell className="text-sm">{p.pickup_time || "-"}</TableCell>
+                    <TableCell className={`text-sm ${isLatePickup(p.pickup_time) ? "text-red-600 font-bold" : ""}`}>{p.pickup_time || "-"}</TableCell>
                     <TableCell><span className="font-medium">{p.pickup_by}</span></TableCell>
                     <TableCell className="text-xs text-slate-500">{relationLabel(p.relationship)}</TableCell>
                     <TableCell className="text-xs">{p.phone || "-"}</TableCell>
                     <TableCell className="text-xs font-mono">{p.vehicle_plate || "-"}</TableCell>
-                    <TableCell>{statusBadge(p.status)}</TableCell>
+                    <TableCell>{statusBadge(p.status, isLatePickup(p.pickup_time))}</TableCell>
                     <TableCell>
                       {p.parent_confirmed
                         ? <CheckCircle className="h-4 w-4 text-emerald-500" />
@@ -199,15 +220,40 @@ export default function PickupManagementPage() {
           <DialogHeader><DialogTitle>{t("登记接送")}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div>
+              <Label>{t("选择年级")}</Label>
+              <select
+                className="h-9 w-full rounded-md border px-2 text-sm"
+                value={gradeFilter}
+                onChange={e => { setGradeFilter(e.target.value); setSelectedStudent("") }}
+              >
+                <option value="all">{t("全部年级")}</option>
+                {Array.from(new Set(students.map(s => formatGrade(s.grade)).filter(Boolean))).sort().map(g => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+            </div>
+            <div>
               <Label>{t("选择学生 *")}</Label>
               <Select value={selectedStudent} onValueChange={setSelectedStudent}>
                 <SelectTrigger><SelectValue placeholder={t("选择学生...")} /></SelectTrigger>
-                <SelectContent>
-                  {students.map(s => (
-                    <SelectItem key={s.id} value={s.id}>{s.name} ({formatGrade(s.grade)})</SelectItem>
-                  ))}
+                <SelectContent className="max-h-64 overflow-y-auto">
+                  {students
+                    .filter(s => gradeFilter === "all" || formatGrade(s.grade) === gradeFilter)
+                    .map(s => (
+                      <SelectItem key={s.id} value={s.id}>{s.name} ({formatGrade(s.grade)})</SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>{t("接送日期")}</Label>
+                <Input type="date" value={pickupDate} onChange={e => setPickupDate(e.target.value)} />
+              </div>
+              <div>
+                <Label>{t("接送时间")}</Label>
+                <Input type="time" value={pickupTime} onChange={e => setPickupTime(e.target.value)} />
+              </div>
             </div>
             <div>
               <Label>{t("接人者姓名 *")}</Label>

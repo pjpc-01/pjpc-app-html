@@ -153,6 +153,7 @@ export default function StudentForm({
         student_name: student.student_name || '',
         student_id: student.student_id || '',
         standard: student.standard || student.grade || '',
+        class_name: (student as any).class_name || '',
         fatherName: student.fatherName || student.father_name || '',
         motherName: student.motherName || student.mother_name || '',
         fatherPhone: student.fatherPhone || student.father_phone || '',
@@ -193,6 +194,7 @@ export default function StudentForm({
         student_name: '',
         student_id: '',
         standard: '',
+        class_name: '',
         fatherName: '',
         motherName: '',
         fatherPhone: '',
@@ -745,6 +747,16 @@ export default function StudentForm({
                   <p className="text-xs text-green-600 mt-1">{t("✓ 年级已根据出生日期自动计算，也可手动选择")}</p>
                 )}
                 {errors.standard && <p className="text-red-500 text-sm mt-1">{errors.standard}</p>}
+              </div>
+
+              <div>
+                <Label htmlFor="class_name">{t("班级 Class")}</Label>
+                <Input
+                  id="class_name"
+                  value={formData.class_name || ''}
+                  onChange={(e) => handleInputChange('class_name' as any, e.target.value)}
+                  placeholder={t("如 1H / 5B（学校班级）")}
+                />
               </div>
 
               {/* Peralihan checkbox */}
