@@ -114,9 +114,17 @@ function respond(entry: { pdf: Buffer; name: string }) {
   })
 }
 
+/** 院长助理用 x-pjpc-agent-token 调；和登录态等价 */
+function isAgent(req: NextRequest): boolean {
+  const key = process.env.PJPC_AGENT_TOKEN || ''
+  return !!key && req.headers.get('x-pjpc-agent-token') === key
+}
+
 export async function GET(req: NextRequest) {
-  const gate = await requireRoles(req, ['admin', 'office_admin', 'teacher'])
-  if ('error' in gate) return gate.error
+  if (!isAgent(req)) {
+    const gate = await requireRoles(req, ['admin', 'office_admin', 'teacher'])
+    if ('error' in gate) return gate.error
+  }
   const number = req.nextUrl.searchParams.get('invoiceNumber') || ''
   if (!number) return NextResponse.json({ error: 'invoiceNumber required' }, { status: 400 })
   try {
@@ -127,8 +135,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const gate = await requireRoles(req, ['admin', 'office_admin', 'teacher'])
-  if ('error' in gate) return gate.error
+  if (!isAgent(req)) {
+    const gate = await requireRoles(req, ['admin', 'office_admin', 'teacher'])
+    if ('error' in gate) return gate.error
+  }
   let body: any = {}
   try {
     body = await req.json()
