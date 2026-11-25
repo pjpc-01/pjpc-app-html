@@ -163,11 +163,13 @@ async function attachActorToAudit(opts: {
       return
     }
 
-    // 钩子是 PB 保存成功后写的，实测 0.2–1.5 秒才落库（PB 0.39.6 JSVM 慢），
-    // 所以最多等约 3 秒；超时才兜底自己写一条，避免同一笔改动两条记录
-    for (let attempt = 0; attempt < 20; attempt++) {
+    // 钩子是 PB 保存成功后写的，实测 ~90ms 就落库（PB 0.39.6 JSVM）。
+    // 2026-11-25：原来等 20×150ms=3 秒，且过滤只认 user_name=""，而钩子实际写「系统内部」
+    // → 每次都白等满 3 秒才兜底自己写，一次写接口 4 秒多；学生费用分配保存 135 条 = 10 分钟。
+    // 现在：过滤两种都认，最多等 6×120ms=0.7 秒，绝大多数情况 0.1 秒内就命中。
+    for (let attempt = 0; attempt < 6; attempt++) {
       try {
-        const filter = `action = "${verb}:${opts.collection}" && user_name = ""` +
+        const filter = `action = "${verb}:${opts.collection}" && (user_name = "" || user_name = "系统内部")` +
           (opts.recordId ? ` && description ~ "${opts.recordId}"` : '')
         const url = `${POCKETBASE_URL}/api/collections/audit_logs/records?perPage=10&sort=-created&filter=${encodeURIComponent(filter)}`
         const r = await fetch(url, { headers: { Authorization: `Bearer ${tok}` } })
@@ -192,7 +194,7 @@ async function attachActorToAudit(opts: {
           }
         }
       } catch { /* 单次失败继续重试 */ }
-      await new Promise(res => setTimeout(res, 150))
+      await new Promise(res => setTimeout(res, 120))
     }
 
     // 兜底：钩子没写（例如 schedules 被钩子排除）→ 自己写一条

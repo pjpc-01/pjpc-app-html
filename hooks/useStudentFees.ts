@@ -434,47 +434,70 @@ export function useStudentFees() {
 
     // Process each student's assignments individually so a single failure
     // does not abort the rest of the batch.
+    // ① 先算好每个学生要写什么，顺手判掉「没改」的。
+    //    原来 135 个学生一律逐条串行写一遍 —— 哪怕只动了一个学生，
+    //    也要发 135 个请求，每个还要等代理补审计，一次保存要等好几分钟。
+    type SaveJob = { studentId: string; kind: 'update' | 'create'; recordId?: string; payload: any; previousStatus?: string }
+    const jobs: SaveJob[] = []
+    let unchanged = 0
+
     for (const [studentId, feeIds] of localFeeAssignments) {
-      try {
-        // Create fee items array — preserve existing quantities from PB
-        // 优先用刚落库的最新记录(保住刚调好的天数)，退回内存快照
-        const existingRecord = freshByStudent.get(studentId) || feeByStudentId.get(studentId);
-        const rawExisting = existingRecord?.fee_items
-        // 全量读回来的 fee_items 是 JSON 字符串；内存快照里已经是数组 —— 两种都要接
-        const existingItems: any[] = typeof rawExisting === 'string' ? safeParse(rawExisting) : (rawExisting || [])
-        const existingQty: Record<string, number> = {}
-        existingItems.forEach((fi: any) => { if (fi.quantity) existingQty[fi.id] = fi.quantity })
+      const existingRecord = freshByStudent.get(studentId) || feeByStudentId.get(studentId);
+      const rawExisting = existingRecord?.fee_items
+      // 全量读回来的 fee_items 是 JSON 字符串；内存快照里已经是数组 —— 两种都要接
+      const existingItems: any[] = typeof rawExisting === 'string' ? safeParse(rawExisting) : (rawExisting || [])
+      const existingQty: Record<string, number> = {}
+      existingItems.forEach((fi: any) => { if (fi.quantity) existingQty[fi.id] = fi.quantity })
 
-        // 合计必须按 单价 × 数量（Meal 3 份、迟接 12 次），否则存下来的
-        // totalAmount 会比明细少（沈仁平 989 存成 918 就是这么来的）
-        const baseAmount = allFees
-          .filter((fee: any) => feeIds.has(fee.id))
-          .reduce((total: number, fee: any) => total + (fee.amount || 0) * (existingQty[fee.id] || 1), 0);
-        const adj = localAdjustments.get(studentId);
-        const discount = adj?.discount || 0;
-        const discountType = adj?.discount_type || 'amount';
-        const totalAmount = Math.max(0, baseAmount - (discountType === 'percent' ? baseAmount * (discount / 100) : discount));
-        const feeItems = allFees
-          .filter((fee: any) => feeIds.has(fee.id))
-          .map((fee: any) => ({
-            id: fee.id,
-            name: fee.name,
-            amount: fee.amount,
-            quantity: existingQty[fee.id] || 1,
-            active: true
-          }));
+      // 合计必须按 单价 × 数量（Meal 3 份、迟接 12 次），否则存下来的
+      // totalAmount 会比明细少（沈仁平 989 存成 918 就是这么来的）
+      const baseAmount = allFees
+        .filter((fee: any) => feeIds.has(fee.id))
+        .reduce((total: number, fee: any) => total + (fee.amount || 0) * (existingQty[fee.id] || 1), 0);
+      const adj = localAdjustments.get(studentId);
+      const discount = adj?.discount || 0;
+      const discountType = adj?.discount_type || 'amount';
+      const totalAmount = Math.max(0, baseAmount - (discountType === 'percent' ? baseAmount * (discount / 100) : discount));
+      const feeItems = allFees
+        .filter((fee: any) => feeIds.has(fee.id))
+        .map((fee: any) => ({
+          id: fee.id,
+          name: fee.name,
+          amount: fee.amount,
+          quantity: existingQty[fee.id] || 1,
+          active: true
+        }));
 
-        debugLog(`🔄 Saving for student ID: ${studentId}, Total: ${totalAmount}, Items: ${feeItems.length}`);
+      // 跟库里最新值比：勾选集合、数量、金额、折扣全都没变 → 不写
+      if (existingRecord) {
+        const prevActive = new Set(
+          existingItems.filter((i: any) => i.active !== false).map((i: any) => i.id)
+        )
+        const sameSet = prevActive.size === feeIds.size && Array.from(feeIds).every(id => prevActive.has(id))
+        const sameQty = feeItems.every(
+          (fi: any) => (existingQty[fi.id] || 1) === ((existingItems.find((x: any) => x.id === fi.id)?.quantity) || 1)
+        )
+        const sameMoney = Math.abs((Number(existingRecord.totalAmount) || 0) - totalAmount) < 0.005
+        const sameAdj =
+          (Number(existingRecord.discount) || 0) === (adj?.discount ?? 0) &&
+          (existingRecord.discount_type || 'amount') === (adj?.discount_type ?? 'amount') &&
+          JSON.stringify(existingRecord.six_month_fee_ids || []) === JSON.stringify(adj?.six_month_fee_ids ?? []) &&
+          (Number(existingRecord.six_month_pay_rate) || 0) === (adj?.six_month_pay_rate ?? 0)
+        if (sameSet && sameQty && sameMoney && sameAdj) {
+          unchanged++
+          continue
+        }
 
-        if (existingRecord) {
-          // BUG #8: update branch also updates `status`. If fee items are
-          // assigned and the record was previously "paid", flip back to
-          // "pending" because the outstanding set has changed.
-          const previousStatus = existingRecord.status || 'pending';
-          const newStatus =
-            feeItems.length > 0 && previousStatus === 'paid' ? 'pending' : previousStatus;
+        // BUG #8: 已付清的记录被改了勾选 → 回到 pending
+        const previousStatus = existingRecord.status || 'pending';
+        const newStatus = feeItems.length > 0 && previousStatus === 'paid' ? 'pending' : previousStatus;
 
-          const savePayload = {
+        jobs.push({
+          studentId,
+          kind: 'update',
+          recordId: existingRecord.id,
+          previousStatus,
+          payload: {
             fee_items: JSON.stringify(feeItems),
             totalAmount: totalAmount,
             status: newStatus,
@@ -484,13 +507,13 @@ export function useStudentFees() {
             six_month_pay: adj?.six_month_fee_ids ? adj.six_month_fee_ids.length > 0 : false,
             six_month_pay_rate: adj?.six_month_pay_rate ?? 0,
             six_month_pay_rate_type: adj?.six_month_pay_rate_type ?? 'percent',
-          };
-
-          await pbInstance.collection("student_fees").update(existingRecord.id, savePayload);
-          debugLog(`✅ Updated record for student: ${studentId} (status: ${previousStatus} → ${newStatus}, discount: ${savePayload.discount})`);
-        } else {
-          // Create new record — use student ID directly for the relation field
-          await pbInstance.collection("student_fees").create({
+          },
+        })
+      } else {
+        jobs.push({
+          studentId,
+          kind: 'create',
+          payload: {
             students: studentId,
             student_id: studentId,
             fee_items: JSON.stringify(feeItems),
@@ -503,15 +526,35 @@ export function useStudentFees() {
             six_month_pay: adj?.six_month_fee_ids ? adj.six_month_fee_ids.length > 0 : false,
             six_month_pay_rate: adj?.six_month_pay_rate ?? 0,
             six_month_pay_rate_type: adj?.six_month_pay_rate_type ?? 'percent',
-          });
-          debugLog(`✅ Created new record for student: ${studentId}`);
-        }
-        savedCount++;
-      } catch (err: any) {
-        debugLog(`❌ Failed saving for student ${studentId}:`, err);
-        failures.push({ studentId, error: err });
+          },
+        })
       }
     }
+
+    debugLog(`🔄 需要写 ${jobs.length} 个学生，未变动跳过 ${unchanged} 个`)
+
+    // ② 并发写（每批 6 个）。逐条串行是之前慢的主因之一。
+    const CONCURRENCY = 6
+    let cursor = 0
+    const runner = async () => {
+      while (cursor < jobs.length) {
+        const job = jobs[cursor++]
+        try {
+          if (job.kind === 'update') {
+            await pbInstance.collection("student_fees").update(job.recordId, job.payload);
+            debugLog(`✅ Updated record for student: ${job.studentId} (status: ${job.previousStatus} → ${job.payload.status})`);
+          } else {
+            await pbInstance.collection("student_fees").create(job.payload);
+            debugLog(`✅ Created new record for student: ${job.studentId}`);
+          }
+          savedCount++;
+        } catch (err: any) {
+          debugLog(`❌ Failed saving for student ${job.studentId}:`, err);
+          failures.push({ studentId: job.studentId, error: err });
+        }
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, jobs.length) }, runner))
 
     // Only refresh remote data when every record was saved. If anything failed
     // we keep the local edits so the user can retry without losing work, and
@@ -527,8 +570,7 @@ export function useStudentFees() {
 
     debugLog(`✅ Successfully saved all ${savedCount} students to PocketBase`);
 
-    // Wait briefly before refreshing so PocketBase has propagated writes
-    await new Promise(resolve => setTimeout(resolve, 300));
+    // 写已经全部 await 完成，PocketBase 落库后才回响应 —— 不需要再人为等
     if (!isMountedRef.current) return { savedCount, failures: [] };
 
     // BUG #2: refresh failure must NOT clear localFeeAssignments — keep them
