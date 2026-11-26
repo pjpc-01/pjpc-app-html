@@ -280,8 +280,8 @@ export default function GradesManagementPage() {
         return (
           <Card className="mb-6">
             <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm flex items-center gap-2"><GraduationCap className="h-4 w-4" />{t("成绩报表")}</CardTitle>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <CardTitle className="flex shrink-0 items-center gap-2 whitespace-nowrap text-sm"><GraduationCap className="h-4 w-4" />{t("成绩报表")}</CardTitle>
                 <div className="flex items-center gap-2">
                   <Select value={reportTerm} onValueChange={setReportTerm}>
                     <SelectTrigger className="w-28 h-7 text-xs"><SelectValue /></SelectTrigger>
@@ -302,7 +302,7 @@ export default function GradesManagementPage() {
             </CardHeader>
             <CardContent className="p-0">
               {/* 滚动容器：必须中和 shadcn Table 自带的 overflow-auto 内层 div，否则 sticky 表头失效 */}
-              <div className="grades-table-scroll max-h-[70vh] overflow-auto">
+              <div className="grades-table-scroll hidden max-h-[70vh] overflow-auto md:block">
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
@@ -363,6 +363,100 @@ export default function GradesManagementPage() {
                     })}
                   </TableBody>
                 </Table>
+              </div>
+
+              {/* 手机：一个学生一张卡（这张表 18 列，390px 下只能看到 3 列，横拖着看没法用） */}
+              <div className="divide-y divide-slate-100 md:hidden">
+                {centerStudents.length === 0 ? (
+                  <p className="py-10 text-center text-sm text-slate-400">{t("暂无")}</p>
+                ) : (
+                  centerStudents.map((s, i) => {
+                    const subjects = studentSubjectMap[s.id] || {}
+                    const scores = Object.values(subjects).filter((d) => !isNaN(d.score)).map((d) => d.score)
+                    const avg = scores.length ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10 : 0
+                    return (
+                      <div key={s.id} className="px-3 py-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-slate-800">
+                              <span className="mr-1 font-mono text-xs text-slate-400">{i + 1}</span>
+                              {s.name || s.student_name}
+                            </p>
+                            <p className="mt-0.5 text-xs text-slate-500">{s.standard || s.grade}</p>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <p className={`text-lg font-bold leading-none ${avg >= 70 ? "text-emerald-600" : avg >= 50 ? "text-slate-700" : "text-red-600"}`}>
+                              {avg > 0 ? avg : "-"}
+                            </p>
+                            <p className="mt-0.5 text-[10px] text-slate-400">{t("平均")}</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-2 grid grid-cols-3 gap-1.5">
+                          {gradeSubjects.map((subj) => {
+                            const d = subjects[subj]
+                            const cellKey = `${s.id}-${subj}`
+                            const isEditing = editingCell === cellKey
+                            return (
+                              <div key={subj} className="rounded-md border border-slate-100 bg-slate-50/60 px-1.5 py-1">
+                                <p className="truncate text-[10px] leading-tight text-slate-400">{subj}</p>
+                                {isEditing ? (
+                                  <form onSubmit={(e) => { e.preventDefault(); handleCellSave(s.id, subj) }}>
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      min={0}
+                                      max={100}
+                                      value={editCellScore}
+                                      onChange={(e) => setEditCellScore(e.target.value)}
+                                      onBlur={() => handleCellSave(s.id, subj)}
+                                      className="h-6 w-full p-0 text-xs"
+                                      autoFocus
+                                    />
+                                  </form>
+                                ) : d ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => { setEditingCell(cellKey); setEditCellScore(String(d.score)) }}
+                                    className={`w-full text-left text-sm font-mono font-semibold ${d.score >= 80 ? "text-emerald-600" : d.score >= 50 ? "text-slate-700" : "text-red-600"}`}
+                                  >
+                                    {d.score}
+                                    <span className="ml-0.5 text-[10px] font-normal text-slate-400">{d.letter}</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => { setEditingCell(cellKey); setEditCellScore("") }}
+                                    className="w-full text-left text-sm text-slate-300"
+                                  >
+                                    +
+                                  </button>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+
+                        <div className="mt-2 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const ic = (s as any).nric || ''
+                              if (ic) {
+                                navigator.clipboard?.writeText(ic.replace(/\s+/g, '')).catch(() => {})
+                                alert(`已复制该生IC: ${ic}\n\n点击确定后，在打开的 DataStudio 页面输入框内直接粘贴(Ctrl+V)并回车，即可看到该生成绩`)
+                              }
+                              window.open("https://datastudio.google.com/u/0/reporting/5755410c-43ab-4d79-afa7-a770c11eef2a/page/bEQqD", "_blank")
+                            }}
+                            className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-[11px] text-slate-600"
+                          >
+                            <ExternalLink className="h-3 w-3" />{t("核对")}
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
               </div>
             </CardContent>
           </Card>
