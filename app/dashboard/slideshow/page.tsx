@@ -12,6 +12,7 @@ import { LeaderboardList, type LeaderboardStudent } from "@/components/shared/Le
 import ExamTargetsWidget from "@/components/dashboard/ExamTargetsWidget"
 import { useLanguage } from "@/contexts/language-context"
 import { withThumb } from "@/lib/utils"
+import { GlitchTitle, GlitchTransition, GlitchContent, SlideProgress } from "@/components/motion/SlideGlitch"
 
 // ─── Types ──────────────────────────────────────────────────────────
 interface Student {
@@ -568,26 +569,35 @@ function SlideshowOverlay({
       </div>
       )}
 
+      {/* 切页扫描光带（铺满整个覆盖层，只播一次） */}
+      <GlitchTransition trigger={idx} />
+
       {/* Slide content */}
       <div className="flex-1 flex p-6 min-h-0">
         <div className="w-full flex flex-col min-h-0">
           <div className="text-center mb-4 shrink-0">
-            <h1 className="text-lg font-bold text-white">
-              {current.title}
-              {(current as any).pageCount > 1 ? `（第${(current as any).page}页，第${(current as any).page * 30 - 29}-${Math.min((current as any).page * 30, centerStudents.length)}名）` : ''}
+            <h1 className="flex flex-wrap items-center justify-center gap-x-2 text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
+              <GlitchTitle
+                trigger={idx}
+                text={`${current.title}${(current as any).pageCount > 1 ? `（第${(current as any).page}页，第${(current as any).page * 30 - 29}-${Math.min((current as any).page * 30, centerStudents.length)}名）` : ''}`}
+                className="text-white [text-shadow:0_0_16px_rgba(34,211,238,0.45),0_0_38px_rgba(217,70,239,0.25)]"
+              />
             </h1>
             <div className="flex justify-center">
-              <div className="flex gap-1.5 mt-1">
+              <div className="flex items-center gap-1.5 mt-2">
                 {expandedList.map((_, i) => (
-                  <div key={i} className={`w-1.5 h-1.5 rounded-full transition-all ${i === idx ? "bg-white w-4" : "bg-white/30"}`} />
+                  <div key={i} className={`rounded-full transition-all duration-300 ${i === idx ? "h-2 w-8 bg-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.9)]" : "h-2 w-2 bg-white/35"}`} />
                 ))}
               </div>
             </div>
+            <SlideProgress trigger={idx} durationMs={interval} paused={paused} />
           </div>
-          <Card className="shadow-2xl border-0 overflow-hidden flex-1 flex flex-col min-h-0">
-            <CardContent className="p-6 flex-1 overflow-hidden min-h-0">
-              {renderWidget(current)}
-            </CardContent>
+          <Card className="relative flex min-h-0 flex-1 flex-col overflow-hidden border-0 shadow-2xl ring-1 ring-white/10">
+            <GlitchContent trigger={idx} className="flex min-h-0 flex-1 flex-col">
+              <CardContent className="p-6 flex-1 overflow-hidden min-h-0">
+                {renderWidget(current)}
+              </CardContent>
+            </GlitchContent>
           </Card>
         </div>
       </div>
