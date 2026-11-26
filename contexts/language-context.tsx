@@ -1296,14 +1296,8 @@ const translations: Record<Language, Record<string, string>> = {
     "加载中…": "加载中…",
     "学生自助刷卡 kiosk": "学生自助刷卡 kiosk",
     "nav.attendance_manual": "手动点名",
-    "本月安排": "本月安排",
-    "天有安排": "天有安排",
-    "本月没有排班": "本月没有排班",
 },
   en: {
-    "本月安排": "This month",
-    "天有安排": "day(s) with plans",
-    "本月没有排班": "No schedule this month",
     // 手动点名（考勤门禁 → 手动点名）
     "手动点名": "Manual Attendance",
     "按班级名册点名，一格一天，看得出一整个月的出席": "Mark the class roster; one cell per day shows the whole month at a glance",
