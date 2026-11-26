@@ -15,6 +15,10 @@
 onRecordCreateRequest((e) => {
   try {
     const rec = e.record;
+    // 只处理 invoices；别的集合没 studentNumber 这个字段
+    let col = "";
+    try { col = rec.collection().name; } catch (xCol) { col = (e.collection && e.collection.name) || ""; }
+    if (col && col !== "invoices") { e.next(); return; }
     const sid = rec.getString("studentId");
     if (sid) {
       const app = e.app || $app;
@@ -31,6 +35,9 @@ onRecordCreateRequest((e) => {
 onRecordUpdateRequest((e) => {
   try {
     const rec = e.record;
+    let col = "";
+    try { col = rec.collection().name; } catch (xCol) { col = (e.collection && e.collection.name) || ""; }
+    if (col && col !== "invoices") { e.next(); return; }
     const sid = rec.getString("studentId");
     if (sid) {
       const app = e.app || $app;

@@ -17,6 +17,16 @@
 //   3. 软删失败也要放行原流程，别制造死锁
 
 onRecordDeleteRequest((e) => {
+  // ⚠️ 只拦 invoices。原来没过滤集合 → 2026-11-26 把「撤销点名」也拦死了：
+  // roll_call 的删除被当成「发票硬删」回 400，点名撤不回来。
+  let col = "";
+  try {
+    col = e.record.collection().name;
+  } catch (xCol) {
+    try { col = (e.collection && e.collection.name) || ""; } catch (xCol2) { col = ""; }
+  }
+  if (col && col !== "invoices") { e.next(); return; }
+
   // 清理测试数据用的后门：要带内网令牌 + ?hard=1
   try {
     const info = e.requestInfo() || {};
