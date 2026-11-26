@@ -56,6 +56,30 @@ export async function registerPush(): Promise<boolean> {
       console.warn("[PUSH] 注册失败:", e?.error || e)
     })
 
+    // App 在前台时系统不会自己弹，这里手动补一条
+    await Push.addListener?.("pushNotificationReceived", async (n: any) => {
+      const title = n?.title || "PJPC"
+      const body = n?.body || ""
+      const link = String(n?.data?.link || "")
+      const Notify = nativePlugin("PjpcNotify")
+      try {
+        await Notify?.show?.({ title, body, link, id: Math.floor(Date.now() / 1000) % 100000 })
+      } catch {
+        /* ignore */
+      }
+    })
+
+    // 点了通知 → 跳到对应页面（壳里就是改地址）
+    await Push.addListener?.("pushNotificationActionPerformed", (ev: any) => {
+      const link = String(ev?.notification?.data?.link || "")
+      if (!link) return
+      try {
+        window.location.assign(link.startsWith("http") ? link : `https://pjpcapp.com${link}`)
+      } catch {
+        /* ignore */
+      }
+    })
+
     await Push.register?.()
     return true
   } catch (e: any) {
