@@ -4,6 +4,8 @@ import { useState, useCallback } from "react"
 import { SmartphoneNfc, Loader2, CheckCircle, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/contexts/language-context";
+import { isNativeApp } from "@/lib/native-app";
+import { readNativeCardOnce } from "@/lib/native-nfc";
 
 declare global {
   interface Window { NDEFReader: any }
@@ -14,9 +16,83 @@ export default function PointsNfcScanner() {
   const [scanning, setScanning] = useState(false)
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null)
 
+  // 拿到卡号之后的公共流程（Web NFC 和原生 NFC 共用）
+  const processCardId = useCallback(async (cardId: string) => {
+    setScanning(true)
+    try {
+      
+        // Build lookup IDs
+        const lookupIds: string[] = [cardId]
+        if (/^[0-9A-Fa-f]+$/.test(cardId) && cardId.length <= 8) {
+          lookupIds.push(parseInt(cardId, 16).toString().padStart(10, "0"))
+        }
+        if (/^\d+$/.test(cardId) && cardId.length >= 8) {
+          try { lookupIds.push(BigInt(cardId).toString(16).toUpperCase()) } catch {}
+        }
+
+        console.log('[NFC] 查询:', lookupIds)
+
+        // Try to find the card
+        let tapData: any = { found: false }
+        for (const id of lookupIds) {
+          try {
+            const tapRes = await fetch("/api/nfc/tap", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ card_uid: id }),
+            })
+            tapData = await tapRes.json()
+            console.log('[NFC] 结果:', tapData.found ? '✅' : '❌', id)
+            if (tapData.found) break
+          } catch {}
+        }
+
+        if (!tapData.found) {
+          setStatus({ ok: false, msg: tapData.error || "未注册的卡片" })
+          setScanning(false)
+          return
+        }
+
+        const person = tapData.person
+        if (tapData.person_type === "student") {
+          setStatus({ ok: true, msg: `🎯 ${person.name}` })
+          window.dispatchEvent(new CustomEvent("pjpc:student-scanned", {
+            detail: { studentId: person.id, studentName: person.name }
+          }))
+        } else {
+          setStatus({ ok: false, msg: "请刷学生卡" })
+        }
+        setScanning(false)
+    } catch (err: any) {
+      console.log('[NFC] 处理错误:', err.message)
+      setStatus({ ok: false, msg: err.message })
+    } finally {
+      setScanning(false)
+    }
+  }, [])
+
   const handleNfcTap = useCallback(async () => {
     console.log('[NFC] 点击扫描')
     setStatus(null)
+
+    // 装在手机里的 App：用原生 Reader Mode 读 UID（WebView 里没有 Web NFC）
+    if (isNativeApp()) {
+      setScanning(true)
+      setStatus({ ok: true, msg: "请将卡片贴近手机背面..." })
+      try {
+        const uid = await readNativeCardOnce()
+        if (!uid) {
+          setStatus({ ok: false, msg: "没读到卡，请再贴近一次" })
+          setScanning(false)
+          return
+        }
+        await processCardId(uid)
+      } catch (e: any) {
+        setStatus({ ok: false, msg: e?.message || "NFC 读取失败" })
+        setScanning(false)
+      }
+      return
+    }
 
     if (typeof window === "undefined" || !("NDEFReader" in window)) {
       console.log('[NFC] 设备不支持')
@@ -72,50 +148,7 @@ export default function PointsNfcScanner() {
             return
           }
 
-          console.log('[NFC] 卡号:', cardId)
-
-          // Build lookup IDs
-          const lookupIds: string[] = [cardId]
-          if (/^[0-9A-Fa-f]+$/.test(cardId) && cardId.length <= 8) {
-            lookupIds.push(parseInt(cardId, 16).toString().padStart(10, "0"))
-          }
-          if (/^\d+$/.test(cardId) && cardId.length >= 8) {
-            try { lookupIds.push(BigInt(cardId).toString(16).toUpperCase()) } catch {}
-          }
-
-          console.log('[NFC] 查询:', lookupIds)
-
-          // Try to find the card
-          let tapData: any = { found: false }
-          for (const id of lookupIds) {
-            try {
-              const tapRes = await fetch("/api/nfc/tap", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ card_uid: id }),
-              })
-              tapData = await tapRes.json()
-              console.log('[NFC] 结果:', tapData.found ? '✅' : '❌', id)
-              if (tapData.found) break
-            } catch {}
-          }
-
-          if (!tapData.found) {
-            setStatus({ ok: false, msg: tapData.error || "未注册的卡片" })
-            setScanning(false)
-            return
-          }
-
-          const person = tapData.person
-          if (tapData.person_type === "student") {
-            setStatus({ ok: true, msg: `🎯 ${person.name}` })
-            window.dispatchEvent(new CustomEvent("pjpc:student-scanned", {
-              detail: { studentId: person.id, studentName: person.name }
-            }))
-          } else {
-            setStatus({ ok: false, msg: "请刷学生卡" })
-          }
-          setScanning(false)
+          await processCardId(cardId)
 
         } catch (err: any) {
           console.log('[NFC] 处理错误:', err.message)

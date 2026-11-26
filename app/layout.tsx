@@ -12,6 +12,7 @@ import { LanguageProvider } from "@/contexts/language-context"
 import GlobalCardScanner from "@/components/attendance/GlobalCardScanner"
 import WelcomeGate from "@/components/motion/WelcomeGate"
 import PwaRegister from "@/components/PwaRegister"
+import NativeShell from "@/components/NativeShell"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -66,6 +67,8 @@ export default function RootLayout({
                 {/* 登录后的一次性欢迎动效（只在这个标签页的这次登录播一次） */}
                 <WelcomeGate />
                 <PwaRegister />
+                {/* 只在装好的 App 里生效：版本强制更新、通知、token 交接 */}
+                <NativeShell />
               </NfcAuthProvider>
             </AuthProvider>
           </LanguageProvider>
