@@ -78,6 +78,14 @@ interface LeaveRecord {
   expand?: { teacher_id?: { name?: string } }
 }
 
+// 手机上格子只有 40 多像素宽，塞不下「08:30 老师名」这种字 → 手机只画圆点
+const dotColors: Record<string, string> = {
+  scheduled: "bg-blue-400",
+  confirmed: "bg-emerald-500",
+  completed: "bg-gray-400",
+  cancelled: "bg-rose-400",
+}
+
 const statusColors: Record<string, string> = {
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
   confirmed: "bg-green-100 text-green-800 border-green-200",
@@ -425,6 +433,23 @@ export default function CalendarScheduleView({
   }
 
   // teacher_id -> 名字反查(排班记录 teacher_name 为空时用)
+  // 手机用：本月「有东西」的日子（排班 / 请假 / 公假），按日期排好
+  const monthDayList = useMemo(() => {
+    const list: { dateKey: string; day: Date; events: ScheduleEvent[]; leaves: any[]; holiday: any }[] = []
+    const year = currentMonth.getFullYear()
+    const monthIdx = currentMonth.getMonth()
+    const total = new Date(year, monthIdx + 1, 0).getDate()
+    for (let d = 1; d <= total; d++) {
+      const day = new Date(year, monthIdx, d)
+      const dateKey = format(day, "yyyy-MM-dd")
+      const events = eventsByDate.get(dateKey) || []
+      const leaves = leavesByDate.get(dateKey) || []
+      const holiday = holidayByDate.get(dateKey)
+      if (events.length || leaves.length || holiday) list.push({ dateKey, day, events, leaves, holiday })
+    }
+    return list
+  }, [currentMonth, eventsByDate, leavesByDate, holidayByDate])
+
   const teacherById = useMemo(() => {
     const map = new Map<string, string>()
     teachers.forEach((t) => {
@@ -524,43 +549,71 @@ export default function CalendarScheduleView({
 
                   {/* 公假 / 学校假期 */}
                   {holiday && (
-                    <div className={`mt-0.5 text-[10px] leading-tight px-1 py-0.5 rounded text-white font-medium truncate ${
-                      holiday.type === 'school' ? 'bg-amber-500' : 'bg-rose-500'
-                    }`}
-                      title={`${holiday.type === 'school' ? '学校假期' : '公共假期'}：${holiday.name_zh || holiday.name}`}>
-                      {holiday.type === 'school' ? '🏫' : '🎌'} {holiday.name_zh || holiday.name}
-                    </div>
+                    <>
+                      {/* 手机：一格放不下名字，只放一个记号 */}
+                      <div className="md:hidden mt-0.5 text-[11px] leading-none"
+                        title={`${holiday.type === 'school' ? '学校假期' : '公共假期'}：${holiday.name_zh || holiday.name}`}>
+                        {holiday.type === 'school' ? '🏫' : '🎌'}
+                      </div>
+                      <div className={`hidden md:block mt-0.5 text-[10px] leading-tight px-1 py-0.5 rounded text-white font-medium truncate ${
+                        holiday.type === 'school' ? 'bg-amber-500' : 'bg-rose-500'
+                      }`}
+                        title={`${holiday.type === 'school' ? '学校假期' : '公共假期'}：${holiday.name_zh || holiday.name}`}>
+                        {holiday.type === 'school' ? '🏫' : '🎌'} {holiday.name_zh || holiday.name}
+                      </div>
+                    </>
                   )}
 
                   {/* 已批请假：谁休 */}
+                  {dayLeaves.length > 0 && (
+                    <div className="md:hidden mt-0.5 text-[10px] leading-none text-purple-700 font-medium"
+                      title={`${dayLeaves.map(l => leaveTeacherName(l)).join('、')} 请假`}>
+                      🏖{dayLeaves.length}
+                    </div>
+                  )}
                   {dayLeaves.slice(0, 2).map((l) => (
-                    <div key={l.id} className="text-[10px] leading-tight px-1 py-0.5 rounded mt-0.5 border bg-purple-100 text-purple-800 border-purple-200 truncate"
+                    <div key={l.id} className="hidden md:block text-[10px] leading-tight px-1 py-0.5 rounded mt-0.5 border bg-purple-100 text-purple-800 border-purple-200 truncate"
                       title={`${leaveTeacherName(l)} 请假(${LEAVE_TYPE_ZH[l.leave_type] || l.leave_type})`}>
                       🏖 {leaveTeacherName(l)}
                     </div>
                   ))}
                   {dayLeaves.length > 2 && (
-                    <div className="text-[10px] text-purple-700 font-medium px-1">
+                    <div className="hidden md:block text-[10px] text-purple-700 font-medium px-1">
                       +{dayLeaves.length - 2} {t("人请假")}
                     </div>
                   )}
 
-                  {dayEvents.slice(0, 3).map((evt) => (
-                    <div
-                      key={evt.id}
-                      className={`text-[10px] leading-tight px-1 py-0.5 rounded truncate mt-0.5 border ${
-                        statusColors[evt.status] || "bg-gray-50"
-                      }`}
-                      title={`${displayEventName(evt)} ${evt.start_time}-${evt.end_time}${evt.course_name ? ' · ' + evt.course_name : ''}`}
-                    >
-                      {evt.start_time} {displayEventName(evt)}
-                    </div>
-                  ))}
-                  {dayEvents.length > 3 && (
-                    <div className="text-[10px] text-indigo-600 font-medium px-1">
-                      +{dayEvents.length - 3} {t("更多")}
-                    </div>
-                  )}
+                  {/* 手机：一格只有 40 多像素，塞字必然被截成小色块 → 只显示圆点，内容看下面的清单 */}
+                  <div className="md:hidden mt-0.5 flex flex-wrap items-center gap-1">
+                    {dayEvents.slice(0, 4).map((evt) => (
+                      <span
+                        key={evt.id}
+                        className={`h-1.5 w-1.5 rounded-full ${dotColors[evt.status] || "bg-gray-300"}`}
+                        title={`${displayEventName(evt)} ${evt.start_time}-${evt.end_time}`}
+                      />
+                    ))}
+                    {dayEvents.length > 4 && (
+                      <span className="text-[9px] leading-none text-indigo-600 font-semibold">+{dayEvents.length - 4}</span>
+                    )}
+                  </div>
+                  <div className="hidden md:block">
+                    {dayEvents.slice(0, 3).map((evt) => (
+                      <div
+                        key={evt.id}
+                        className={`text-[10px] leading-tight px-1 py-0.5 rounded truncate mt-0.5 border ${
+                          statusColors[evt.status] || "bg-gray-50"
+                        }`}
+                        title={`${displayEventName(evt)} ${evt.start_time}-${evt.end_time}${evt.course_name ? ' · ' + evt.course_name : ''}`}
+                      >
+                        {evt.start_time} {displayEventName(evt)}
+                      </div>
+                    ))}
+                    {dayEvents.length > 3 && (
+                      <div className="text-[10px] text-indigo-600 font-medium px-1">
+                        +{dayEvents.length - 3} {t("更多")}
+                      </div>
+                    )}
+                  </div>
                 </button>
               )
             })}
@@ -571,6 +624,55 @@ export default function CalendarScheduleView({
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-rose-500 inline-block" />{t("公假（不排课）")}</span>
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-purple-300 inline-block" />{t("已批请假")}</span>
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-blue-300 inline-block" />{t("已排班")}</span>
+          </div>
+
+          {/* 手机：本月一览。格子太窄塞不下字，改成一张能读的清单，不用点也能看全 */}
+          <div className="md:hidden mt-3">
+            <div className="flex items-baseline justify-between mb-1.5">
+              <div className="text-xs font-semibold text-gray-700">{t("本月安排")}</div>
+              <div className="text-[11px] text-gray-500">{monthDayList.length} {t("天有安排")}</div>
+            </div>
+            <div className="max-h-80 overflow-y-auto rounded-lg border divide-y bg-white">
+              {monthDayList.length === 0 && (
+                <div className="px-3 py-4 text-xs text-gray-500 text-center">{t("本月没有排班")}</div>
+              )}
+              {monthDayList.map(({ dateKey, day, events, leaves, holiday }) => (
+                <button
+                  key={dateKey}
+                  type="button"
+                  onClick={() => setSelectedDate(day)}
+                  className="w-full px-3 py-2 text-left active:bg-blue-50"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-sm font-bold ${isToday(day) ? "text-indigo-600" : "text-gray-900"}`}>
+                      {format(day, "d")}
+                    </span>
+                    <span className="text-[11px] text-gray-500">{format(day, "EEE", { locale: zhCN })}</span>
+                    {isToday(day) && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-600 text-white leading-none">{t("今天")}</span>
+                    )}
+                  </div>
+                  {holiday && (
+                    <div className="mt-0.5 text-[12px] text-rose-600 leading-snug">
+                      {holiday.type === 'school' ? '🏫' : '🎌'} {holiday.name_zh || holiday.name}
+                    </div>
+                  )}
+                  {events.map((evt) => (
+                    <div key={evt.id} className="mt-0.5 text-[12px] leading-snug text-gray-700">
+                      <span className="font-semibold text-gray-900 tabular-nums">{evt.start_time}–{evt.end_time}</span>
+                      {" · "}{displayEventName(evt)}
+                      {evt.course_name ? <span className="text-gray-500"> · {evt.course_name}</span> : null}
+                      {evt.room ? <span className="text-gray-400"> · {evt.room}</span> : null}
+                    </div>
+                  ))}
+                  {leaves.map((l: any) => (
+                    <div key={l.id} className="mt-0.5 text-[12px] leading-snug text-purple-700">
+                      🏖 {leaveTeacherName(l)} {t("请假")}
+                    </div>
+                  ))}
+                </button>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>
