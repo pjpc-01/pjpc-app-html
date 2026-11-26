@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { appInfo, isNativeApp, nativePlugin, currentAuthToken, syncNativeAuthToken, openExternal } from "@/lib/native-app"
 import { takePhoto } from "@/lib/native-camera"
 import { registerPush } from "@/lib/native-push"
+import { installUpdate } from "@/lib/native-update"
 import { useLanguage } from "@/contexts/language-context";
 
 /**
@@ -48,6 +49,30 @@ export default function NativeShell() {
   const [blocked, setBlocked] = useState<VersionInfo | null>(null)
   const [update, setUpdate] = useState<VersionInfo | null>(null)
   const [dismissed, setDismissed] = useState(false)
+  const [pct, setPct] = useState<number | null>(null)
+  const [updateMsg, setUpdateMsg] = useState("")
+
+  // App 内更新：App 里点更新 → 原生下载 + 校验签名 + 弹系统安装；浏览器里就退回去开链接
+  const startUpdate = async (url: string) => {
+    setUpdateMsg("")
+    setPct(0)
+    const res = await installUpdate(url, (p) => setPct(p))
+    if (res.ok) {
+      setPct(100)
+      setUpdateMsg("下载完了，点系统弹窗里的「安装」就完成")
+      return
+    }
+    setPct(null)
+    if (res.reason === "not-native") {
+      openExternal(url)
+      return
+    }
+    if (res.reason === "need-permission") {
+      setUpdateMsg("已打开设置，请允许「安装未知应用」，然后回来再点一次更新")
+      return
+    }
+    setUpdateMsg(res.message || "更新失败，请稍后再试")
+  }
 
   useEffect(() => {
     if (!isNativeApp()) return
@@ -177,12 +202,13 @@ export default function NativeShell() {
         </div>
         <button
           type="button"
-          onClick={() => openExternal(blocked.apkUrl)}
-          className="rounded-full bg-gray-900 px-6 py-3 text-sm font-medium text-white"
+          onClick={() => startUpdate(blocked.apkUrl)}
+          disabled={pct !== null && pct < 100}
+          className="rounded-full bg-gray-900 px-6 py-3 text-sm font-medium text-white disabled:opacity-60"
         >
-          {t("立即更新")}
+          {pct !== null && pct < 100 ? `下载中 ${pct}%` : t("立即更新")}
         </button>
-        <div className="text-xs text-gray-400">{t("下载后点安装，装完回到这里就会自动进入")}</div>
+        <div className="text-xs text-gray-500">{updateMsg || t("下载后点安装，装完回到这里就会自动进入")}</div>
       </div>
     )
   }
@@ -196,10 +222,10 @@ export default function NativeShell() {
         </div>
         <button
           type="button"
-          onClick={() => openExternal(update.apkUrl)}
+          onClick={() => startUpdate(update.apkUrl)}
           className="shrink-0 rounded-full bg-white/95 px-3 py-1 text-[13px] font-medium text-amber-700"
         >
-          {t("更新")}
+          {pct !== null && pct < 100 ? `${pct}%` : t("更新")}
         </button>
         <button
           type="button"
