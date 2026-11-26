@@ -213,7 +213,8 @@ export default function StudentLeaveManagement() {
           </div>
 
           {error && <div className="text-sm text-red-600">{error}</div>}
-          {loading ? <div className="py-8 text-center text-sm text-gray-500">{t("加载中…")}</div> : (
+          {loading ? <div className="py-8 text-center text-sm text-gray-500">{t("加载中…")}</div> : (<>
+            <div className="hidden md:block">
             <Table>
               <TableHeader><TableRow>
                 <TableHead>{t("学生")}</TableHead><TableHead>{t("年级")}</TableHead><TableHead>{t("类型")}</TableHead>
@@ -246,7 +247,44 @@ export default function StudentLeaveManagement() {
                 ))}
               </TableBody>
             </Table>
-          )}
+            </div>
+
+            {/* 手机：一条请假一张卡 */}
+            <div className="divide-y divide-gray-100 md:hidden">
+              {records.length === 0 ? (
+                <p className="py-10 text-center text-sm text-gray-500">{t("暂无请假记录")}</p>
+              ) : records.map((r) => (
+                <div key={r.id} className="px-3 py-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-gray-800">{studentName(r)}</p>
+                      <p className="text-[11px] text-gray-500">{studentGrade(r) || "-"}</p>
+                    </div>
+                    <Badge className={`shrink-0 ${statusClass(r.status)}`}>{statusLabel(r.status)}</Badge>
+                  </div>
+
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-600">
+                    <Badge variant="secondary">{t(typeLabel(r.leave_type))}</Badge>
+                    <span className="whitespace-nowrap">{dstr(r.start_date)} → {dstr(r.end_date)}</span>
+                    <span>{r.total_days ?? "-"} {t("天")}</span>
+                  </div>
+
+                  {r.reason ? <p className="mt-1 line-clamp-2 text-[11px] text-gray-500">{r.reason}</p> : null}
+
+                  <div className="mt-2 flex justify-end gap-1">
+                    {r.status === "pending" && (
+                      <>
+                        <Button variant="ghost" size="sm" onClick={() => setStatus(r, "approved")} title={t("批准")}><CheckCircle className="w-4 h-4 text-green-600" /></Button>
+                        <Button variant="ghost" size="sm" onClick={() => setStatus(r, "rejected")} title={t("拒绝")}><XCircle className="w-4 h-4 text-red-600" /></Button>
+                      </>
+                    )}
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(r)}><Edit className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => remove(r)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>)}
         </CardContent>
       </Card>
 

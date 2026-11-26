@@ -1297,6 +1297,11 @@ const translations: Record<Language, Record<string, string>> = {
     "学生自助刷卡 kiosk": "学生自助刷卡 kiosk",
     "nav.attendance_manual": "手动点名",
     "当月暂无排班": "当月暂无排班",
+    "号": "号",
+    "暂无申请": "暂无申请",
+    "暂无薪资结构": "暂无薪资结构",
+    "不扣法定": "不扣法定",
+
     "这个版本的 App 已经不能再用了": "这个版本的 App 已经不能再用了",
     "必须更新到": "必须更新到",
     "才能继续使用。": "才能继续使用。",
@@ -1312,6 +1317,11 @@ const translations: Record<Language, Record<string, string>> = {
     "按班级名册点名，一格一天，看得出一整个月的出席": "Mark the class roster; one cell per day shows the whole month at a glance",
     "nav.attendance_manual": "Manual Attendance",
     "当月暂无排班": "No schedule this month",
+    "号": "No.",
+    "暂无申请": "No applications",
+    "暂无薪资结构": "No salary structures",
+    "不扣法定": "No statutory deductions",
+
     "这个版本的 App 已经不能再用了": "This app version can no longer be used",
     "必须更新到": "Please update to",
     "才能继续使用。": "to keep using the app.",

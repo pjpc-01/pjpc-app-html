@@ -1225,6 +1225,11 @@ export const ZH_TO_EN: Record<string, string> = {
   "当月全部排班记录。标红的 = 没有课程的排班（来源见「来源」列）": "All scheduling records this month. Highlighted in red = shifts without courses (see the \"Source\" column for the source)",
   "本月没有排班": "No schedule this month",
   "当月暂无排班": "No schedule this month",
+  "号": "No.",
+  "暂无申请": "No applications",
+  "暂无薪资结构": "No salary structures",
+  "不扣法定": "No statutory deductions",
+
   "这个版本的 App 已经不能再用了": "This app version can no longer be used",
   "必须更新到": "Please update to",
   "才能继续使用。": "to keep using the app.",

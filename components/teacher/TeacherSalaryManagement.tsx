@@ -1319,7 +1319,7 @@ export default function TeacherSalaryManagement() {
                   </div>
                 </div>
               )}
-              <div className="overflow-x-auto rounded-md border">
+              <div className="hidden overflow-x-auto rounded-md border md:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -1393,6 +1393,67 @@ export default function TeacherSalaryManagement() {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+
+            {/* 手机：一条薪资结构一张卡 */}
+            <div className="divide-y divide-gray-100 rounded-md border md:hidden">
+              {salaryStructures.length === 0 ? (
+                <p className="py-10 text-center text-sm text-gray-500">{t("暂无薪资结构")}</p>
+              ) : salaryStructures.map((structure) => (
+                <div key={structure.id} className={`px-3 py-3 ${structureSelectedIds.has(structure.id) ? "bg-red-50/50" : ""}`}>
+                  <div className="flex items-start gap-2">
+                    <Checkbox
+                      checked={structureSelectedIds.has(structure.id)}
+                      onCheckedChange={() => toggleSelectStructure(structure.id)}
+                      aria-label={`选择 ${structure.expand?.teacher_id?.name || structure.id}`}
+                      className="mt-0.5 shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-gray-800">{structure.expand?.teacher_id?.name}</p>
+                          <p className="truncate text-[11px] text-gray-500">{structure.expand?.teacher_id?.email}</p>
+                        </div>
+                        <Badge variant={structure.status === "active" ? "default" : "secondary"} className="shrink-0">
+                          {structure.status === "active" ? "生效" : "失效"}
+                        </Badge>
+                      </div>
+
+                      <div className="mt-2 flex items-center gap-2">
+                        <Badge variant="outline">
+                          {structure.salary_type === "monthly" ? "月薪" : structure.salary_type === "hourly" ? "时薪" : "佣金"}
+                        </Badge>
+                        <p className="text-sm font-bold text-gray-800">
+                          {structure.salary_type === "hourly"
+                            ? <>RM {structure.hourly_rate || 0}<span className="ml-0.5 text-[10px] font-normal text-gray-400">{t("/时")}</span></>
+                            : formatCurrency(structure.base_salary)}
+                        </p>
+                      </div>
+
+                      <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-gray-600">
+                        <span>{t("津贴")} {formatCurrency((structure.allowance_items || []).reduce((s: number, a: any) => s + (a.amount || 0), 0))}</span>
+                        <span>{t("生效日期")} {formatDate(structure.effective_date)}</span>
+                        {structure.salary_type === "monthly" && !(structure as any).no_statutory ? (
+                          <>
+                            <span>EPF {((structure.epf_rate ?? 0.11) * 100).toFixed(1)}%</span>
+                            <span>SOCSO {((structure.socso_rate ?? 0.005) * 100).toFixed(2)}%</span>
+                            <span>EIS {((structure.eis_rate ?? 0.002) * 100).toFixed(2)}%</span>
+                          </>
+                        ) : (
+                          <span className="text-gray-400">{t("不扣法定")}</span>
+                        )}
+                      </div>
+
+                      <div className="mt-2 flex justify-end">
+                        <RowActions
+                          primary={{ label: t("编辑"), icon: Edit, onClick: () => handleEditStructure(structure) }}
+                          actions={[{ label: t("删除"), icon: Trash2, destructive: true, onClick: () => handleDeleteStructure(structure.id) }]}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
             </CardContent>
           </Card>

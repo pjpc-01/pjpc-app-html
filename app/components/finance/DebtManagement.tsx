@@ -189,6 +189,8 @@ export default function DebtManagement() {
 
       <Card className="border-gray-200">
         <CardContent className="p-0">
+          {/* 桌面表格；手机走下面的卡片 */}
+          <div className="hidden md:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -238,6 +240,60 @@ export default function DebtManagement() {
               ))}
             </TableBody>
           </Table>
+          </div>
+
+          {/* 手机：一笔债一张卡 */}
+          <div className="divide-y divide-gray-100 md:hidden">
+            {loading ? (
+              <p className="py-8 text-center text-sm text-gray-500"><Loader2 className="inline mr-2 h-4 w-4 animate-spin" />{t("加载中...")}</p>
+            ) : debts.length === 0 ? (
+              <p className="px-3 py-10 text-center text-sm text-gray-500">{t("暂无债务，点右上「加债务」登记第一笔")}</p>
+            ) : debts.map((d) => (
+              <div key={d.id} className="px-3 py-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-gray-800">{d.name}</p>
+                    {d.note ? <p className="truncate text-[11px] text-gray-400">{d.note}</p> : null}
+                  </div>
+                  <Badge className={`shrink-0 ${STATUS_CLASS[d.status || "active"]}`}>{STATUS_LABEL[d.status || "active"]}</Badge>
+                </div>
+
+                <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-md bg-gray-50 py-1.5">
+                    <p className="text-[10px] text-gray-500">{t("本金")}</p>
+                    <p className="text-[13px] font-semibold text-gray-800">{rm(d.principal)}</p>
+                  </div>
+                  <div className="rounded-md bg-emerald-50 py-1.5">
+                    <p className="text-[10px] text-emerald-700">{t("已还")}</p>
+                    <p className="text-[13px] font-semibold text-emerald-700">{rm(d.paid)}</p>
+                  </div>
+                  <div className="rounded-md bg-rose-50 py-1.5">
+                    <p className="text-[10px] text-rose-700">{t("剩余")}</p>
+                    <p className="text-[13px] font-semibold text-rose-700">{rm(d.remaining)}</p>
+                  </div>
+                </div>
+
+                <div className="mt-2 flex items-center gap-2">
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
+                    <div className="h-full bg-emerald-500" style={{ width: `${d.progress}%` }} />
+                  </div>
+                  <span className="shrink-0 text-[11px] text-gray-500">{d.progress}%</span>
+                </div>
+
+                <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-gray-500">
+                  <span>{t("每月应还")} {d.monthlyAmount ? rm(d.monthlyAmount) : "—"}</span>
+                  <span>{t("还款日")} {d.paymentDay ? `${d.paymentDay} ${t("号")}` : "—"}</span>
+                  {d.type ? <span>{d.type}</span> : null}
+                </div>
+
+                <div className="mt-2 flex justify-end gap-1">
+                  <Button size="sm" variant="outline" onClick={() => openPay(d)} title={t("记录还款")}><HandCoins className="h-4 w-4" /></Button>
+                  <Button size="sm" variant="outline" onClick={() => openEdit(d)} title={t("编辑")}><Pencil className="h-4 w-4" /></Button>
+                  <Button size="sm" variant="outline" className="text-rose-600" onClick={() => remove(d)} title={t("删除")}><Trash2 className="h-4 w-4" /></Button>
+                </div>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 

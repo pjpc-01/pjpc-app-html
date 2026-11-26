@@ -492,6 +492,8 @@ export default function TeacherLeaveManagement() {
           <CardDescription>{t("查看和管理教师的请假申请")}</CardDescription>
         </CardHeader>
         <CardContent>
+          {/* 桌面表格；手机走下面的卡片 */}
+          <div className="hidden md:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -585,6 +587,69 @@ export default function TeacherLeaveManagement() {
               ))}
             </TableBody>
           </Table>
+          </div>
+
+          {/* 手机：一条请假一张卡 */}
+          <div className="divide-y divide-gray-100 md:hidden">
+            {leaveRecords.length === 0 ? (
+              <p className="py-10 text-center text-sm text-gray-500">{t("暂无申请")}</p>
+            ) : leaveRecords.map((record) => (
+              <div key={record.id} className="px-3 py-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-gray-800">
+                      {Array.isArray(record.expand?.teacher_id) ? record.expand?.teacher_id[0]?.name : record.expand?.teacher_id?.name}
+                    </p>
+                    <p className="truncate text-[11px] text-gray-500">
+                      {Array.isArray(record.expand?.teacher_id) ? record.expand?.teacher_id[0]?.email : record.expand?.teacher_id?.email}
+                    </p>
+                  </div>
+                  <Badge className={`shrink-0 ${getStatusColor(record.status)}`}>{getStatusName(record.status)}</Badge>
+                </div>
+
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-gray-600">
+                  <Badge variant="outline">{getLeaveTypeName(record.leave_type)}</Badge>
+                  <span className="whitespace-nowrap">{formatDate(record.start_date)} {t("至")} {formatDate(record.end_date)}</span>
+                  <span>{record.total_days} {t("天")}</span>
+                  {record.period && record.period !== "full_day" && (
+                    <Badge variant="secondary" className="text-[10px]">
+                      {record.period === "morning" ? t("早上半天") : t("下午半天")}
+                    </Badge>
+                  )}
+                </div>
+
+                {record.reason ? <p className="mt-1 line-clamp-2 text-[11px] text-gray-500">{record.reason}</p> : null}
+                <p className="mt-1 text-[10px] text-gray-400">{t("申请日期")} {formatDate(record.applied_date)}</p>
+
+                <div className="mt-2 flex justify-end gap-1">
+                  {record.status === "pending" && (
+                    <Button size="sm" variant="outline" onClick={() => { setEditingLeave(record); setApprovalDialogOpen(true) }}>
+                      <CheckCircle className="w-4 h-4" />
+                    </Button>
+                  )}
+                  <Button size="sm" variant="outline" onClick={() => {
+                    setEditingLeave(record)
+                    setLeaveForm({
+                      teacher_id: record.teacher_id,
+                      leave_type: record.leave_type,
+                      start_date: record.start_date,
+                      end_date: record.end_date,
+                      reason: record.reason,
+                      substitute_teacher: record.substitute_teacher || '',
+                      notes: record.notes || '',
+                      period: record.period || 'full_day'
+                    })
+                    setLeaveDialogOpen(true)
+                  }}>
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleDeleteLeave(record.id)}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
