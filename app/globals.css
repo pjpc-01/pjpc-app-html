@@ -315,6 +315,10 @@
 .glass-body {
   background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 40%, #EEEEEE 100%);
   min-height: 100vh;
+  /* 关掉整页横向溢出：抽屉/弹窗动画跑到屏幕外会把 body 撑宽，
+     浏览器于是把整页缩小（手机上看就是「字变小了」）。
+     表格自己的横向滚动在卡片里的 overflow-x-auto 容器里，不受影响。 */
+  overflow-x: hidden;
 }
 
 .glass-sidebar {

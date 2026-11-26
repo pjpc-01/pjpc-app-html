@@ -14,7 +14,8 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground",
+      // 手机：放不下就横向滑动，别把整页撑宽（撑宽会让浏览器把整页缩小）
+      "inline-flex h-10 max-w-full items-center justify-start gap-1 overflow-x-auto rounded-md bg-muted p-1 text-muted-foreground md:justify-center",
       className
     )}
     {...props}
