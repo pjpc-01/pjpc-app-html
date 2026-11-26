@@ -47,6 +47,14 @@ export async function registerPush(): Promise<boolean> {
           }),
         })
         registered = true
+        // 推送已经能到了，就不需要那套 15 分钟轮询，也就没必要在原生层留着明文会话 token
+        const Notify = nativePlugin("PjpcNotify")
+        try {
+          await Notify?.disableBackground?.()
+          await Notify?.setToken?.({ token: "" })
+        } catch {
+          /* ignore */
+        }
       } catch {
         /* 网络问题下次启动再试 */
       }

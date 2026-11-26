@@ -18,8 +18,8 @@ import { NextResponse } from 'next/server'
 const WEB_VERSION = process.env.NEXT_PUBLIC_WEB_VERSION || '2026.11.26'
 
 // 最新原生版本（每次出 APK 都要改这两个）
-const LATEST_VERSION_CODE = 3
-const LATEST_VERSION_NAME = '0.2.1'
+const LATEST_VERSION_CODE = 4
+const LATEST_VERSION_NAME = '0.2.2'
 
 // 低于这个 versionCode 就强制更新（整屏拦住）
 const MIN_SUPPORTED_VERSION_CODE = 1

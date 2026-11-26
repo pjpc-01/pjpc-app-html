@@ -27,6 +27,10 @@ export async function POST(request: NextRequest) {
 
   const token = String(body?.token || '').trim()
   if (!token) return NextResponse.json({ success: false, error: '缺 token' }, { status: 400 })
+  // FCM token 是长串 ASCII；限制长度和字符，别让乱七八糟的东西进库
+  if (token.length < 40 || token.length > 400 || !/^[A-Za-z0-9_:\-]+$/.test(token)) {
+    return NextResponse.json({ success: false, error: 'token 格式不对' }, { status: 400 })
+  }
 
   const uid = gate.session.id
   const platform = String(body?.platform || 'android')
@@ -39,6 +43,18 @@ export async function POST(request: NextRequest) {
     const existed = await fetch(`${PB_URL}/api/collections/device_tokens/records?perPage=1&filter=${q}`, { headers: H })
       .then((r) => (r.ok ? r.json() : { items: [] }))
       .catch(() => ({ items: [] }))
+
+    // 一个账号最多留 5 台设备，防着有人刷一堆 token 占库
+    if (!existed?.items?.[0]) {
+      const mine = encodeURIComponent(`user="${uid}"`)
+      const list = await fetch(`${PB_URL}/api/collections/device_tokens/records?perPage=50&sort=-last_seen&filter=${mine}`, { headers: H })
+        .then((r) => (r.ok ? r.json() : { items: [] }))
+        .catch(() => ({ items: [] }))
+      const extra = (list?.items || []).slice(4)
+      for (const row of extra) {
+        await fetch(`${PB_URL}/api/collections/device_tokens/records/${row.id}`, { method: 'DELETE', headers: H }).catch(() => {})
+      }
+    }
 
     const payload = { user: uid, token, platform, app_version: appVersion, last_seen: new Date().toISOString() }
     const row = existed?.items?.[0]

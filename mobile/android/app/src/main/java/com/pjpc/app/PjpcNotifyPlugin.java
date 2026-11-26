@@ -84,6 +84,9 @@ public class PjpcNotifyPlugin extends Plugin {
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(body == null ? "" : body))
                 .setAutoCancel(true)
                 .setContentIntent(pi)
+                // 锁屏上不显示正文：这台手机躺着的时候别人也能看见
+                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .build();
 
         NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
