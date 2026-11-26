@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { appInfo, isNativeApp, nativePlugin, currentAuthToken, syncNativeAuthToken, openExternal } from "@/lib/native-app"
 import { takePhoto } from "@/lib/native-camera"
+import { registerPush } from "@/lib/native-push"
 import { useLanguage } from "@/contexts/language-context";
 
 /**
@@ -111,6 +112,8 @@ export default function NativeShell() {
     const boot = async () => {
       await checkVersion()
       await syncNativeAuthToken()
+      // FCM 推送（配了 Firebase 才真正拿到 token；没配就静默失败，靠下面的轮询兜底）
+      if (currentAuthToken()) void registerPush()
       await pollNotifications()
       // 登录状态可能在页面里才建立，隔几秒再同步一次 token
       setTimeout(() => { if (alive) syncNativeAuthToken() }, 4000)
@@ -150,6 +153,7 @@ export default function NativeShell() {
       if (document.visibilityState !== "visible") return
       checkVersion()
       syncNativeAuthToken()
+      if (currentAuthToken()) void registerPush()
       pollNotifications()
     }
     document.addEventListener("visibilitychange", onVisible)

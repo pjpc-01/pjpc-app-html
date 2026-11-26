@@ -8,6 +8,8 @@
  * 收件人用 users 表（登录账号）。如果只有学生 id，会先按 student_id 找到对应账号。
  */
 
+import { pushToUser } from '@/lib/push'
+
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
 
 export type NotifyKind = 'contribution' | 'redemption' | 'suggestion' | 'achievement' | 'system'
@@ -62,6 +64,16 @@ export async function notify(token: string, opts: NotifyOptions): Promise<string
     })
     if (!r.ok) return ''
     const d = await r.json()
+
+    // 顺手推一条到手机（FCM）。没配 Firebase 就什么都不做，
+    // 也不 await —— 推送慢不能拖住业务接口。
+    void pushToUser(token, uid, {
+      title: String(opts.title || 'PJPC'),
+      body: String(opts.body || ''),
+      link: opts.link || '',
+      kind: opts.kind || 'system',
+    }).catch(() => {})
+
     return d.id || ''
   } catch {
     return ''

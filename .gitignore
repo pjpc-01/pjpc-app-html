@@ -150,3 +150,7 @@ backups/
 
 # Hermes agent 工作区（不是产品代码）
 .hermes/
+
+# Firebase 服务账号（服务器发推送用，绝不入库）
+firebase-service-account*.json
+mobile/android/app/google-services.json
