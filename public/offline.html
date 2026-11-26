@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PJPC · 暂时离线</title>
+    <style>
+      html, body { height: 100%; margin: 0; }
+      body {
+        display: flex; align-items: center; justify-content: center;
+        font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+        background: #fffaeb; color: #1f2937; text-align: center; padding: 24px;
+      }
+      img { width: 96px; height: 96px; border-radius: 20px; }
+      h1 { font-size: 18px; margin: 16px 0 6px; }
+      p { font-size: 13px; color: #6b7280; margin: 0 0 18px; line-height: 1.6; }
+      button {
+        font: inherit; font-size: 14px; padding: 10px 22px; border-radius: 999px;
+        border: 0; background: #1f2937; color: #fff; cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <img src="/icon-192.png" alt="PJPC" />
+      <h1>现在没有网</h1>
+      <p>连上网络就会自动恢复。<br />点名、打卡、费用都要联网才能写入。</p>
+      <button onclick="location.reload()">重新加载</button>
+    </div>
+  </body>
+</html>
