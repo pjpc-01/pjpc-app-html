@@ -361,8 +361,8 @@ export function InvoiceList({
             </div>
           )}
 
-          {/* Invoice Table */}
-          <div className="border rounded-lg">
+          {/* Invoice Table（桌面）；手机走下面的卡片，11 列在 390px 下要横拖三次 */}
+          <div className="hidden rounded-lg border md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -435,6 +435,66 @@ export function InvoiceList({
                 ))}
               </TableBody>
             </Table>
+          </div>
+
+          {/* 手机：一张票一张卡 */}
+          <div className="md:hidden">
+            {paginatedInvoices.length === 0 ? (
+              <p className="py-10 text-center text-sm text-gray-400">{t("暂无")}</p>
+            ) : (
+              <div className="divide-y divide-gray-100 rounded-lg border">
+                {paginatedInvoices.map((invoice) => (
+                  <div key={invoice.id} className={`px-3 py-3 ${selectedIds.has(invoice.id) ? "bg-red-50/50" : ""}`}>
+                    <div className="flex items-start gap-2">
+                      <Checkbox
+                        checked={selectedIds.has(invoice.id)}
+                        onCheckedChange={() => toggleSelect(invoice.id)}
+                        aria-label={`${t("选择")} ${invoice.invoiceNumber}`}
+                        className="mt-0.5 shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <p className="truncate text-[13px] font-semibold text-gray-800">{invoice.invoiceNumber}</p>
+                          <p className="shrink-0 text-sm font-bold text-green-600">{formatCurrency(invoice.totalAmount)}</p>
+                        </div>
+                        <p className="mt-0.5 truncate text-xs text-gray-600">
+                          {invoice.studentName}
+                          <span className="ml-1 text-gray-400">{invoice.studentNumber || '-'}</span>
+                          <span className="ml-1 text-gray-400">{formatGrade((invoice as any).studentGrade)}</span>
+                        </p>
+                        <div className="mt-1 flex flex-wrap items-center gap-1">
+                          {/* 草稿/已取消 才单独标；其余「已缴费/逾期」跟缴费徽章重复，手机上只留一个 */}
+                          {(invoice.status === 'draft' || invoice.status === 'cancelled') && getInvoiceStatusBadge(invoice.status)}
+                          {getPaymentStatusBadge(invoice.id)}
+                        </div>
+                        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-gray-500">
+                          <span>{t("账期")} {(() => {
+                            const m = String((invoice as any).period || '').match(/^(\d{4})-(\d{2})/)
+                            return m ? `${m[1]}年${Number(m[2])}月` : '—'
+                          })()}</span>
+                          <span>{t("到期日期")} {formatDate(invoice.dueDate)}</span>
+                          <span>{t("开票日期")} {formatDate(invoice.issueDate)}</span>
+                        </div>
+                        <div className="mt-2 flex items-center justify-end">
+                          <RowActions
+                            primary={{
+                              label: t("查看"), icon: Eye,
+                              onClick: () => onView(invoice),
+                            }}
+                            actions={[
+                              { label: t("下载"), icon: Download, onClick: () => onDownload(invoice) },
+                              { label: t("打印"), icon: Printer, onClick: () => onPrint(invoice) },
+                              { label: t("发送"), icon: Send, onClick: () => onSend(invoice) },
+                              { label: t("删除"), icon: Trash2, destructive: true, onClick: () => handleDeleteClick(invoice) },
+                            ]}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Invoice Pagination */}
