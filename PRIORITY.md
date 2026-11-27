@@ -62,7 +62,10 @@
 
 **新发现（PRIORITY / BLUEPRINT 都没有）**
 - 🔴 **通知实际发不出去**：`pb_hooks/notify.pb.js` 只找「有登录账号的学生」。在读 110 人里只有 23 人有账号 → 11-25~27 建了 135 张发票，通知只发出 5 条（全库 132 条，最近一条 11-24）。家长 0 账号（已拍板先不建）→ 需要换家长可达的通道（短信 / Telegram / 纸本单），否则家长永远不知道有新票。
-- 🔴 **家长端即使有账号也全 403**（2026-11-27 实测）：`app/api/pocketbase-proxy/[...path]/route.ts` 的 `!STAFF_ROLES.has(role)` 直接挡掉 `role=parent`，家长端 7 个页面读不到任何数据（parents/student_parents/students/invoices/payments 全 403）。用临时 parent 账号登录 `/parent/payments` 实测：页面显示「暂无缴费记录」，全部请求 403；把该账号临时改 admin 后同一页面正常出 22 张票 → **前端没问题，卡在代理层没有 parent 分支**。要做家长端，必须照 student 分支加一段「只读 + 只看自己的孩子」，这是开数据权限，需老板点头。
+- ✅ **家长账号已建（2026-11-27 完成）**：117 个（只给有在读孩子的家长），username=手机号，初始密码=手机号后 8 位；有真邮箱 42 个用真邮箱，其余 75 个用 `<手机号>@parent.pjpc`。名单+密码在 `/home/pjpc/backups/parent-accounts-20261127.json`（不在仓库）。建号前备份 `data.db.pre-parentacct-20261127-135924`。剩下 115 位没建：无在读孩子（退学）或手机号不全。
+  代理层同时补了 parent 分支（只读 + 只看自己孩子），实测跨账号单条 403、filter 撞别人 0 条、admin 无回归。
+  还没做：给家长发「账号已开通 + 手机号后8位」的通知（需要短信/WhatsApp 通道，站内通知他们进不来才看得到）。
+- 🔴 **家长端即使有账号也全 403**（2026-11-27 实测，已修，留档）：`app/api/pocketbase-proxy/[...path]/route.ts` 的 `!STAFF_ROLES.has(role)` 直接挡掉 `role=parent`，家长端 7 个页面读不到任何数据（parents/student_parents/students/invoices/payments 全 403）。用临时 parent 账号登录 `/parent/payments` 实测：页面显示「暂无缴费记录」，全部请求 403；把该账号临时改 admin 后同一页面正常出 22 张票 → **前端没问题，卡在代理层没有 parent 分支**。要做家长端，必须照 student 分支加一段「只读 + 只看自己的孩子」，这是开数据权限，需老板点头。
 - 🟡 **`invoices.paidAmount` 是死字段**：448 张有效票全为 `null`/0，而 `payments` 合计 **RM197,371.25**。`app/parent/payments/page.tsx` 直接读它 → 家长端「已付 RM」永不显示（列表和报表走 payments 求和，所以没暴雷）。
 - 🟡 **停学/退学不会自动作废下月票**：12 月仍有 7 张已停学学生的票（RM2,280）——程宣瑜 027 / 艾思琳 065 / 吴悠嫙 075 / 何丽昕 104 / 张展铭 114 / 黄俊鸿 033 / 安藤豊大 034，已交院长定是否作废。
 - 🟡 **17 条依赖漏洞**（`npm audit`）从未记录。
