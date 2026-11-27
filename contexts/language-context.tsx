@@ -1297,6 +1297,10 @@ const translations: Record<Language, Record<string, string>> = {
     "学生自助刷卡 kiosk": "学生自助刷卡 kiosk",
     "nav.attendance_manual": "手动点名",
     "当月暂无排班": "当月暂无排班",
+    "开票失败：": "开票失败：",
+    "开票中…": "开票中…",
+    "未知错误": "未知错误",
+
     "号": "号",
     "暂无申请": "暂无申请",
     "暂无薪资结构": "暂无薪资结构",
@@ -1317,6 +1321,10 @@ const translations: Record<Language, Record<string, string>> = {
     "按班级名册点名，一格一天，看得出一整个月的出席": "Mark the class roster; one cell per day shows the whole month at a glance",
     "nav.attendance_manual": "Manual Attendance",
     "当月暂无排班": "No schedule this month",
+    "开票失败：": "Invoice failed: ",
+    "开票中…": "Creating…",
+    "未知错误": "Unknown error",
+
     "号": "No.",
     "暂无申请": "No applications",
     "暂无薪资结构": "No salary structures",

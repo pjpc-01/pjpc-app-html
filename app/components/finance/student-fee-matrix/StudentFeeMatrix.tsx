@@ -20,7 +20,9 @@ export const StudentFeeMatrix = () => {
   const { isAssigned, getStudentAmount, assignFeeToStudent, removeFeeFromStudent, enterEditMode, exitEditMode,
     loading: studentFeesLoading, error: studentFeesError, fetchStudentFees,
     setLocalDiscount, toggleLocalSixMonthFeeId, setLocalSixMonthPayRate, setLocalSixMonthPayRateType, getLocalAdjustment, isEditMode: hookEditMode } = useStudentFees()
-  const { createInvoice: createInvoiceFromHook, invoices } = useInvoices()
+  const { createInvoice: createInvoiceFromHook, invoices, refetch: refetchInvoices } = useInvoices()
+  // 哪张卡正在开票：按钮要显示「开票中…」并禁点，否则用户点了没反应以为坏了
+  const [creatingId, setCreatingId] = useState<string | null>(null)
 
   const [studentInvoices, setStudentInvoices] = useState<Map<string, boolean>>(new Map())
   const [editMode, setEditMode] = useState(false)
@@ -116,7 +118,9 @@ export const StudentFeeMatrix = () => {
     } catch {}
 
     const period = resolveInvoicePeriod()
-    createInvoiceFromHook({
+    setCreatingId(studentId)
+    try {
+      await createInvoiceFromHook({
       studentId, studentName: student.student_name || '', studentGrade: student.standard || '',
       studentNumber: student.student_id || '',
       totalAmount: total, items, status: 'issued',
@@ -128,8 +132,16 @@ export const StudentFeeMatrix = () => {
       discount: built.discountAmount || undefined,
       discountType: built.discountAmount > 0 ? 'amount' : undefined,
       latePaymentRule: latePaymentRule || undefined,
-    })
-    setStudentInvoices(prev => { const m = new Map(prev); m.set(studentId, true); return m })
+      })
+      // 刷新发票列表：hasInvoiceThisMonth 靠它 → 徽章变「已开单」、按钮置灰
+      await refetchInvoices?.()
+      setStudentInvoices(prev => { const m = new Map(prev); m.set(studentId, true); return m })
+    } catch (e: any) {
+      const msg = String(e?.message || e?.data?.message || e || '')
+      alert(`${t("开票失败：")}${msg || t("未知错误")}`)
+    } finally {
+      setCreatingId(null)
+    }
   }
 
   const hasInvoiceThisMonth = (studentId: string) => {
@@ -189,6 +201,7 @@ export const StudentFeeMatrix = () => {
               groupedFees={groupedFees}
               studentTotal={getStudentAmount(student.id, allFees)}
               onCreateInvoice={createInvoice}
+              creating={creatingId === student.id}
               editMode={editMode}
               isAssigned={isAssigned}
               assignFeeToStudent={assignFeeToStudent}

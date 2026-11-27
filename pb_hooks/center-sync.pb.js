@@ -29,12 +29,15 @@ function backfill(rec) {
   console.log('[center-sync] 学生 ' + rec.getString('name') + ' centerId 回填 ' + code)
 }
 
-onRecordBeforeCreateRequest((e) => {
+// ⚠️ PocketBase 0.39 没有 onRecordBeforeCreateRequest / onRecordBeforeUpdateRequest，
+//    用旧名字会在加载时抛 ReferenceError，整个文件的钩子都不生效（学生 centerId 回填
+//    一直没跑过）。正确名字是 onRecordCreateRequest / onRecordUpdateRequest。
+onRecordCreateRequest((e) => {
   try { backfill(e.record) } catch (err) { console.log('[center-sync] ' + err) }
   e.next()
 }, 'students')
 
-onRecordBeforeUpdateRequest((e) => {
+onRecordUpdateRequest((e) => {
   try { backfill(e.record) } catch (err) { console.log('[center-sync] ' + err) }
   e.next()
 }, 'students')

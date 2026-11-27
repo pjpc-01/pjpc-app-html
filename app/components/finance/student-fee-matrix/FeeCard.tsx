@@ -12,7 +12,7 @@ import {
   ChevronDown, ChevronRight, FileText, CheckCircle,
   GraduationCap, MapPin, Phone, Mail, CreditCard,
   Package, CalendarDays, Utensils, Bus, FolderOpen, BookOpen, School,
-  ClipboardList, Receipt, Banknote, ScrollText, Library, User
+  ClipboardList, Receipt, Banknote, ScrollText, Library, User, Loader2
 } from "lucide-react"
 import { createElement, type ComponentType, useState, useEffect, useRef } from "react"
 import { Fee } from "@/types/fees"
@@ -41,6 +41,8 @@ interface FeeCardProps {
   assignFeeToStudent: (studentId: string, feeId: string) => void
   removeFeeFromStudent: (studentId: string, feeId: string) => void
   hasInvoiceThisMonth: (studentId: string) => boolean
+  /** 这张卡正在开票 → 按钮显示「开票中…」并禁点 */
+  creating?: boolean
   getLocalAdjustment: (studentId: string) => StudentAdjustment
   setLocalDiscount: (studentId: string, discount: number, discount_type?: 'amount' | 'percent') => void
   toggleLocalSixMonthFeeId: (studentId: string, feeId: string) => void
@@ -52,7 +54,8 @@ interface FeeCardProps {
 export const FeeCard = ({
   student, activeFees, groupedFees, studentTotal,
   onCreateInvoice, editMode, isAssigned,
-  assignFeeToStudent, removeFeeFromStudent, hasInvoiceThisMonth,
+  assignFeeToStudent, removeFeeFromStudent,  hasInvoiceThisMonth,
+  creating,
   getLocalAdjustment, setLocalDiscount, toggleLocalSixMonthFeeId, setLocalSixMonthPayRate, setLocalSixMonthPayRateType, onRefreshFees,
  }: FeeCardProps) => {
   const { t } = useLanguage();
@@ -261,11 +264,11 @@ export const FeeCard = ({
         <div className="flex items-center gap-1">
           <Button
             variant="outline" size="sm" className="h-7 text-xs"
-            disabled={localTotal === 0 || hasInvoice}
+            disabled={localTotal === 0 || hasInvoice || creating}
             onClick={(e) => { e.stopPropagation(); onCreateInvoice?.(studentId) }}
           >
-            <FileText className="h-3 w-3 mr-1" />
-            {t("开单")}
+            {creating ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <FileText className="h-3 w-3 mr-1" />}
+            {creating ? t("开票中…") : t("开单")}
           </Button>
           <Button
             variant="ghost" size="sm" className="h-7 w-7 p-0"
