@@ -22,6 +22,20 @@ import {
 import { formatGrade } from "@/lib/utils"
 import { useLanguage } from "@/contexts/language-context"
 
+/**
+ * 旧批次的票号用的是「开票月」，跟账期差一个月（例：8 月开票、账期 9 月 → INV-202608-xxx）。
+ * 票已经发给家长，不能改号，所以在列表里补一个灰标说明，免得出纳和家长对不上账。
+ * 返回 0 表示票号月份 = 账期，不用标。
+ */
+function invoiceNumberMismatchMonth(inv: any): number {
+  const no = String(inv?.invoiceNumber || '')
+  const period = String(inv?.period || '')
+  if (!/^INV-\d{6}-/.test(no) || !/^\d{4}-\d{2}$/.test(period)) return 0
+  const noYM = no.slice(4, 10)
+  if (noYM === period.replace('-', '')) return 0
+  return parseInt(noYM.slice(4, 6), 10) || 0
+}
+
 interface InvoiceListProps {
   invoices: any[]
   filters: any
@@ -396,7 +410,19 @@ export function InvoiceList({
                         aria-label={`选择 ${invoice.invoiceNumber}`}
                       />
                     </TableCell>
-                    <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-1 whitespace-nowrap">
+                        <span>{invoice.invoiceNumber}</span>
+                        {invoiceNumberMismatchMonth(invoice) > 0 && (
+                          <span
+                            className="rounded bg-slate-100 px-1 py-0.5 text-[10px] font-normal text-slate-500"
+                            title={t("票号用的是开票月，与账期不同")}
+                          >
+                            {t("开票月")} {invoiceNumberMismatchMonth(invoice)}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       {getInvoiceStatusBadge(invoice.status)}
                     </TableCell>
@@ -463,6 +489,11 @@ export function InvoiceList({
                           <span className="ml-1 text-gray-400">{formatGrade((invoice as any).studentGrade)}</span>
                         </p>
                         <div className="mt-1 flex flex-wrap items-center gap-1">
+                          {invoiceNumberMismatchMonth(invoice) > 0 && (
+                            <span className="rounded bg-slate-100 px-1 py-0.5 text-[10px] text-slate-500">
+                              {t("开票月")} {invoiceNumberMismatchMonth(invoice)}
+                            </span>
+                          )}
                           {/* 草稿/已取消 才单独标；其余「已缴费/逾期」跟缴费徽章重复，手机上只留一个 */}
                           {(invoice.status === 'draft' || invoice.status === 'cancelled') && getInvoiceStatusBadge(invoice.status)}
                           {getPaymentStatusBadge(invoice.id)}

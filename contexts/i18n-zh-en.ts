@@ -1225,6 +1225,9 @@ export const ZH_TO_EN: Record<string, string> = {
   "当月全部排班记录。标红的 = 没有课程的排班（来源见「来源」列）": "All scheduling records this month. Highlighted in red = shifts without courses (see the \"Source\" column for the source)",
   "本月没有排班": "No schedule this month",
   "当月暂无排班": "No schedule this month",
+  "开票月": "Issued ",
+  "票号用的是开票月，与账期不同": "Number uses the issue month, which differs from the billing period",
+
   "自动开票预览": "Auto invoice preview",
   "只开勾选的学生，0 元不开票": "Only checked students; RM0 skipped",
   "跳过": "Skipped",

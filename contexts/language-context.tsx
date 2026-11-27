@@ -1297,6 +1297,9 @@ const translations: Record<Language, Record<string, string>> = {
     "学生自助刷卡 kiosk": "学生自助刷卡 kiosk",
     "nav.attendance_manual": "手动点名",
     "当月暂无排班": "当月暂无排班",
+    "开票月": "开票月",
+    "票号用的是开票月，与账期不同": "票号用的是开票月，与账期不同",
+
     "自动开票预览": "自动开票预览",
     "只开勾选的学生，0 元不开票": "只开勾选的学生，0 元不开票",
     "全选": "全选",
@@ -1333,6 +1336,9 @@ const translations: Record<Language, Record<string, string>> = {
     "按班级名册点名，一格一天，看得出一整个月的出席": "Mark the class roster; one cell per day shows the whole month at a glance",
     "nav.attendance_manual": "Manual Attendance",
     "当月暂无排班": "No schedule this month",
+    "开票月": "Issued ",
+    "票号用的是开票月，与账期不同": "Number uses the issue month, which differs from the billing period",
+
     "自动开票预览": "Auto invoice preview",
     "只开勾选的学生，0 元不开票": "Only checked students; RM0 skipped",
     "全选": "Select all",
