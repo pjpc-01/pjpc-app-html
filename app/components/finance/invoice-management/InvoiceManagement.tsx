@@ -106,6 +106,11 @@ export default function InvoiceManagement() {
   const [messageContent, setMessageContent] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [isAutoGenerating, setIsAutoGenerating] = useState(false)
+  // 自动开票：先看「会开哪几张」，勾选后再开 —— 院长要求「只开选中学生、0 元不开票」
+  const [planOpen, setPlanOpen] = useState(false)
+  const [plan, setPlan] = useState<{ period: string; planned: any[]; skipped: any[] } | null>(null)
+  const [planSelected, setPlanSelected] = useState<Set<string>>(new Set())
+  const [isPlanning, setIsPlanning] = useState(false)
   const [isReapplying, setIsReapplying] = useState(false)
   // 视图：列表 / 按学生（已开具·已发送 看板）
   const [invoiceView, setInvoiceView] = useState<'list' | 'student'>('list')
@@ -578,19 +583,45 @@ Prospek Cemerlang`,
 
   // ── Auto-generate invoices for students with unpaid fees ──
   const handleAutoGenerate = async () => {
+    setIsPlanning(true)
+    try {
+      const res = await fetch('/api/billing/auto-generate', { method: 'GET' })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.success) throw new Error(data?.error || `请求失败 (${res.status})`)
+      const planned: any[] = data.planned || []
+      if (planned.length === 0) {
+        const reasons = [...new Set((data.skippedList || []).map((s: any) => s.reason))].filter(Boolean).slice(0, 4).join('、')
+        alert(`${data.period}：${t("没有需要开票的学生")}${reasons ? '\n' + t("跳过原因：") + reasons : ''}`)
+        return
+      }
+      setPlan({ period: data.period, planned, skipped: data.skippedList || [] })
+      setPlanSelected(new Set(planned.map((p: any) => p.studentId)))
+      setPlanOpen(true)
+    } catch (error) {
+      alert(t("预览失败：") + (error as Error).message)
+    } finally {
+      setIsPlanning(false)
+    }
+  }
+
+  const confirmAutoGenerate = async () => {
+    if (!plan || planSelected.size === 0) return
     setIsAutoGenerating(true)
     try {
-      const res = await fetch('/api/billing/auto-generate', { method: 'POST' })
-      if (!res.ok) {
-        const errData = await res.json().catch(() => null)
-        throw new Error(errData?.error || `请求失败 (${res.status})`)
-      }
-      const result = await res.json()
-      alert(`✅ 成功自动生成 ${result.count || 0} 张发票`)
+      const res = await fetch('/api/billing/auto-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentIds: [...planSelected], period: plan.period }),
+      })
+      const result = await res.json().catch(() => null)
+      if (!res.ok || !result?.success) throw new Error(result?.error || `请求失败 (${res.status})`)
+      alert(`${t("已开")} ${result.count || 0} ${t("张")}（${result.period}）` +
+        ((result.skippedList || []).length ? `\n${t("跳过")} ${result.skippedList.length}` : ''))
+      setPlanOpen(false)
       await fetchInvoices()
     } catch (error) {
-      console.error('Auto-generate failed:', error)
-      alert('自动生成发票失败: ' + (error as Error).message)    } finally {
+      alert(t("开票失败：") + (error as Error).message)
+    } finally {
       setIsAutoGenerating(false)
     }
   }
@@ -750,9 +781,9 @@ Prospek Cemerlang`,
           <Button
             variant="secondary"
             onClick={handleAutoGenerate}
-            disabled={isAutoGenerating}
+            disabled={isAutoGenerating || isPlanning}
           >
-            {isAutoGenerating ? (
+            {isAutoGenerating || isPlanning ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
               <Zap className="h-4 w-4 mr-2" />
@@ -1317,6 +1348,74 @@ Prospek Cemerlang`,
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* 自动开票预览：只开勾选的学生，0 元不开票 */}
+      <Dialog open={planOpen} onOpenChange={setPlanOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5" />{t("自动开票预览")} · {plan?.period}
+            </DialogTitle>
+            <DialogDescription>{t("只开勾选的学生，0 元不开票")}</DialogDescription>
+          </DialogHeader>
+
+          <div className="flex items-center justify-between text-xs text-gray-500">
+            <span>
+              {plan?.planned.length || 0} {t("位")} · RM {(plan?.planned || [])
+                .filter((x: any) => planSelected.has(x.studentId))
+                .reduce((s: number, x: any) => s + Number(x.totalAmount || 0), 0).toFixed(2)}
+            </span>
+            <div className="flex gap-3">
+              <button type="button" className="text-blue-600" onClick={() => setPlanSelected(new Set((plan?.planned || []).map((x: any) => x.studentId)))}>
+                {t("全选")}
+              </button>
+              <button type="button" className="text-gray-500" onClick={() => setPlanSelected(new Set())}>
+                {t("全不选")}
+              </button>
+            </div>
+          </div>
+
+          <div className="max-h-[45vh] divide-y divide-gray-100 overflow-y-auto rounded-md border">
+            {(plan?.planned || []).map((row: any) => (
+              <label key={row.studentId} className="flex cursor-pointer items-center gap-2 px-3 py-2">
+                <Checkbox
+                  checked={planSelected.has(row.studentId)}
+                  onCheckedChange={(v: any) => {
+                    setPlanSelected(prev => {
+                      const next = new Set(prev)
+                      if (v) next.add(row.studentId); else next.delete(row.studentId)
+                      return next
+                    })
+                  }}
+                />
+                <span className="min-w-0 flex-1 truncate text-sm">
+                  {row.studentName}
+                  <span className="ml-1 text-xs text-gray-400">{row.studentNumber || '-'}</span>
+                  {row.carryForward ? (
+                    <span className="ml-1 text-[10px] text-amber-600">{t("含结转")}</span>
+                  ) : null}
+                </span>
+                <span className="shrink-0 text-sm font-semibold text-green-600">RM {Number(row.totalAmount || 0).toFixed(2)}</span>
+              </label>
+            ))}
+          </div>
+
+          {(plan?.skipped || []).length > 0 && (
+            <p className="text-xs text-gray-500">
+              {t("跳过")} {plan!.skipped.length} {t("个")}
+              {[...new Set(plan!.skipped.map((s: any) => s.reason))].filter(Boolean).slice(0, 3).join('、')}
+            </p>
+          )}
+
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" onClick={() => setPlanOpen(false)}>{t("取消")}</Button>
+            <Button onClick={confirmAutoGenerate} disabled={isAutoGenerating || planSelected.size === 0}>
+              {isAutoGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+              {t("开票")} {planSelected.size}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

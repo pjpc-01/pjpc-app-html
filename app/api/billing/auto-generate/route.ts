@@ -43,6 +43,15 @@ async function getNextInvoiceNumber(token: string, period: string): Promise<stri
 }
 
 export async function POST(request: NextRequest) {
+  return runAutoGenerate(request, false)
+}
+
+/** 预览：不改任何数据，只算「会开出哪些、哪些跳过、各多少钱」 */
+export async function GET(request: NextRequest) {
+  return runAutoGenerate(request, true)
+}
+
+async function runAutoGenerate(request: NextRequest, forceDryRun: boolean) {
   const gate = await requireRoles(request, ['admin', 'office_admin'])
   if ('error' in gate) return gate.error
   _invoiceSeq = 0 // Reset sequence counter for this request
@@ -56,6 +65,12 @@ export async function POST(request: NextRequest) {
     // 账期统一由 lib/invoice-build 决定：默认下个月，body 传 period 可覆盖
     const body = await request.json().catch(() => ({} as any))
     const period = resolveInvoicePeriod(typeof body?.period === 'string' ? body.period : undefined)
+    // 院长定的规矩：只开选中的学生。不传 studentIds 才是「全部在读」（保留给定时任务用）
+    const onlyIds: string[] | null =
+      Array.isArray(body?.studentIds) && body.studentIds.length > 0
+        ? body.studentIds.map((x: any) => String(x))
+        : null
+    const dryRun = forceDryRun || body?.dryRun === true
 
     // 0. 获取全局 invoice_settings（迟付费规则）
     let latePaymentFee = 0
@@ -181,7 +196,9 @@ export async function POST(request: NextRequest) {
     )
     const existingInvoices = existingInvoicesRes.ok ? (await existingInvoicesRes.json()).items : []
     const existingStudentPeriods = new Set(
-      existingInvoices.map((inv: any) => `${inv.studentId}_${inv.period || period}`)
+      existingInvoices
+        .filter((inv: any) => inv.deleted !== true && !['deleted', 'cancelled', 'void'].includes(String(inv.status || '')))
+        .map((inv: any) => `${inv.studentId}_${inv.period || period}`)
     )
 
     // 6. 生成新账单
@@ -189,7 +206,12 @@ export async function POST(request: NextRequest) {
     const skipped: any[] = []
     const markedSettled: string[] = []
 
-    for (const assignment of activeAssignments) {
+    const targetAssignments = onlyIds
+      ? activeAssignments.filter((a: any) => onlyIds.includes(String(a.students)))
+      : activeAssignments
+
+    const planned: any[] = []
+    for (const assignment of targetAssignments) {
       const sid = assignment.students
       if (!sid) {
         skipped.push({ reason: "无学生ID" })
@@ -252,6 +274,25 @@ export async function POST(request: NextRequest) {
 
       totalAmount = Math.max(0, round2(totalAmount))
 
+      // 院长原话：「0 元不开票」。以前 0 元也照开，库里就堆出一批没意义的票。
+      if (totalAmount <= 0) {
+        skipped.push({ student: sid, studentName: student?.name || '', reason: "金额为 0，不开票" })
+        continue
+      }
+
+      if (dryRun) {
+        planned.push({
+          studentId: sid,
+          studentName: student?.name || '',
+          studentNumber: student?.student_id || '',
+          grade: student?.grade || '',
+          totalAmount,
+          carryForward,
+          items,
+        })
+        continue
+      }
+
       const invoiceData = {
         studentId: sid,
         studentName: student?.name || "",
@@ -274,13 +315,39 @@ export async function POST(request: NextRequest) {
         latePaymentRule: latePaymentRule || undefined,
       }
 
-      const createRes = await fetch(`${PB_URL}/api/collections/invoices/records`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(invoiceData),
-      })
+      // 并发保护：创建前再查一次这个学生本期有没有有效票。
+      // 11-26 的 03:58 / 04:01 / 04:15 三次跑同时进循环，靠「开始时拉的列表」
+      // 判断已存在，三个请求都判定「还没开」，于是同一个学生开出两张。
+      try {
+        const recheckRes = await fetch(
+          `${PB_URL}/api/collections/invoices/records?perPage=1&filter=${encodeURIComponent(
+            `studentId="${sid}" && period="${period}" && deleted!=true && status!="cancelled"`
+          )}`,
+          { headers }
+        )
+        if (recheckRes.ok) {
+          const rd = await recheckRes.json()
+          if ((rd.totalItems || 0) > 0) {
+            skipped.push({ student: sid, studentName: student?.name || '', reason: "本期已有发票（并发保护）" })
+            continue
+          }
+        }
+      } catch { /* 查不到就照常开，不因为保护查询失败挡住开票 */ }
 
-      if (createRes.ok) {
+      // 票号撞号就换号重试（票号有唯一约束，并发时序号会撞）
+      let createRes: any = null
+      for (let attempt = 0; attempt < 3; attempt++) {
+        createRes = await fetch(`${PB_URL}/api/collections/invoices/records`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ ...invoiceData, invoiceNumber: await getNextInvoiceNumber(token, period) }),
+        })
+        if (createRes.ok) break
+        const errText = await createRes.clone().text().catch(() => '')
+        if (!/invoiceNumber|unique|已被占用/i.test(errText)) break
+      }
+
+      if (createRes?.ok) {
         const createdInvoice = await createRes.json()
 
         // 开票后自动抵上期多收（服务端串行，同一学生不会被两张票同时抵掉）
@@ -341,9 +408,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       period,
-      totalActive: activeAssignments.length,
+      totalActive: targetAssignments.length,
       created: created.length,
+      count: created.length,
+      dryRun,
+      planned,
       skipped: skipped.length,
+      skippedList: skipped,
       markedSettled: markedSettled.length,
       latePaymentFeeApplied: latePaymentFee,
       details: { created, skipped },
