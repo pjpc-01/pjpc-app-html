@@ -1,6 +1,7 @@
 "use client"
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react"
+import { ThemeAmbient, ThemeFlash, ThemeRouteSweep } from "@/components/motion/ThemeKinetic"
 
 /**
  * 全站主题（2026-11-27）
@@ -73,6 +74,8 @@ function applyTheme(id: ThemeId) {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<ThemeId>("phantom")
+  // 换主题时 +1，用来触发一次全屏动效
+  const [flash, setFlash] = useState(0)
 
   // 首帧：读本地保存的主题（layout 里还有一段内联脚本先设好，避免闪一下）
   useEffect(() => {
@@ -86,14 +89,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const setTheme = useCallback((t: ThemeId) => {
+    const changed = t !== theme
     setThemeState(t)
     applyTheme(t)
     try { localStorage.setItem(STORAGE_KEY, t) } catch { /* 忽略 */ }
-  }, [])
+    // 只有真的换了才播动效，重复点同一个主题不闪
+    if (changed) setFlash((n) => n + 1)
+  }, [theme])
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, themes: THEMES }}>
       {children}
+      <ThemeAmbient theme={theme} />
+      <ThemeRouteSweep theme={theme} />
+      <ThemeFlash theme={theme} trigger={flash} />
     </ThemeContext.Provider>
   )
 }
