@@ -37,6 +37,7 @@ import {
 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import AccountSettings from "@/components/settings/account-settings"
+import ThemePicker from "@/components/settings/theme-picker"
 import { goBack } from "@/lib/back"
 
 export default function SettingsPage() {
@@ -366,6 +367,7 @@ export default function SettingsPage() {
             <TabsTrigger value="permissions" className="flex items-center gap-2"><Shield className="h-4 w-4" />{t("权限")}</TabsTrigger>
             <TabsTrigger value="audit" className="flex items-center gap-2"><History className="h-4 w-4" />{t("日志")}</TabsTrigger>
             <TabsTrigger value="account" className="flex items-center gap-2"><UserCog className="h-4 w-4" />{t("账户")}</TabsTrigger>
+            <TabsTrigger value="theme" className="flex items-center gap-2"><Palette className="h-4 w-4" />{t("主题")}</TabsTrigger>
           </TabsList>
 
           {/* 1. Bank Account Settings */}
@@ -784,6 +786,24 @@ export default function SettingsPage() {
           {/* Account Settings */}
           <TabsContent value="account">
             <AccountSettings />
+          </TabsContent>
+
+          {/* 主题（换肤） */}
+          <TabsContent value="theme" className="space-y-4 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Palette className="h-5 w-5" />
+                  {t("界面主题")}
+                </CardTitle>
+                <CardDescription>
+                  {t("换主题只改配色和动效，不影响任何数据。选完立刻生效，下次打开还是这个。")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ThemePicker />
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

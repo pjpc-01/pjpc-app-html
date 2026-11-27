@@ -346,6 +346,14 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
       { label: "我的建议", href: "/my/suggestions", icon: MessageSquarePlus },
     ],
   },
+  // 家长：没有后台菜单可给，只留家长门户入口 + 自己的账号
+  parent: {
+    title: "家长门户",
+    navItems: [
+      { label: "家长门户", href: "/parent/dashboard", icon: Users },
+      { label: "我的账号", href: "/account", icon: UserRound },
+    ],
+  },
   office_admin: {
     title: "行政",
     navItems: [

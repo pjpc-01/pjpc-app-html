@@ -16,7 +16,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Lock, Loader2, Mail, UserRound, Building2, ShieldCheck, KeyRound } from "lucide-react"
+import { Lock, Loader2, Mail, UserRound, Building2, ShieldCheck, KeyRound, Palette } from "lucide-react"
+import ThemePicker from "@/components/settings/theme-picker"
 
 const ROLE_LABEL: Record<string, string> = {
   admin: "管理员",
@@ -107,6 +108,18 @@ export default function AccountPage() {
             <p className="text-[11px] text-gray-400 pt-1">
               {zh ? "姓名、中心、角色这些要改，找管理员或行政。" : "Name, center and role are changed by an admin."}
             </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Palette className="h-4 w-4" />
+              {zh ? "界面主题" : "Interface theme"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ThemePicker />
           </CardContent>
         </Card>
 

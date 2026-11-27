@@ -1225,6 +1225,16 @@ export const ZH_TO_EN: Record<string, string> = {
   "当月全部排班记录。标红的 = 没有课程的排班（来源见「来源」列）": "All scheduling records this month. Highlighted in red = shifts without courses (see the \"Source\" column for the source)",
   "本月没有排班": "No schedule this month",
   "当月暂无排班": "No schedule this month",
+  "界面主题": "Interface theme",
+  "换主题只改配色和动效，不影响任何数据。选完立刻生效，下次打开还是这个。": "Switching only changes colors and motion — no data is touched. Applies instantly and sticks next visit.",
+  "幽灵玻璃": "Phantom Glass",
+  "原本的中性灰白玻璃质感，最稳、最耐看": "The original neutral grey-white glass — steadiest on the eyes",
+  "故障霓虹": "Glitch Neon",
+  "青洋红双色、扫描线、标题 RGB 错位抖动": "Cyan/magenta split, scanlines, RGB-shifted headings",
+  "乱码终端": "Scramble Terminal",
+  "荧光绿 + 等宽字 + 闪烁光标，像在敲终端": "Phosphor green, monospace type, blinking cursor",
+  "提示：三个主题都是浅底配色。深色底需要逐页改掉写死的白底，暂时不做。": "Note: all three themes are light-based. A true dark theme needs every hardcoded white replaced — not done yet.",
+
   "学号 / 邮箱 / 手机号": "Student ID / Email / Phone",
   "请输入学号 / 邮箱 / 手机号": "Enter student ID / email / phone",
 

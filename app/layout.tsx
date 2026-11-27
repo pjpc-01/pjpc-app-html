@@ -9,6 +9,7 @@ import QueryProvider from "@/components/providers/query-provider"
 import DashboardLayout from "@/components/layouts/DashboardLayout"
 import { NfcAuthProvider } from "@/contexts/nfc-auth-context"
 import { LanguageProvider } from "@/contexts/language-context"
+import { ThemeProvider } from "@/contexts/theme-context"
 import GlobalCardScanner from "@/components/attendance/GlobalCardScanner"
 import WelcomeGate from "@/components/motion/WelcomeGate"
 import PwaRegister from "@/components/PwaRegister"
@@ -55,8 +56,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN" suppressHydrationWarning>
+      <head>
+        {/* 主题：在首帧前就把 data-theme 设好，避免打开页面先闪一下默认配色 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('pjpc_theme');if(t==='glitch'||t==='scramble'){document.documentElement.dataset.theme=t;}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className={inter.className}>
         <QueryProvider>
+          <ThemeProvider>
           <LanguageProvider>
             <AuthProvider>
               <NfcAuthProvider>
@@ -72,6 +82,7 @@ export default function RootLayout({
               </NfcAuthProvider>
             </AuthProvider>
           </LanguageProvider>
+          </ThemeProvider>
         </QueryProvider>
       </body>
     </html>

@@ -460,3 +460,282 @@
 .codex-sc td.v{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;padding-left:8px}
 .codex-sc td.c{text-align:right;font-size:9px;color:#525f74;padding-left:6px}
 .codex-foot{font-size:10px;color:#8794a9;margin-top:16px;border-top:1px solid var(--line);padding-top:9px;line-height:1.8}
+
+
+/* ============================================================================
+   🎨 主题系统（2026-11-27）
+   <html data-theme="glitch"> / "scramble" / 不设 = 默认幽灵玻璃
+   ---------------------------------------------------------------------------
+   只覆盖 CSS 变量 + 玻璃层颜色 + 少量动效，组件一行都不用改。
+   考虑：页面里还有大量写死的 bg-white / text-gray-*，所以新主题都保持浅底，
+   深色底要逐页换硬编码颜色，等以后单独排期。
+   ============================================================================ */
+
+/* ── ⚡ 故障霓虹 ───────────────────────────────────────────────────────── */
+[data-theme="glitch"] {
+  --background: 195 30% 98%;
+  --foreground: 195 45% 8%;
+  --card: 0 0% 100%;
+  --card-foreground: 195 45% 8%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 195 45% 8%;
+  --primary: 186 100% 41%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 320 100% 59%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 195 25% 94%;
+  --muted-foreground: 195 18% 33%;
+  --accent: 186 80% 92%;
+  --accent-foreground: 195 45% 12%;
+  --border: 186 45% 84%;
+  --input: 186 45% 84%;
+  --ring: 186 100% 45%;
+  --chart-1: 186 100% 41%;
+  --chart-2: 320 100% 59%;
+  --chart-3: 48 100% 50%;
+  --chart-4: 265 90% 62%;
+  --chart-5: 150 90% 40%;
+  --sidebar-background: 195 32% 99%;
+  --sidebar-foreground: 195 30% 22%;
+  --sidebar-primary: 186 100% 41%;
+  --sidebar-accent: 186 80% 94%;
+  --sidebar-accent-foreground: 195 45% 10%;
+  --sidebar-border: 186 45% 86%;
+  --sidebar-ring: 186 100% 45%;
+}
+
+[data-theme="glitch"] .glass,
+[data-theme="glitch"] .glass-stat,
+[data-theme="glitch"] .glass-btn {
+  background: rgba(255, 255, 255, 0.62);
+  border-color: rgba(0, 194, 212, 0.38);
+  box-shadow: 0 8px 32px rgba(0, 194, 212, 0.14), 0 1px 3px rgba(255, 45, 149, 0.10);
+}
+[data-theme="glitch"] .glass:hover,
+[data-theme="glitch"] .glass-stat:hover {
+  background: rgba(255, 255, 255, 0.80);
+  border-color: rgba(255, 45, 149, 0.45);
+  box-shadow: 0 12px 40px rgba(255, 45, 149, 0.16), 0 2px 6px rgba(0, 194, 212, 0.14);
+}
+[data-theme="glitch"] .glass-strong { background: rgba(255,255,255,0.82); border-color: rgba(0,194,212,0.42); }
+[data-theme="glitch"] .glass-body {
+  background: linear-gradient(135deg, #F6FAFC 0%, #EEF7FA 45%, #F7F4FA 100%);
+}
+[data-theme="glitch"] .glass-sidebar {
+  background: rgba(255, 255, 255, 0.78);
+  border-right: 1px solid rgba(0, 194, 212, 0.35);
+  box-shadow: 2px 0 24px rgba(0, 194, 212, 0.12);
+}
+[data-theme="glitch"] .glass-input { border-color: rgba(0, 194, 212, 0.40); }
+[data-theme="glitch"] .glass-tab[data-state="active"],
+[data-theme="glitch"] .glass-tab.active { color: hsl(var(--primary)); }
+
+/* 顶部霓虹条：一眼看出主题变了 */
+[data-theme="glitch"] body::before,
+[data-theme="scramble"] body::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  pointer-events: none;
+  z-index: 9999;
+}
+[data-theme="glitch"] body::before {
+  background: linear-gradient(90deg, #00C2D4 0%, #FF2D95 45%, #00C2D4 100%);
+  box-shadow: 0 0 12px rgba(0, 194, 212, 0.6);
+}
+[data-theme="scramble"] body::before {
+  background: linear-gradient(90deg, #12A150 0%, #8CF7B0 55%, #12A150 100%);
+  box-shadow: 0 0 12px rgba(18, 161, 80, 0.5);
+}
+
+/* 标题 RGB 错位 */
+[data-theme="glitch"] h1,
+[data-theme="glitch"] h2 {
+  text-shadow: 1.5px 0 rgba(255, 45, 149, 0.55), -1.5px 0 rgba(0, 212, 255, 0.55);
+}
+/* 扫描线 */
+[data-theme="glitch"] body::after,
+[data-theme="scramble"] body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: 0.022;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.5) 0px,
+    rgba(0, 0, 0, 0.5) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+}
+
+/* ── 💻 乱码终端 ───────────────────────────────────────────────────────── */
+[data-theme="scramble"] {
+  --background: 140 18% 98%;
+  --foreground: 150 35% 9%;
+  --card: 0 0% 100%;
+  --card-foreground: 150 35% 9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 150 35% 9%;
+  --primary: 150 80% 32%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 150 30% 90%;
+  --secondary-foreground: 150 45% 12%;
+  --muted: 140 16% 94%;
+  --muted-foreground: 150 14% 32%;
+  --accent: 145 70% 88%;
+  --accent-foreground: 150 45% 12%;
+  --border: 150 25% 82%;
+  --input: 150 25% 82%;
+  --ring: 150 80% 36%;
+  --chart-1: 150 80% 32%;
+  --chart-2: 145 60% 48%;
+  --chart-3: 90 70% 38%;
+  --chart-4: 175 60% 38%;
+  --chart-5: 60 80% 40%;
+  --sidebar-background: 140 20% 99%;
+  --sidebar-foreground: 150 25% 22%;
+  --sidebar-primary: 150 80% 32%;
+  --sidebar-accent: 145 60% 93%;
+  --sidebar-accent-foreground: 150 45% 10%;
+  --sidebar-border: 150 25% 85%;
+  --sidebar-ring: 150 80% 36%;
+}
+
+[data-theme="scramble"] .glass,
+[data-theme="scramble"] .glass-stat,
+[data-theme="scramble"] .glass-btn {
+  background: rgba(255, 255, 255, 0.66);
+  border-color: rgba(18, 161, 80, 0.32);
+  box-shadow: 0 8px 32px rgba(18, 161, 80, 0.10), 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+[data-theme="scramble"] .glass:hover,
+[data-theme="scramble"] .glass-stat:hover {
+  background: rgba(255, 255, 255, 0.84);
+  border-color: rgba(18, 161, 80, 0.50);
+  box-shadow: 0 12px 40px rgba(18, 161, 80, 0.16);
+}
+[data-theme="scramble"] .glass-strong { background: rgba(255,255,255,0.84); border-color: rgba(18,161,80,0.38); }
+[data-theme="scramble"] .glass-body {
+  background: linear-gradient(135deg, #F7FAF7 0%, #EFF6F0 45%, #F4F8F2 100%);
+}
+[data-theme="scramble"] .glass-sidebar {
+  background: rgba(255, 255, 255, 0.80);
+  border-right: 1px solid rgba(18, 161, 80, 0.30);
+  box-shadow: 2px 0 24px rgba(18, 161, 80, 0.10);
+}
+
+/* 等宽字 + 荧光绿光标 */
+[data-theme="scramble"] h1,
+[data-theme="scramble"] h2,
+[data-theme="scramble"] .glass-tab,
+[data-theme="scramble"] th {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  letter-spacing: 0.02em;
+}
+[data-theme="scramble"] h1::after {
+  content: "▌";
+  margin-left: 0.12em;
+  color: hsl(var(--primary));
+  animation: pjpc-blink 1.1s steps(1) infinite;
+}
+
+/* ── 把写死的浅灰底拉回主题色 ───────────────────────────────────────────────
+   家长门户和不少页面用的是 bg-gray-50 / bg-gray-100 这类硬编码浅灰，
+   变量覆盖管不到，所以对这两个 utility 做定向覆盖（只改底色，不动其它）。 */
+[data-theme="glitch"] .bg-gray-50,
+[data-theme="glitch"] .bg-gray-100,
+[data-theme="scramble"] .bg-gray-50,
+[data-theme="scramble"] .bg-gray-100 {
+  background-color: hsl(var(--background)) !important;
+}
+[data-theme="glitch"] .border-gray-200,
+[data-theme="scramble"] .border-gray-200 {
+  border-color: hsl(var(--border)) !important;
+}
+/* 主色按钮加霓虹光晕：这是「换主题了」最直观的一眼 */
+[data-theme="glitch"] button[class*="bg-primary"],
+[data-theme="glitch"] a[class*="bg-primary"],
+[data-theme="glitch"] [class*="bg-primary"][class*="rounded"] {
+  box-shadow: 0 0 16px rgba(0, 194, 212, 0.38), 0 0 2px rgba(255, 45, 149, 0.35);
+}
+[data-theme="scramble"] button[class*="bg-primary"],
+[data-theme="scramble"] a[class*="bg-primary"] {
+  box-shadow: 0 0 14px rgba(18, 161, 80, 0.32);
+}
+/* 蓝色系是「选中/激活」的主色，把蓝换成主题主色，整页气质立刻跟着换 */
+[data-theme="glitch"] .text-blue-600,
+[data-theme="glitch"] .text-blue-500,
+[data-theme="glitch"] .text-indigo-600,
+[data-theme="scramble"] .text-blue-600,
+[data-theme="scramble"] .text-blue-500,
+[data-theme="scramble"] .text-indigo-600 {
+  color: hsl(var(--primary)) !important;
+}
+[data-theme="glitch"] .bg-blue-600,
+[data-theme="glitch"] .bg-blue-500,
+[data-theme="glitch"] .bg-indigo-600,
+[data-theme="scramble"] .bg-blue-600,
+[data-theme="scramble"] .bg-blue-500,
+[data-theme="scramble"] .bg-indigo-600 {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+}
+[data-theme="glitch"] .border-blue-200,
+[data-theme="glitch"] .border-blue-300,
+[data-theme="scramble"] .border-blue-200,
+[data-theme="scramble"] .border-blue-300 {
+  border-color: hsl(var(--border)) !important;
+}
+/* 顶栏 / 底部 Tab 也跟着走 */
+[data-theme="glitch"] header,
+[data-theme="scramble"] header {
+  border-color: hsl(var(--border)) !important;
+}
+[data-theme="glitch"] nav,
+[data-theme="scramble"] nav {
+  border-color: hsl(var(--border)) !important;
+}
+
+/* 乱码终端：全站等宽 + 等宽数字，终端感落在字体上 */
+[data-theme="scramble"] body {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+/* ── 动效 ─────────────────────────────────────────────────────────────── */
+@keyframes pjpc-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+@keyframes pjpc-glitch-shake {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-1px, 1px); }
+  50% { transform: translate(1px, -1px); }
+  75% { transform: translate(-1px, -1px); }
+  100% { transform: translate(0, 0); }
+}
+[data-theme="glitch"] .glass-btn-primary:hover,
+[data-theme="glitch"] .glass-btn:hover {
+  animation: pjpc-glitch-shake 0.28s steps(2) infinite;
+}
+[data-theme="glitch"] h1 {
+  animation: pjpc-glitch-shake 6s steps(1) infinite;
+}
+
+/* 关掉动效偏好：动画和扫描线一起收掉 */
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="glitch"] h1,
+  [data-theme="glitch"] h2,
+  [data-theme="glitch"] .glass-btn:hover,
+  [data-theme="glitch"] .glass-btn-primary:hover,
+  [data-theme="scramble"] h1::after {
+    animation: none;
+  }
+  [data-theme="glitch"] body::after,
+  [data-theme="scramble"] body::after { display: none; }
+}
