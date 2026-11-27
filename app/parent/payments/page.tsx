@@ -25,6 +25,8 @@ export default function ParentPaymentsPage() {
   const childId = searchParams?.get("child")
 
   const [invoices, setInvoices] = useState<any[]>([])
+  // invoices.paidAmount 这个字段全库是空的，已付金额只能从 payments 明细求和
+  const [paidByInvoice, setPaidByInvoice] = useState<Record<string, number>>({})
   const [fetching, setFetching] = useState(false)
 
   const filteredChildren = childId
@@ -39,12 +41,32 @@ export default function ParentPaymentsPage() {
       try {
         // Fetch invoices for all visible children
         const studentIds = filteredChildren.map((c) => c.id)
-        const filter = studentIds.map((id) => `studentId='${id}'`).join("||")
+        // 已作废（cancelled）和已删除的票不该出现在家长端
+        const filter = `(${studentIds.map((id) => `studentId='${id}'`).join("||")}) && status!='cancelled' && deleted!=true`
         const res = await fetch(
           `/api/pocketbase-proxy/api/collections/invoices/records?perPage=50&sort=-created&filter=${encodeURIComponent(filter)}`
         )
         const data = await res.json()
-        setInvoices(data?.items || [])
+        const list = data?.items || []
+        setInvoices(list)
+
+        // 已付金额：按发票 id 去 payments 汇总（每张票一条，最多 50 张）
+        if (list.length > 0) {
+          const invFilter = list.map((i: any) => `invoiceId='${i.id}'`).join("||")
+          const payRes = await fetch(
+            `/api/pocketbase-proxy/api/collections/payments/records?perPage=500&filter=${encodeURIComponent(invFilter + "&&deleted!=true")}`
+          )
+          const payData = await payRes.json().catch(() => null)
+          const sums: Record<string, number> = {}
+          for (const pay of payData?.items || []) {
+            const key = pay.invoiceId || pay.invoice
+            if (!key) continue
+            sums[key] = (sums[key] || 0) + Number(pay.amount || 0)
+          }
+          setPaidByInvoice(sums)
+        } else {
+          setPaidByInvoice({})
+        }
       } catch (e) {
         console.error("Failed to fetch invoices:", e)
       } finally {
@@ -88,26 +110,43 @@ export default function ParentPaymentsPage() {
           {invoices.map((inv) => {
             const student = filteredChildren.find((c) => c.id === inv.studentId)
             const status = STATUS_MAP[inv.status] || { label: inv.status, color: "outline" }
+            const paid = paidByInvoice[inv.id] || 0
+            const due = Math.max(0, Number(inv.totalAmount || 0) - paid)
             return (
               <Card key={inv.id} className="hover:shadow-sm transition-shadow">
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium">{inv.invoiceNumber || `#${inv.id.slice(0, 8)}`}</span>
                         <Badge variant={status.color}>{status.label}</Badge>
                       </div>
                       <div className="text-sm text-gray-500">
                         {student?.name || "未知学生"} · {new Date(inv.created || inv.date).toLocaleDateString("zh-CN")}
                       </div>
+                      {(inv.period || inv.dueDate) && (
+                        <div className="flex flex-wrap gap-x-3 text-xs text-gray-500">
+                          {inv.period && <span>{t("账期")} {inv.period}</span>}
+                          {inv.dueDate && (
+                            <span className={due > 0 && String(inv.dueDate).slice(0, 10) < new Date().toISOString().slice(0, 10) ? "text-red-600" : ""}>
+                              {t("到期")} {String(inv.dueDate).slice(0, 10)}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold">
+                    <div className="shrink-0 text-right">
+                      <div className="whitespace-nowrap text-lg font-bold">
                         RM {Number(inv.totalAmount || 0).toFixed(2)}
                       </div>
-                      {inv.paidAmount && (
-                        <div className="text-xs text-gray-400">
-                          {t("已付 RM")} {Number(inv.paidAmount).toFixed(2)}
+                      {paid > 0 && (
+                        <div className="text-xs text-gray-500">
+                          {t("已付 RM")} {paid.toFixed(2)}
+                        </div>
+                      )}
+                      {paid > 0 && due > 0 && (
+                        <div className="text-xs text-orange-600">
+                          {t("未收 RM")} {due.toFixed(2)}
                         </div>
                       )}
                     </div>

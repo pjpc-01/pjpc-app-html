@@ -117,7 +117,12 @@ async function runAutoGenerate(request: NextRequest, forceDryRun: boolean) {
 
     // 3. 获取在读学生（排除离校/休学）
     const studentsRes = await fetch(
-      `${PB_URL}/api/collections/students/records?perPage=500&filter=(status!="inactive"%26%26status!="left"%26%26status!="suspended")`,
+      // 只给仍在读的学生开票。以前这里只排除 inactive/left/suspended，
+  // 而库里实际用的是 withdrawn（退学/停学）和 deleted —— 于是退学学生
+  // 每月照样收到新票（2026-12 就有 7 张 RM2,280 是这么来的）。
+  `${PB_URL}/api/collections/students/records?perPage=500&filter=${encodeURIComponent(
+    '(status!="inactive" && status!="left" && status!="suspended" && status!="withdrawn" && status!="deleted" && status!="graduated")'
+  )}`,
       { headers }
     )
     const students = studentsRes.ok ? (await studentsRes.json()).items : []
