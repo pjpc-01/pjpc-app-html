@@ -47,7 +47,7 @@ function isAuthEndpoint(path: string): boolean {
 // ─── 守门：谁在调、能碰什么 ─────────────────────────────────────────────
 // 原来所有请求都套 superuser token → 不带任何登录就能读工资表/学生/发票（公网实测 200）。
 // 现在：除登录类接口与图片文件外，一律要求有效登录，并按角色挡敏感集合。
-type Session = { id: string; role: string; studentId?: string; name?: string ; teacherId?: string } | null
+type Session = { id: string; role: string; studentId?: string; name?: string ; teacherId?: string; email?: string } | null
 const sessionCache = new Map<string, { s: Session; exp: number }>()
 
 async function getSession(request: NextRequest): Promise<Session> {
@@ -74,6 +74,7 @@ async function getSession(request: NextRequest): Promise<Session> {
       studentId: d?.record?.student_id || '',
       teacherId: d?.record?.teacher_id || '',
       name: String(d?.record?.name || d?.record?.username || d?.record?.email || ''),
+      email: String(d?.record?.email || ''),
     }
     sessionCache.set(token, { s, exp: Date.now() + 60_000 })
     return s
@@ -273,6 +274,70 @@ const STUDENT_SELF_FIELD: Record<string, string> = {
 /** 学生可以整表读的（不含个人数据） */
 const STUDENT_OPEN_READ = new Set(['courses', 'centers', 'homework', 'report_settings'])
 
+// ─── 家长范围（2026-11-27）──────────────────────────────────────────────
+// 家长登录后曾经被 `!STAFF_ROLES.has(role)` 一律 403，整家长门户读不到任何数据。
+// 这里给 parent 一条只读通道：先按登录邮箱找到 parents 记录，再经 student_parents
+// 找到孩子，所有查询都 AND 上「只属于我孩子」的条件（服务端拼，前端改不掉）。
+const PARENT_SCOPE_FIELD: Record<string, string> = {
+  students: 'id',
+  invoices: 'studentId',
+  grades: 'studentId',
+  student_reports: 'studentId',
+  points: 'studentId',
+  monthly_test_scores: 'studentId',
+  student_leave_record: 'student_id',
+  student_attendance: 'student_id',
+}
+/** 家长可以整表读的公共数据（课程/中心/活动这类不含个人隐私） */
+const PARENT_OPEN_READ = new Set(['courses', 'centers', 'activities', 'report_settings', 'course_time_slots'])
+
+type ParentScope = { parentId: string; childIds: string[]; invoiceIds: string[] } | null
+
+async function getParentScope(email: string): Promise<ParentScope> {
+  if (!email) return null
+  const tok = await getAdminToken()
+  if (!tok) return null
+  const auth = { Authorization: `Bearer ${tok}` }
+  try {
+    const pr = await fetch(
+      `${POCKETBASE_URL}/api/collections/parents/records?perPage=1&filter=${encodeURIComponent(`email="${email.replace(/"/g, '')}"`)}`,
+      { headers: auth },
+    )
+    if (!pr.ok) return null
+    const parent = (await pr.json())?.items?.[0]
+    if (!parent) return null
+
+    const sr = await fetch(
+      `${POCKETBASE_URL}/api/collections/student_parents/records?perPage=200&filter=${encodeURIComponent(`parentId="${parent.id}"`)}`,
+      { headers: auth },
+    )
+    if (!sr.ok) return { parentId: parent.id, childIds: [], invoiceIds: [] }
+    const childIds = ((await sr.json())?.items || [])
+      .map((x: any) => String(x.studentId || ''))
+      .filter(Boolean)
+    if (childIds.length === 0) return { parentId: parent.id, childIds: [], invoiceIds: [] }
+
+    const childFilter = childIds.map((id: string) => `studentId="${id}"`).join('||')
+    const ir = await fetch(
+      `${POCKETBASE_URL}/api/collections/invoices/records?perPage=500&fields=id&filter=${encodeURIComponent(`(${childFilter}) && status!="cancelled" && deleted!=true`)}`,
+      { headers: auth },
+    )
+    const invoiceIds = ir.ok ? ((await ir.json())?.items || []).map((x: any) => String(x.id)) : []
+    return { parentId: parent.id, childIds, invoiceIds }
+  } catch {
+    return null
+  }
+}
+
+/** 把「属于我孩子」的条件拼进查询串 */
+function withScopeFilter(pbPath: string, search: string, expr: string): string {
+  const params = new URLSearchParams(search)
+  const old = params.get('filter')
+  params.set('filter', old ? `(${old}) && (${expr})` : `(${expr})`)
+  const q = params.toString()
+  return q ? `${pbPath}?${q}` : pbPath
+}
+
 /** 把「只看自己」的条件拼进查询串；返回新的 path+query */
 function withStudentFilter(pbPath: string, search: string, field: string, sid: string): string {
   const params = new URLSearchParams(search)
@@ -391,6 +456,76 @@ async function proxyRequest(method: string, request: NextRequest) {
         } else if (!col || !STUDENT_OPEN_READ.has(col)) {
           return NextResponse.json({ error: '没有权限访问该数据' }, { status: 403 })
         }
+        }
+      } else if (session.role === 'parent') {
+        // ★ 家长：只读 + 只看自己的孩子（2026-11-27 新增，之前整段被 403）
+        if (method !== 'GET') {
+          return NextResponse.json({ error: '家长账号只能查看' }, { status: 403 })
+        }
+        const selfRid = (pbPath.match(/\/records\/([^/?#]+)/) || [])[1]
+        if (col === 'users') {
+          // 只允许读自己那条（前端要拿姓名/角色）
+          if (!selfRid || selfRid !== String(session.id || '')) {
+            const listSelf = pbPath.match(/\/records\/?$/)
+            if (!listSelf) return NextResponse.json({ error: '没有权限' }, { status: 403 })
+            targetPath = withScopeFilter(pbPath, targetSearch, `id="${String(session.id || '').replace(/"/g, '')}"`)
+            targetSearch = ''
+          }
+        } else if (col === 'role_permissions') {
+          // 只读放行（渲染导航用）
+        } else {
+          const scope = await getParentScope(String(session.email || ''))
+          if (!scope) {
+            return NextResponse.json({ error: '这个账号还没绑定家长资料，请联系中心' }, { status: 403 })
+          }
+          if (scope.childIds.length === 0) {
+            return NextResponse.json({ error: '这个账号还没关联孩子，请联系中心' }, { status: 403 })
+          }
+          const childExpr = PARENT_SCOPE_FIELD[col] === 'id'
+            ? scope.childIds.map((id) => `id="${id}"`).join('||')
+            : scope.childIds.map((id) => `${PARENT_SCOPE_FIELD[col]}="${id}"`).join('||')
+
+          if (col === 'parents') {
+            // 只有自己那条家长资料
+            if (selfRid) {
+              if (selfRid !== scope.parentId) return NextResponse.json({ error: '没有权限访问该数据' }, { status: 403 })
+            } else {
+              targetPath = withScopeFilter(pbPath, targetSearch, `id="${scope.parentId}"`)
+              targetSearch = ''
+            }
+          } else if (col === 'student_parents') {
+            targetPath = withScopeFilter(pbPath, targetSearch, `parentId="${scope.parentId}"`)
+            targetSearch = ''
+          } else if (col === 'payments' || col === 'receipts') {
+            // 收款/收据没有 studentId，只能按「我孩子的发票」限定
+            if (scope.invoiceIds.length === 0) {
+              return NextResponse.json({ items: [], totalItems: 0, page: 1, perPage: 50, totalPages: 0 })
+            }
+            const invExpr = scope.invoiceIds.map((id) => `invoiceId="${id}"`).join('||')
+            targetPath = withScopeFilter(pbPath, targetSearch, invExpr)
+            targetSearch = ''
+          } else if (PARENT_SCOPE_FIELD[col]) {
+            const field = PARENT_SCOPE_FIELD[col]
+            if (selfRid) {
+              // 单条详情：先核对这条是不是自己孩子的
+              const tok = await getAdminToken()
+              const chk = await fetch(`${POCKETBASE_URL}/api/collections/${col}/records/${selfRid}`, {
+                headers: { Authorization: `Bearer ${tok}` },
+              })
+              if (!chk.ok) return NextResponse.json({ error: '没有权限访问该数据' }, { status: chk.status === 404 ? 404 : 403 })
+              const rec = await chk.json().catch(() => null)
+              const owner = rec ? String(rec[field] || '') : ''
+              const mine = field === 'id' ? scope.childIds.includes(owner) : scope.childIds.includes(owner)
+              if (!mine) return NextResponse.json({ error: '没有权限访问该数据' }, { status: 403 })
+            } else {
+              targetPath = withScopeFilter(pbPath, targetSearch, childExpr)
+              targetSearch = ''
+            }
+          } else if (PARENT_OPEN_READ.has(col)) {
+            // 公共数据，放行
+          } else {
+            return NextResponse.json({ error: '没有权限访问该数据' }, { status: 403 })
+          }
         }
       } else if (!STAFF_ROLES.has(session.role)) {
         // 未知/未开放角色

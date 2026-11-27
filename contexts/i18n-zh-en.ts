@@ -1225,6 +1225,9 @@ export const ZH_TO_EN: Record<string, string> = {
   "当月全部排班记录。标红的 = 没有课程的排班（来源见「来源」列）": "All scheduling records this month. Highlighted in red = shifts without courses (see the \"Source\" column for the source)",
   "本月没有排班": "No schedule this month",
   "当月暂无排班": "No schedule this month",
+  "学号 / 邮箱 / 手机号": "Student ID / Email / Phone",
+  "请输入学号 / 邮箱 / 手机号": "Enter student ID / email / phone",
+
 
   "未收 RM": "Due RM ",
 

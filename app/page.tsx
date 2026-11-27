@@ -71,6 +71,13 @@ export default function Dashboard() {
     }
   }, [loading, userProfile?.role, router])
 
+  // 家长角色：首页对他们没意义，直接进家长门户
+  useEffect(() => {
+    if (!loading && userProfile?.role === "parent") {
+      router.replace("/parent/dashboard")
+    }
+  }, [loading, userProfile?.role, router])
+
   // 学生角色：首页没他们的东西，直接去学生中心（/my）
   useEffect(() => {
     if (!loading && userProfile?.role === "student") {

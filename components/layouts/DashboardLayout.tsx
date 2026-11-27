@@ -3,6 +3,7 @@
 import React, { Suspense } from "react"
 import { Toaster } from "sonner"
 import AppShell from "./AppShell"
+import { usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useLanguage } from "@/contexts/language-context"
 
@@ -37,6 +38,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // 使用真实 auth context 替代硬编码 dev admin
   // parent 角色登录时自动切换到家长门户侧边栏
   const { userProfile, user, loading } = useAuth()
+  // 家长门户自带顶部栏 + 底部 Tab，不需要管理后台侧边栏
+  const pathname = usePathname()
+  const isParentPortal = (pathname || "").startsWith("/parent")
 
   // 开发环境 fallback — auth 未就绪或未登录时显示 admin 侧边栏
   const role = userProfile?.role || ""
@@ -45,9 +49,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <>
       <Suspense fallback={<LoadingShell />}>
-        <AppShellWrapper role={role} name={name}>
-          {children}
-        </AppShellWrapper>
+        {isParentPortal ? (
+          children
+        ) : (
+          <AppShellWrapper role={role} name={name}>
+            {children}
+          </AppShellWrapper>
+        )}
       </Suspense>
       <Toaster
         position="top-right"
